@@ -7,19 +7,19 @@ using System;
 
 namespace PrestaQi.Service.WriteServices
 {
-    public class PeriodWriteService : WriteService<Period>
+    public class ConfigurationWriteService : WriteService<Configuration>
     {
-        IRetrieveService<Period> _PeriodRetrieveService;
+        IRetrieveService<Configuration> _ConfigurationRetrieveService;
 
-        public PeriodWriteService(
-            IWriteRepository<Period> repository,
-            IRetrieveService<Period> periodRetrieveService
+        public ConfigurationWriteService(
+            IWriteRepository<Configuration> repository,
+            IRetrieveService<Configuration> configurationRetrieveService
             ) : base(repository)
         {
-            this._PeriodRetrieveService = periodRetrieveService;
+            this._ConfigurationRetrieveService = configurationRetrieveService;
         }
 
-        public override bool Create(Period entity)
+        public override bool Create(Configuration entity)
         {
             try
             {
@@ -35,11 +35,11 @@ namespace PrestaQi.Service.WriteServices
            
         }
 
-        public override bool Update(Period entity)
+        public override bool Update(Configuration entity)
         {
             try
             {
-                Period entityFound = this._PeriodRetrieveService.Find(entity.id);
+                Configuration entityFound = this._ConfigurationRetrieveService.Find(entity.id);
 
                 if (entityFound != null)
                 {

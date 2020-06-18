@@ -15,6 +15,9 @@
     <Reference Include="JabilCore.Service">
       <HintPath>..\..\Libraries\JabilCore.Service.dll</HintPath>
     </Reference>
+    <Reference Include="JabilCore.Utilities">
+      <HintPath>..\..\Libraries\JabilCore.Utilities.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

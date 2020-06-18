@@ -14,6 +14,8 @@ namespace PrestaQi.Model
         public string First_Name { get; set; }
         [Column("last_name")]
         public string Last_Name { get; set; }
+        [Column("password")]
+        public string Password { get; set; }
         [Column("rfc")]
         public string RFC { get; set; }
         [Column("birth_date")]

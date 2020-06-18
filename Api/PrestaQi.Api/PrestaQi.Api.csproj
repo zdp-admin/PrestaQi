@@ -13,12 +13,11 @@
   <ItemGroup>
     <ProjectReference Include="..\PrestaQi.DataAccess\PrestaQi.DataAccess.csproj" />
     <ProjectReference Include="..\PrestaQi.Model\PrestaQi.Model.csproj" />
-    <ProjectReference Include="..\PrestaQi.Service\PrestaQi.Service.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="JabilCore.Base">
-      <HintPath>..\..\Libraries\JabilCore.Base.dll</HintPath>
+      <HintPath>..\..\..\JBCore.Americas.GTP\Applications\JabilCore\ICore\bin\Debug\netstandard2.0\JabilCore.Base.dll</HintPath>
     </Reference>
     <Reference Include="JabilCore.EFRepository">
       <HintPath>..\..\Libraries\JabilCore.EFRepository.dll</HintPath>

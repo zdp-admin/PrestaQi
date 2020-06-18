@@ -24,6 +24,7 @@ namespace PrestaQi.Service.WriteServices
         {
             try
             {
+                entity.Password = JabilCore.Utilities.Crypto.MD5.Encrypt(entity.Password);
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
 
@@ -43,6 +44,7 @@ namespace PrestaQi.Service.WriteServices
                 User user = this._UserRetrieveService.Find(entity.id);
                 if (user != null)
                 {
+                    entity.Password = user.Password;
                     entity.updated_at = DateTime.Now;
                     entity.created_at = entity.created_at;
 

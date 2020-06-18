@@ -15,5 +15,9 @@ namespace PrestaQi.DataAccess
         public DbSet<User> Users { get; set; }
         public DbSet<UserType> UserTypes { get; set; }
         public DbSet<UserProperty> UserProperties { get; set; }
+        public DbSet<UserCapital> UserCapitals { get; set; }
+        public DbSet<Contact> Contacts { get; set; }
+        public DbSet<Configuration> Configurations { get; set; }
     }
+
 }
