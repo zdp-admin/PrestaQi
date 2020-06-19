@@ -2,6 +2,7 @@
 using JabilCore.Base.Service;
 using JabilCore.Service;
 using PrestaQi.Model;
+using PrestaQi.Model.Dto;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -58,6 +59,21 @@ namespace PrestaQi.Service.WriteServices
                 throw;
             }
             
+        }
+
+        public bool Update(ChangePassword changePassword)
+        {
+            var user = this._UserRetrieveService.Find(changePassword.User_Id);
+
+            if (user == null)
+                throw new Exception("User not found");
+
+            user.updated_at = DateTime.Now;
+            user.Password = JabilCore.Utilities.Crypto.MD5.Encrypt(changePassword.Password);
+
+            base.Update(user);
+
+            return true;
         }
     }
 }

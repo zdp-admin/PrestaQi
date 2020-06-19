@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -5,10 +6,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using PrestaQi.Api.Configuration;
 using PrestaQi.DataAccess;
 using System;
 using System.Security.AccessControl;
+using System.Text;
 
 namespace PrestaQi.Api
 {
@@ -29,17 +32,23 @@ namespace PrestaQi.Api
         public void ConfigureServices(IServiceCollection services)
         {
             Type type = typeof(GeneralContext);
-
-            /*services.AddDbContext<GeneralContext>(options => {
-                options.UseNpgsql(Configuration.GetConnectionString("Postgres")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-                });
-
-            services.AddScoped<DbContext>(p => p.GetService<GeneralContext>());
-      */
-
             ServicePool.RegistryService(_Environment.ContentRootPath, Configuration, services);
-           
 
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration["Jwt:Issuer"],
+                    ValidAudience = Configuration["Jwt:Issuer"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                };
+            });
+            
             services.AddControllers();
         }
 
@@ -52,7 +61,7 @@ namespace PrestaQi.Api
             }
 
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

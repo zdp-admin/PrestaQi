@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PrestaQi.Model;
+using PrestaQi.Model.Dto;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -41,6 +42,12 @@ namespace PrestaQi.Api.Controllers
         public bool Put(User user)
         {
             return this._UserWriteService.Update(user);
+        }
+
+        [HttpPost, Route("[action]")]
+        public bool ChangePassword(ChangePassword changePassword)
+        {
+            return this._UserWriteService.Update<ChangePassword, bool>(changePassword);
         }
 
     }

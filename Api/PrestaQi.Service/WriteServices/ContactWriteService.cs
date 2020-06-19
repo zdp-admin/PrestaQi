@@ -2,6 +2,7 @@
 using JabilCore.Base.Data;
 using JabilCore.Base.Service;
 using JabilCore.Service;
+using Microsoft.AspNetCore.Authorization;
 using PrestaQi.Model;
 using System;
 
