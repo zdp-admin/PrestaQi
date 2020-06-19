@@ -1,9 +1,7 @@
 ﻿using PrestaQi.Model.General;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace PrestaQi.Model
 {
@@ -26,8 +24,8 @@ namespace PrestaQi.Model
         public string Phone { get; set; }
         [Column("mail")]
         public string Mail { get; set; }
-        [Column("status")]
-        public int Status { get; set; }
+        [Column("enabled")]
+        public bool Enabled { get; set; }
         [Column("user_type_id")]
         public int User_Type_Id { get; set; }
     }

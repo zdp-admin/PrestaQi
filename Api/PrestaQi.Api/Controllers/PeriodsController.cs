@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using JabilCore.Base.Service;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 
 namespace PrestaQi.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PeriodsController : ControllerBase
+    public class PeriodsController : CustomController
     {
         IWriteService<Period> _PeriodWriteService;
         IRetrieveService<Period> _PeriodRetrieveService;
@@ -26,21 +23,21 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet]
-        public List<Period> Get()
+        public IActionResult Get()
         {
-            return this._PeriodRetrieveService.Where(p => true).ToList();
+            return Ok(this._PeriodRetrieveService.Where(p => true).ToList());
         }
 
         [HttpPost]
-        public bool Post(Period period)
+        public IActionResult Post(Period period)
         {
-            return this._PeriodWriteService.Create(period);
+            return Ok(this._PeriodWriteService.Create(period), "Period created!");
         }
 
         [HttpPut]
-        public bool Put(Period period)
+        public IActionResult Put(Period period)
         {
-            return this._PeriodWriteService.Update(period);
+            return Ok(this._PeriodWriteService.Update(period), "Period updated!");
         }
 
     }

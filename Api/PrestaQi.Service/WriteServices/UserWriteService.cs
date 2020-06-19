@@ -2,10 +2,9 @@
 using JabilCore.Base.Service;
 using JabilCore.Service;
 using PrestaQi.Model;
+using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace PrestaQi.Service.WriteServices
 {
@@ -33,32 +32,26 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw;
+                throw new SystemValidationException("Error creating user");
             }
            
         }
 
         public override bool Update(User entity)
         {
+            User user = this._UserRetrieveService.Find(entity.id);
+            if (user == null)
+                throw new SystemValidationException("User not found");
+
+            entity.Password = user.Password;
+            entity.updated_at = DateTime.Now;
+            entity.created_at = entity.created_at;
+
             try
             {
-                User user = this._UserRetrieveService.Find(entity.id);
-                if (user != null)
-                {
-                    entity.Password = user.Password;
-                    entity.updated_at = DateTime.Now;
-                    entity.created_at = entity.created_at;
-
-                    return base.Update(entity);
-                }
-
-                throw new Exception("NOT_FOUND");
+                return base.Update(entity);
             }
-            catch (Exception exception)
-            {
-                throw;
-            }
-            
+            catch (Exception exception) { throw new SystemValidationException("Error updating password!");  }
         }
 
         public bool Update(ChangePassword changePassword)
@@ -66,14 +59,17 @@ namespace PrestaQi.Service.WriteServices
             var user = this._UserRetrieveService.Find(changePassword.User_Id);
 
             if (user == null)
-                throw new Exception("User not found");
+                throw new SystemValidationException("User not found");
 
             user.updated_at = DateTime.Now;
-            user.Password = JabilCore.Utilities.Crypto.MD5.Encrypt(changePassword.Password);
 
-            base.Update(user);
+            try
+            {
+                user.Password = JabilCore.Utilities.Crypto.MD5.Encrypt(changePassword.Password);
 
-            return true;
+                return base.Update(user);
+            }
+            catch (Exception) { throw new SystemValidationException("Error change password!"); }
         }
     }
 }

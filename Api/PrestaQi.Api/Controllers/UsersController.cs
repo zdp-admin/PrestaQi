@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using JabilCore.Base.Service;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto;
 
@@ -13,7 +11,7 @@ namespace PrestaQi.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class UsersController : CustomController
     {
         IWriteService<User> _UserWriteService;
         IRetrieveService<User> _UserRetrieveService;
@@ -27,27 +25,36 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet]
-        public List<User> Get()
+        public IActionResult Get()
         {
-            return this._UserRetrieveService.Where(p => true).ToList();
+            return Ok(this._UserRetrieveService.Where(p => true).ToList());
+        }
+
+        [HttpGet, Route("[action]/{id}")]
+        public IActionResult GetByType(int id, [FromQuery] bool onlyActive)
+        {
+            return Ok(
+                onlyActive == true ? this._UserRetrieveService.Where(p => p.User_Type_Id == id && p.Enabled == true) :
+                this._UserRetrieveService.Where(p => p.User_Type_Id == id)
+                );
         }
 
         [HttpPost]
-        public bool Post(User user)
+        public IActionResult Post(User user)
         {
-            return this._UserWriteService.Create(user);
+            return Ok(this._UserWriteService.Create(user), "User created!");
         }
 
         [HttpPut]
-        public bool Put(User user)
+        public IActionResult Put(User user)
         {
-            return this._UserWriteService.Update(user);
+            return Ok(this._UserWriteService.Update(user), "User updated!");
         }
 
-        [HttpPost, Route("[action]")]
-        public bool ChangePassword(ChangePassword changePassword)
+        [HttpPut, Route("[action]")]
+        public IActionResult ChangePassword(ChangePassword changePassword)
         {
-            return this._UserWriteService.Update<ChangePassword, bool>(changePassword);
+            return Ok(this._UserWriteService.Update<ChangePassword, bool>(changePassword), "Password changed!");
         }
 
     }

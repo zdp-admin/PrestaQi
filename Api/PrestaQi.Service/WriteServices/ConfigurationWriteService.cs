@@ -3,6 +3,7 @@ using JabilCore.Base.Data;
 using JabilCore.Base.Service;
 using JabilCore.Service;
 using PrestaQi.Model;
+using PrestaQi.Model.Configurations;
 using System;
 
 namespace PrestaQi.Service.WriteServices
@@ -30,32 +31,26 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw;
+                throw new SystemValidationException("Error creating Configuration!");
             }
            
         }
 
         public override bool Update(Configuration entity)
         {
+            Configuration entityFound = this._ConfigurationRetrieveService.Find(entity.id);
+
+            if (entityFound == null)
+                throw new SystemValidationException("Configuration not found!");
+
+            entity.updated_at = DateTime.Now;
+            entity.created_at = entityFound.created_at;
+
             try
             {
-                Configuration entityFound = this._ConfigurationRetrieveService.Find(entity.id);
-
-                if (entityFound != null)
-                {
-                    entity.updated_at = DateTime.Now;
-                    entity.created_at = entityFound.created_at;
-
-                    return base.Update(entity);
-                }
-
-                throw new Exception("NO_FOUND");
+                return base.Update(entity);
             }
-            catch (Exception exception)
-            {
-                throw;
-            }
-            
+            catch (Exception) { throw new SystemValidationException("Error updating Configuration!"); }
         }
     }
 }

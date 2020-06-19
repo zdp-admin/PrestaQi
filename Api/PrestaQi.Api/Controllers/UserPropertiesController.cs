@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using JabilCore.Base.Service;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 
 namespace PrestaQi.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserPropertiesController : ControllerBase
+    public class UserPropertiesController : CustomController
     {
         IWriteService<UserProperty> _UserPropertyWriteService;
         IRetrieveService<UserProperty> _UserPropertyRetrieveService;
@@ -26,33 +24,33 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("[action]/{id}")]
-        public List<UserProperty> GetByUser(int id)
+        public IActionResult GetByUser(int id)
         {
-            return this._UserPropertyRetrieveService.Where(p => p.User_Id == id).ToList();
+           return Ok(this._UserPropertyRetrieveService.Where(p => p.User_Id == id).ToList());
         }
 
         [HttpPost]
-        public bool Post(UserProperty userProperty)
+        public IActionResult Post(UserProperty userProperty)
         {
-            return this._UserPropertyWriteService.Create(userProperty);
+            return Ok(this._UserPropertyWriteService.Create(userProperty), "Property created!");
         }
 
         [HttpPut]
-        public bool Put(UserProperty userProperty)
+        public IActionResult Put(UserProperty userProperty)
         {
-            return this._UserPropertyWriteService.Update(userProperty);
+            return Ok(this._UserPropertyWriteService.Update(userProperty), "Property updated");
         }
 
         [HttpPost, Route("[action]")]
-        public bool CreateList(List<UserProperty> userProperties)
+        public IActionResult CreateList(List<UserProperty> userProperties)
         {
-            return this._UserPropertyWriteService.Create(userProperties);
+            return Ok(this._UserPropertyWriteService.Create(userProperties), "Properties created!");
         }
 
         [HttpPut, Route("[action]")]
-        public bool UpdateList(List<UserProperty> userProperties)
+        public IActionResult UpdateList(List<UserProperty> userProperties)
         {
-            return this._UserPropertyWriteService.Update(userProperties);
+            return Ok(this._UserPropertyWriteService.Update(userProperties), "Properties updated!");
         }
 
     }

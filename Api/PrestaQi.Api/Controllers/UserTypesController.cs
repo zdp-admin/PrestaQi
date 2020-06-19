@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using JabilCore.Base.Service;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 
 namespace PrestaQi.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserTypesController : ControllerBase
+    public class UserTypesController : CustomController
     {
         IWriteService<UserType> _UserTypeWriteService;
         IRetrieveService<UserType> _UserTypeRetrieveService;
@@ -26,21 +23,21 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet]
-        public List<UserType> Get()
+        public IActionResult Get()
         {
-            return this._UserTypeRetrieveService.Where(p => true).ToList();
+            return Ok(this._UserTypeRetrieveService.Where(p => true).ToList());
         }
 
         [HttpPost]
-        public bool Post(UserType userType)
+        public IActionResult Post(UserType userType)
         {
-            return this._UserTypeWriteService.Create(userType);
+            return Ok(this._UserTypeWriteService.Create(userType), "User Type created!");
         }
 
         [HttpPut]
-        public bool Put(UserType userType)
+        public IActionResult Put(UserType userType)
         {
-            return this._UserTypeWriteService.Update(userType);
+            return Ok(this._UserTypeWriteService.Update(userType), "User Type updated");
         }
 
     }

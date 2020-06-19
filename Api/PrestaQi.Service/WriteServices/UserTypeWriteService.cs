@@ -2,9 +2,8 @@
 using JabilCore.Base.Service;
 using JabilCore.Service;
 using PrestaQi.Model;
+using PrestaQi.Model.Configurations;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace PrestaQi.Service.WriteServices
 {
@@ -31,33 +30,26 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw;
+                throw new SystemValidationException("Error creating User Type!");
             }
            
         }
 
         public override bool Update(UserType entity)
         {
+            UserType entityFound = this._UserTypeRetrieveService.Find(entity.id);
+
+            if (entityFound == null)
+                throw new SystemValidationException("User Type not found!");
+
+            entity.created_at = entityFound.created_at;
+            entity.updated_at = DateTime.Now;
+
             try
             {
-                UserType entityFound = this._UserTypeRetrieveService.Find(entity.id);
-                
-                if (entityFound != null)
-                {
-                    entity.created_at = entityFound.created_at;
-                    entity.updated_at = DateTime.Now;
-
-                    return base.Update(entity);
-                }
-
-                throw new Exception("NOT_FOUND");
-                
+                return base.Update(entity);
             }
-            catch (Exception exception)
-            {
-                throw;
-            }
-            
+            catch (Exception) { throw new SystemValidationException("Error updating User Type!"); }
         }
     }
 }

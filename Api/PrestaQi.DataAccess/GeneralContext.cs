@@ -1,7 +1,5 @@
-﻿using JabilCore.EFRepository;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PrestaQi.Model;
-using System;
 
 namespace PrestaQi.DataAccess
 {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PrestaQi.Model.General
+﻿namespace PrestaQi.Model.General
 {
     public class Response<T>
     {

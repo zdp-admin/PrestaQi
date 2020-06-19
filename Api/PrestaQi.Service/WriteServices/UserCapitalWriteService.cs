@@ -2,9 +2,8 @@
 using JabilCore.Base.Service;
 using JabilCore.Service;
 using PrestaQi.Model;
+using PrestaQi.Model.Configurations;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace PrestaQi.Service.WriteServices
 {
@@ -31,7 +30,7 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw;
+                throw new SystemValidationException("Error creating User Capital!");
             }
            
         }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PrestaQi.Model.Dto
+﻿namespace PrestaQi.Model.Dto
 {
     public class ChangePassword
     {

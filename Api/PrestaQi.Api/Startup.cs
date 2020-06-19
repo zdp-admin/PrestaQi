@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,7 +8,6 @@ using Microsoft.IdentityModel.Tokens;
 using PrestaQi.Api.Configuration;
 using PrestaQi.DataAccess;
 using System;
-using System.Security.AccessControl;
 using System.Text;
 
 namespace PrestaQi.Api
@@ -48,7 +45,12 @@ namespace PrestaQi.Api
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
                 };
             });
-            
+
+            services.AddMvc(config =>
+            {
+                config.Filters.Add(new ExceptionHandling());
+            });
+
             services.AddControllers();
         }
 
