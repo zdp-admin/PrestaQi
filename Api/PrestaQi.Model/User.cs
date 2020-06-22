@@ -32,5 +32,7 @@ namespace PrestaQi.Model
         public int User_Type_Id { get; set; }
         [NotMapped]
         public List<UserProperty> User_Properties { get; set; }
+        [NotMapped]
+        public List<UserModule> Modules { get; set; }
     }
 }

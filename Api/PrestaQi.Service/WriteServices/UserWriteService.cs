@@ -5,6 +5,7 @@ using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PrestaQi.Service.WriteServices
@@ -13,15 +14,21 @@ namespace PrestaQi.Service.WriteServices
     {
         IRetrieveService<User> _UserRetrieveService;
         IWriteService<UserProperty> _UserPropertyWriteService;
+        IWriteService<UserModule> _UserModuleWriteService;
+        IRetrieveService<UserModule> _UserModuloRetrieveService;
 
         public UserWriteService(
             IWriteRepository<User> repository,
             IRetrieveService<User> userRetrieveService,
-            IWriteService<UserProperty> userPropertyWriteService
+            IWriteService<UserProperty> userPropertyWriteService,
+            IWriteService<UserModule> userModuleWriteService,
+            IRetrieveService<UserModule> userModuloRetrieveService
             ) : base(repository)
         {
             this._UserRetrieveService = userRetrieveService;
             this._UserPropertyWriteService = userPropertyWriteService;
+            this._UserModuleWriteService = userModuleWriteService;
+            this._UserModuloRetrieveService = userModuloRetrieveService;
         }
 
         public override bool Create(User entity)
@@ -42,6 +49,17 @@ namespace PrestaQi.Service.WriteServices
                         {
                             entity.User_Properties.ForEach(p => { p.User_Id = entity.id; });
                             this._UserPropertyWriteService.Create(entity.User_Properties);
+                        }
+
+                        if (entity.Modules != null)
+                        {
+                            if (entity.Modules.Count > 0)
+                            {
+                                entity.Modules.ForEach(p => { p.user_id = entity.id; p.created_at = DateTime.Now;
+                                    p.updated_at = DateTime.Now;
+                                });
+                                this._UserModuleWriteService.Create(entity.Modules);
+                            }
                         }
                     }
                 }
@@ -80,15 +98,27 @@ namespace PrestaQi.Service.WriteServices
                             var listNew = entity.User_Properties.Where(p => p.id == 0).ToList();
                             var listUpdate = entity.User_Properties.Where(p => p.id > 0).ToList();
 
-                            this._UserPropertyWriteService.Create(listNew);
-                            this._UserPropertyWriteService.Update(listUpdate);
+                            if (listNew.Count > 0) this._UserPropertyWriteService.Create(listNew);
+                            if (listUpdate.Count > 0) this._UserPropertyWriteService.Update(listUpdate);
+                        }
+
+                        if (entity.Modules != null)
+                        {
+                            if (entity.Modules.Count > 0)
+                            {
+                                var listSaved = this._UserModuloRetrieveService.Where(p => p.user_id == entity.id);
+                                if (listSaved.Count() > 0) this._UserModuleWriteService.Delete(listSaved);
+
+                                entity.Modules.ForEach(p => { p.user_id = entity.id; p.created_at = DateTime.Now; p.updated_at = DateTime.Now; });
+                                this._UserModuleWriteService.Create(entity.Modules);
+                            }
                         }
                     }
                 }
 
                 return updated;
             }
-            catch (Exception exception) { throw new SystemValidationException("Error updating password!");  }
+            catch (Exception exception) { throw new SystemValidationException("Error updating User!");  }
         }
 
         public bool Update(ChangePassword changePassword)

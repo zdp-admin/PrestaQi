@@ -16,6 +16,7 @@ namespace PrestaQi.DataAccess
         public DbSet<UserCapital> UserCapitals { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<Configuration> Configurations { get; set; }
+        public DbSet<UserModule> UserModules { get; set; }
     }
 
 }
