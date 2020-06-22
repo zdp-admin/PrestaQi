@@ -1,7 +1,9 @@
 ﻿using PrestaQi.Model.General;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Principal;
 
 namespace PrestaQi.Model
 {
@@ -28,5 +30,7 @@ namespace PrestaQi.Model
         public bool Enabled { get; set; }
         [Column("user_type_id")]
         public int User_Type_Id { get; set; }
+        [NotMapped]
+        public List<UserProperty> User_Properties { get; set; }
     }
 }
