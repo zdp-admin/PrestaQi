@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using JabilCore.Base.Service;
+using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Mvc;
 using PrestaQi.Api.Configuration;
 

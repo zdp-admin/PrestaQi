@@ -1,7 +1,7 @@
-﻿using JabilCore.Base.Data;
-using JabilCore.Base.Service;
-using JabilCore.EFRepository;
-using JabilCore.Service;
+﻿using InsiscoCore.Base.Data;
+using InsiscoCore.Base.Service;
+using InsiscoCore.EFRepository;
+using InsiscoCore.Service;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +19,7 @@ namespace PrestaQi.Api.Configuration
         {
             RegistryDefault(services);
 
-            var configurationJabil = configuration.GetSection("JabilCore").Get<JabilCoreConfiguration>();
+            var configurationJabil = configuration.GetSection("InsiscoCore").Get<InsiscoCoreConfiguration>();
 
             foreach (var service in configurationJabil.Services)
             {
@@ -32,7 +32,7 @@ namespace PrestaQi.Api.Configuration
             }
         }
 
-        static void RegistryContexts(string path, JabilCoreConfigurationSection configuration, IServiceCollection services, string connectionString)
+        static void RegistryContexts(string path, InsiscoCoreConfigurationSection configuration, IServiceCollection services, string connectionString)
         {
             /*Assembly assembly = Assembly.LoadFile(Path.Combine(path, "../" + configuration.RepositoryAssemblyPath));
             var dbContextType = assembly.GetType(configuration.Context);

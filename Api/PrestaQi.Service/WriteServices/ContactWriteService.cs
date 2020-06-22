@@ -1,7 +1,7 @@
 ﻿
-using JabilCore.Base.Data;
-using JabilCore.Base.Service;
-using JabilCore.Service;
+using InsiscoCore.Base.Data;
+using InsiscoCore.Base.Service;
+using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using System;

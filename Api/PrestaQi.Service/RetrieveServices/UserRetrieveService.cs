@@ -1,5 +1,5 @@
-﻿using JabilCore.Base.Data;
-using JabilCore.Service;
+﻿using InsiscoCore.Base.Data;
+using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
@@ -23,7 +23,7 @@ namespace PrestaQi.Service.RetrieveServices
             if (user == null)
                 throw new SystemValidationException("User not found!");
 
-            if (user.Password != JabilCore.Utilities.Crypto.MD5.Encrypt(login.Password))
+            if (user.Password != InsiscoCore.Utilities.Crypto.MD5.Encrypt(login.Password))
                 throw new SystemValidationException("Invalid Password!");
 
             return user;

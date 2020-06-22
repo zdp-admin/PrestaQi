@@ -2,12 +2,12 @@
 
 namespace PrestaQi.Api.Configuration
 {
-    public sealed class JabilCoreConfiguration
+    public sealed class InsiscoCoreConfiguration
     {
-        public List<JabilCoreConfigurationSection> Services { get; set; }
+        public List<InsiscoCoreConfigurationSection> Services { get; set; }
     }
 
-    public sealed class JabilCoreConfigurationSection
+    public sealed class InsiscoCoreConfigurationSection
     {
         public string Context { get; set; }
         public string ConnectionStringName { get; set; }

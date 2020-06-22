@@ -1,6 +1,6 @@
-﻿using JabilCore.Base.Data;
-using JabilCore.Base.Service;
-using JabilCore.Service;
+﻿using InsiscoCore.Base.Data;
+using InsiscoCore.Base.Service;
+using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto;
@@ -24,7 +24,7 @@ namespace PrestaQi.Service.WriteServices
         {
             try
             {
-                entity.Password = JabilCore.Utilities.Crypto.MD5.Encrypt(entity.Password);
+                entity.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(entity.Password);
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
 
@@ -65,7 +65,7 @@ namespace PrestaQi.Service.WriteServices
 
             try
             {
-                user.Password = JabilCore.Utilities.Crypto.MD5.Encrypt(changePassword.Password);
+                user.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(changePassword.Password);
 
                 return base.Update(user);
             }
