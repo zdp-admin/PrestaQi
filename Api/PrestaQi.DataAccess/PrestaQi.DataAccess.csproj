@@ -14,11 +14,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="JabilCore.Base">
-      <HintPath>..\..\Libraries\JabilCore.Base.dll</HintPath>
+    <Reference Include="InsiscoCore.Base">
+      <HintPath>..\..\Libraries\InsiscoCore.Base.dll</HintPath>
     </Reference>
-    <Reference Include="JabilCore.EFRepository">
-      <HintPath>..\..\Libraries\JabilCore.EFRepository.dll</HintPath>
+    <Reference Include="InsiscoCore.EFRepository">
+      <HintPath>..\..\Libraries\InsiscoCore.EFRepository.dll</HintPath>
     </Reference>
   </ItemGroup>
 

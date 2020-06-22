@@ -9,14 +9,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="JabilCore.Base">
-      <HintPath>..\..\Libraries\JabilCore.Base.dll</HintPath>
+    <Reference Include="InsiscoCore.Base">
+      <HintPath>..\..\Libraries\InsiscoCore.Base.dll</HintPath>
     </Reference>
-    <Reference Include="JabilCore.Service">
-      <HintPath>..\..\Libraries\JabilCore.Service.dll</HintPath>
+    <Reference Include="InsiscoCore.Service">
+      <HintPath>..\..\Libraries\InsiscoCore.Service.dll</HintPath>
     </Reference>
-    <Reference Include="JabilCore.Utilities">
-      <HintPath>..\..\Libraries\JabilCore.Utilities.dll</HintPath>
+    <Reference Include="InsiscoCore.Utilities">
+      <HintPath>..\..\Libraries\InsiscoCore.Utilities.dll</HintPath>
     </Reference>
   </ItemGroup>
 
