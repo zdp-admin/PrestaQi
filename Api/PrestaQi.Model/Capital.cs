@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace PrestaQi.Model
 {
     [Table("capitals")]
-    public class Capital : Entity<int>
+    public partial class Capital : Entity<int>
     { 
         [Column("amount")]
         public double Amount { get; set; }
@@ -16,7 +16,7 @@ namespace PrestaQi.Model
         [Column("bussiness_day")]
         public int Bussiness_Day { get; set; }
         [Column("period_id")]
-        public int Period_Id { get; set; }
+        public int period_id { get; set; }
         [Column("notice_mail")]
         public bool Notice_Mail { get; set; }
         [Column("investor_id")]

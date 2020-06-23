@@ -7,7 +7,7 @@ using System.Text;
 namespace PrestaQi.Model
 {
     [Table("accrediteds")]
-    public class Accredited : Entity<int>
+    public partial class Accredited : Entity<int>
     {
         [Column("first_name")]
         public string First_Name { get; set; }
@@ -43,5 +43,10 @@ namespace PrestaQi.Model
         public string Account_Number { get; set; }
         [Column("enabled")]
         public bool Enabled { get; set; }
+
+        [Column("moratoruim_interest_rate")]
+        public int Moratoruim_Interest_Rate { get; set; }
+        [Column("period_id")]
+        public int Period_Id { get; set; }
     }
 }

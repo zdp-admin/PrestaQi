@@ -10,34 +10,25 @@ using System.Linq;
 
 namespace PrestaQi.Service.RetrieveServices
 {
-    public class InvestorRetrieveService : RetrieveService<Investor>
+    public class AccreditedRetrieveService : RetrieveService<Accredited>
     {
         IRetrieveService<Period> _PeriodRetrieveService;
-        IRetrieveService<Capital> _CapitalRetrieveService;
 
-        public InvestorRetrieveService(
-            IRetrieveRepository<Investor> repository,
-            IRetrieveService<Capital> capitalRetrieveService,
+        public AccreditedRetrieveService(
+            IRetrieveRepository<Accredited> repository,
             IRetrieveService<Period> periodRetrieveService
             ) : base(repository)
         {
-            this._CapitalRetrieveService = capitalRetrieveService;
             this._PeriodRetrieveService = periodRetrieveService;
         }
 
-        public override IEnumerable<Investor> Where(Func<Investor, bool> predicate)
+        public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
         {
             var list = this._Repository.Where(predicate);
 
             foreach (var item in list)
             {
-                if (item.Capitals != null)
-                {
-                    item.Capitals.ForEach(p =>
-                    {
-                        p.Period_Name = this._PeriodRetrieveService.Find(p.period_id).Description;
-                    });
-                }
+                item.Period_Name = this._PeriodRetrieveService.Find(item.Period_Id).Description;
             }
             return list;
 
