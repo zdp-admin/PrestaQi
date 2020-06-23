@@ -5,6 +5,7 @@ using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Mvc;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
+using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -14,13 +15,16 @@ namespace PrestaQi.Api.Controllers
     {
         IWriteService<Capital> _CapitalWriteService;
         IRetrieveService<Capital> _CapitalRetrieveService;
+        IProcessService<Capital> _CapitalProcessService;
 
         public CapitalsController(
-            IWriteService<Capital> CapitalWriteService, 
-            IRetrieveService<Capital> CapitalRetrieveService)
+            IWriteService<Capital> capitalWriteService, 
+            IRetrieveService<Capital> capitalRetrieveService,
+            IProcessService<Capital> capitalProcessService)
         {
-            this._CapitalWriteService = CapitalWriteService;
-            this._CapitalRetrieveService = CapitalRetrieveService;
+            this._CapitalWriteService = capitalWriteService;
+            this._CapitalRetrieveService = capitalRetrieveService;
+            this._CapitalProcessService = capitalProcessService;
         }
 
         [HttpGet, Route("[action]/{id}")]
@@ -38,6 +42,12 @@ namespace PrestaQi.Api.Controllers
         public IActionResult Post(Capital userCapital)
         {
             return Ok(this._CapitalWriteService.Create(userCapital), "Record created!");
+        }
+
+        [HttpGet, Route("GetMyInvestments/{id}")]
+        public IActionResult GetMyInvestments(int id)
+        {
+            return Ok(this._CapitalProcessService.ExecuteProcess<int, List<MyInvestment>>(id));
         }
 
     }

@@ -30,6 +30,9 @@ namespace PrestaQi.Model
         public string Account_Number { get; set; }
         [Column("enabled")]
         public bool Enabled { get; set; }
+
+        [Column("is_moral_person")]
+        public bool Is_Moral_Person { get; set; }
         public List<Capital> Capitals { get; set; }
     }
 }

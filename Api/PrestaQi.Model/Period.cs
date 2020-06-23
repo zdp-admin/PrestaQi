@@ -11,5 +11,7 @@ namespace PrestaQi.Model
         public string Description { get; set; }
         [Column("enabled")]
         public bool Enabled { get; set; }
+        [Column("period_value")]
+        public int Period_Value { get; set; }
     }
 }
