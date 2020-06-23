@@ -1,4 +1,5 @@
 ﻿using PrestaQi.Model.General;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrestaQi.Model
@@ -22,5 +23,11 @@ namespace PrestaQi.Model
         public int User_Capital_Id { get; set; }
         [Column("created_by")]
         public int Created_By { get; set; }
+        [Column("start_date")]
+        public DateTime Start_Date { get; set; }
+        [Column("end_date")]
+        public DateTime End_Date { get; set; }
+        [Column("default_interest")]
+        public double Default_Interest { get; set; }
     }
 }
