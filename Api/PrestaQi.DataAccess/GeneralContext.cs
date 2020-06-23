@@ -17,6 +17,7 @@ namespace PrestaQi.DataAccess
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<Configuration> Configurations { get; set; }
         public DbSet<UserModule> UserModules { get; set; }
+
     }
 
 }
