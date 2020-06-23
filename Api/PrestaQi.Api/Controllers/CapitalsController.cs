@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Mvc;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
+using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
@@ -50,5 +52,10 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._CapitalProcessService.ExecuteProcess<int, List<MyInvestment>>(id));
         }
 
+        [HttpPost, Route("[action]")]
+        public IActionResult GetAnchorControl(AnchorByFilter anchorByFilter)
+        {
+            return Ok(this._CapitalProcessService.ExecuteProcess<AnchorByFilter, List<AnchorControl>>(anchorByFilter));
+        }
     }
 }

@@ -15,9 +15,15 @@ namespace PrestaQi.Model.Dto.Output
         public DateTime Start_Date { get; set; }
         public DateTime End_Date { get; set; }
         public int Period_Id { get; set; }
-        public int Default_Interest { get; set; }
-
+        public int Interest_Arrears { get; set; }
+        public bool Enabled { get; set; }
+        public double Interest_Payable { get; set; }
+        public double Quantity_Interest_Arrears { get; set; }
+        public double Total_Interest { get; set; }
+        public double Vat { get; set; }
+        public double Vat_Retention { get; set; }
+        public double Isr_Retention { get; set; }
+        public double Net_Interest { get; set; }
         public List<MyInvestmentDetail> MyInvestmentDetails { get; set; }
-
     }
 }

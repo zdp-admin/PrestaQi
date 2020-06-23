@@ -37,12 +37,12 @@ namespace PrestaQi.Service.RetrieveServices
                     item.Capitals.ForEach(p =>
                     {
                         p.Period_Name = this._PeriodRetrieveService.Find(p.period_id).Description;
+                        p.Enabled = p.End_Date.Date <= DateTime.Now.Date ? true : false;
                     });
                 }
             }
             return list;
 
         }
-
     }
 }

@@ -9,5 +9,7 @@ namespace PrestaQi.Model
     {
         [NotMapped]
         public string Period_Name { get; set; }
+        [NotMapped]
+        public bool Enabled { get; set; }
     }
 }
