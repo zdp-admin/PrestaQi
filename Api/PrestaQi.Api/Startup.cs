@@ -51,6 +51,11 @@ namespace PrestaQi.Api
                 config.Filters.Add(new ExceptionHandling());
             });
 
+            services.AddControllersWithViews()
+                .AddNewtonsoftJson(options =>
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+            );
+
             services.AddControllers();
         }
 

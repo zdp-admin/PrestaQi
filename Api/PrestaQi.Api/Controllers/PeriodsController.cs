@@ -28,16 +28,10 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._PeriodRetrieveService.Where(p => true).ToList());
         }
 
-        [HttpPost]
-        public IActionResult Post(Period period)
+        [HttpGet, Route("[action]")]
+        public IActionResult GetActive()
         {
-            return Ok(this._PeriodWriteService.Create(period), "Period created!");
-        }
-
-        [HttpPut]
-        public IActionResult Put(Period period)
-        {
-            return Ok(this._PeriodWriteService.Update(period), "Period updated!");
+            return Ok(this._PeriodRetrieveService.Where(p => p.Enabled == true).ToList());
         }
 
     }

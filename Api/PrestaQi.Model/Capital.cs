@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrestaQi.Model
 {
-    [Table("usercapitals")]
-    public class UserCapital : Entity<int>
+    [Table("capitals")]
+    public class Capital : Entity<int>
     { 
         [Column("amount")]
         public double Amount { get; set; }
@@ -19,8 +19,8 @@ namespace PrestaQi.Model
         public int Period_Id { get; set; }
         [Column("notice_mail")]
         public bool Notice_Mail { get; set; }
-        [Column("user_capital_id")]
-        public int User_Capital_Id { get; set; }
+        [Column("investor_id")]
+        public int investor_id { get; set; }
         [Column("created_by")]
         public int Created_By { get; set; }
         [Column("start_date")]
@@ -29,5 +29,8 @@ namespace PrestaQi.Model
         public DateTime End_Date { get; set; }
         [Column("default_interest")]
         public double Default_Interest { get; set; }
+        
+        [ForeignKey("investor_id")]
+        public virtual Investor Investor { get; set; }
     }
 }

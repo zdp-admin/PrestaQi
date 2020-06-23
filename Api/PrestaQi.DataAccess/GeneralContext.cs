@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using InsiscoCore.EFRepository;
+using Microsoft.EntityFrameworkCore;
 using PrestaQi.Model;
 
 namespace PrestaQi.DataAccess
@@ -11,13 +12,19 @@ namespace PrestaQi.DataAccess
 
         public DbSet<Period> Periods { get; set; }
         public DbSet<User> Users { get; set; }
-        public DbSet<UserType> UserTypes { get; set; }
-        public DbSet<UserProperty> UserProperties { get; set; }
-        public DbSet<UserCapital> UserCapitals { get; set; }
+        public DbSet<Accredited> Accrediteds { get; set; }
+        public DbSet<Investor> Investors { get; set; }
+        public DbSet<Capital> Capitals { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<Configuration> Configurations { get; set; }
         public DbSet<UserModule> UserModules { get; set; }
+        public DbSet<Gender> Genders { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            builder.Entity<Capital>().HasOne(x => x.Investor).WithMany(x => x.Capitals).HasForeignKey(x => x.investor_id);
+            base.OnModelCreating(builder);
+        }
     }
 
 }

@@ -50,6 +50,8 @@ namespace PrestaQi.Api.Configuration
             */
             services.AddDbContext<GeneralContext>(option => option.UseNpgsql(connectionString).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
             services.AddScoped<DbContext>(p => p.GetService<GeneralContext>());
+
+           // services.AddScoped<IDbContext>(provider => provider.GetService<GeneralContext>());
         }
 
         static void RegisterServices(string path, IServiceCollection services)

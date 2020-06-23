@@ -7,19 +7,19 @@ using System;
 
 namespace PrestaQi.Service.WriteServices
 {
-    public class UserCapitalWriteService : WriteService<UserCapital>
+    public class CapitalWriteService : WriteService<Capital>
     {
-        IRetrieveService<UserCapital> _UserCapitalRetrieveService;
+        IRetrieveService<Capital> _UserCapitalRetrieveService;
 
-        public UserCapitalWriteService(
-            IWriteRepository<UserCapital> repository,
-            IRetrieveService<UserCapital> userCapitalRetrieveService
+        public CapitalWriteService(
+            IWriteRepository<Capital> repository,
+            IRetrieveService<Capital> userCapitalRetrieveService
             ) : base(repository)
         {
             this._UserCapitalRetrieveService = userCapitalRetrieveService;
         }
 
-        public override bool Create(UserCapital entity)
+        public override bool Create(Capital entity)
         {
             try
             {
@@ -30,7 +30,7 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw new SystemValidationException("Error creating User Capital!");
+                throw new SystemValidationException("Error creating Capital!");
             }
            
         }

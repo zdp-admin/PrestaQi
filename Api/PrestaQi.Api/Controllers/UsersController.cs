@@ -24,18 +24,12 @@ namespace PrestaQi.Api.Controllers
             this._UserRetrieveService = userRetrieveService;
         }
 
-        [HttpGet]
-        public IActionResult Get()
-        {
-            return Ok(this._UserRetrieveService.Where(p => true).ToList());
-        }
-
-        [HttpGet, Route("[action]/{id}")]
-        public IActionResult GetByType(int id, [FromQuery] bool onlyActive)
+        [HttpGet, Route("[action]")]
+        public IActionResult GetList([FromQuery] bool onlyActive)
         {
             return Ok(
-                onlyActive == true ? this._UserRetrieveService.Where(p => p.User_Type_Id == id && p.Enabled == true) :
-                this._UserRetrieveService.Where(p => p.User_Type_Id == id)
+                onlyActive == true ? this._UserRetrieveService.Where(p => p.Enabled == true) :
+                this._UserRetrieveService.Where(p => true)
                 );
         }
 
@@ -55,6 +49,12 @@ namespace PrestaQi.Api.Controllers
         public IActionResult ChangePassword(ChangePassword changePassword)
         {
             return Ok(this._UserWriteService.Update<ChangePassword, bool>(changePassword), "Password changed!");
+        }
+
+        [HttpPost, Route("[action]")]
+        public IActionResult CreateUsers(List<User> users)
+        {
+            return Ok(this._UserWriteService.Create(users));
         }
 
     }

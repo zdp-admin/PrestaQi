@@ -33,7 +33,7 @@ namespace PrestaQi.Api.Controllers
         {
             IActionResult response = Unauthorized();
 
-            var user = this._UserRetrieveService.Find<Login, User>(login);
+            var user = this._UserRetrieveService.RetrieveResult<Login, User>(login);
 
             if (user != null)
             {
