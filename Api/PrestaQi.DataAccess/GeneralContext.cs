@@ -19,6 +19,7 @@ namespace PrestaQi.DataAccess
         public DbSet<Configuration> Configurations { get; set; }
         public DbSet<UserModule> UserModules { get; set; }
         public DbSet<Gender> Genders { get; set; }
+        public DbSet<CapitalDetail> CapitalDetails { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

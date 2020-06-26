@@ -57,5 +57,11 @@ namespace PrestaQi.Api.Controllers
         {
             return Ok(this._CapitalProcessService.ExecuteProcess<AnchorByFilter, List<AnchorControl>>(anchorByFilter));
         }
+
+        [HttpPost, Route("ChangeStatus")]
+        public IActionResult ChangeStatus(CapitalChangeStatus capitalChangeStatus)
+        {
+            return Ok(this._CapitalWriteService.Update<CapitalChangeStatus, bool>(capitalChangeStatus));
+        }
     }
 }

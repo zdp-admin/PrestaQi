@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,8 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto;
+using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -31,6 +34,17 @@ namespace PrestaQi.Api.Controllers
                 onlyActive == true ? this._InvestorRetrieveService.Where(p => p.Enabled == true) :
                 this._InvestorRetrieveService.Where(p => true)
                 );
+        }
+
+        [HttpGet, Route("GetInvestors")]
+        public IActionResult GetInvestors([FromQuery] DateTime startDate, 
+            [FromQuery] DateTime endDate)
+        {
+            return Ok(this._InvestorRetrieveService.RetrieveResult<InvestorByDate, List<InvestorData>>(new InvestorByDate()
+            {
+                Start_Date = startDate,
+                End_Date = endDate
+            }));
         }
 
         [HttpPost]

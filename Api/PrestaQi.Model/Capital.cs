@@ -29,7 +29,13 @@ namespace PrestaQi.Model
         public DateTime End_Date { get; set; }
         [Column("default_interest")]
         public int Default_Interest { get; set; }
-        
+        [Column("capital_status")]
+        public int Capital_Status { get; set; }
+        [Column("investment_status")]
+        public int Investment_Status { get; set; }
+        [Column("files")]
+        public string Files { get; set; }
+
         [ForeignKey("investor_id")]
         public virtual Investor Investor { get; set; }
     }

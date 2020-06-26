@@ -5,6 +5,7 @@ using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,6 +44,49 @@ namespace PrestaQi.Service.RetrieveServices
             }
             return list;
 
+        }
+
+        public List<InvestorData> RetrieveResult(InvestorByDate investorByDate)
+        {
+            List<InvestorData> investorDatas = new List<InvestorData>();
+            var periods = this._PeriodRetrieveService.Where(p => p.Enabled == true).ToList();
+
+            var list = this._Repository.Where(p => p.Start_Date_Prestaqi.Date >= investorByDate.Start_Date.Date &&
+                p.Start_Date_Prestaqi.Date <= investorByDate.End_Date).ToList();
+
+            if (list.Count > 0)
+            {
+                investorDatas = list.Select(p => new InvestorData()
+                {
+                    Id = p.id,
+                    Commited_Amount = p.Total_Amount_Agreed,
+                    NameComplete = $"{p.First_Name} {p.Last_Name}",
+                    Limit_Date = p.Limit_Date
+                }).ToList();
+
+
+                investorDatas.ForEach(p =>
+                {
+                    var capitals = this._CapitalRetrieveService.Where(c => c.investor_id == p.Id).ToList();
+
+                    p.AmountExercised = capitals.Count > 0 ? capitals.Sum(p => p.Amount) : 0;
+                    p.CapitalDatas = capitals.Select(c => new CapitalData()
+                    {
+                        Amount = c.Amount,
+                        Capital_Id = c.id,
+                        End_Date = c.End_Date,
+                        Start_Date = c.Start_Date,
+                        File = c.Files,
+                        Interest_Rate = c.Interest_Rate,
+                        Period = periods.Find(item => item.id == c.period_id).Description,
+                        Capital_Status = ((PrestaQiEnum.CapitalEnum)c.Capital_Status).ToString(),
+                        Investment_Status = "Prueba"
+
+                    }).ToList();
+                });
+            }
+
+            return investorDatas;
         }
     }
 }
