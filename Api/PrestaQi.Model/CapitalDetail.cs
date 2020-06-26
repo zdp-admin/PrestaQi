@@ -7,7 +7,7 @@ using System.Text;
 namespace PrestaQi.Model
 {
     [Table("capitaldetails")]
-    public class CapitalDetail : Entity<int>
+    public partial class CapitalDetail : Entity<int>
     {
         [Column("period")]
         public int Period { get; set; }

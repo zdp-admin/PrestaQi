@@ -24,6 +24,8 @@ namespace PrestaQi.Model.Dto.Output
         public double Vat_Retention { get; set; }
         public double Isr_Retention { get; set; }
         public double Net_Interest { get; set; }
-        public List<MyInvestmentDetail> MyInvestmentDetails { get; set; }
+        public DateTime Pay_Day_Limit { get; set; }
+        public int Day_Overdue { get; set; }
+        public List<CapitalDetail> MyInvestmentDetails { get; set; }
     }
 }

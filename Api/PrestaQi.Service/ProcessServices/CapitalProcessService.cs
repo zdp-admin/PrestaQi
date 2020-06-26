@@ -17,18 +17,21 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Capital> _CapitalRetrieveService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<Investor> _InvestorRetrieveService;
+        IRetrieveService<CapitalDetail> _CapitalDetailRetrieveService;
 
         public CapitalProcessService(
             IRetrieveService<Period> periodRetrieveService,
             IRetrieveService<Capital> capitalRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<Investor> investorRetrieveService
+            IRetrieveService<Investor> investorRetrieveService,
+            IRetrieveService<CapitalDetail> capitalDetailRetrieveService
             )
         {
             this._PeriodRetrieveService = periodRetrieveService;
             this._CapitalRetrieveService = capitalRetrieveService;
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._InvestorRetrieveService = investorRetrieveService;
+            this._CapitalDetailRetrieveService = capitalDetailRetrieveService;
         }
 
         public List<MyInvestment> ExecuteProcess(int id)
@@ -82,58 +85,61 @@ namespace PrestaQi.Service.ProcessServices
                     Annual_Interest_Payment = Math.Round((p.Amount * ((double)p.Interest_Rate / 100)), 2),
                     Total = Math.Round(p.Amount + (p.Amount * ((double)p.Interest_Rate / 100)), 2),
                     Period_Id = p.period_id,
-                    MyInvestmentDetails = new List<MyInvestmentDetail>(),
-                    Enabled = p.End_Date.Date >= DateTime.Now.Date ? true : false
+                    MyInvestmentDetails = this._CapitalDetailRetrieveService.Where(detail => detail.Capital_Id == p.id).OrderBy(p => p.Period).ToList(),
+                    Enabled = p.End_Date.Date >= DateTime.Now.Date ? true : false,
                 }).ToList();
 
                 myInvestments.ForEach(p =>
                 {
-                    int totalMonth = p.End_Date.Subtract(p.Start_Date).Days / (365 / 12);
-                    int periodValue = periods.FirstOrDefault(z => z.id == p.Period_Id).Period_Value;
-                    DateTime startDate = p.Start_Date;
+                    var currenPeriod = p.MyInvestmentDetails.FindIndex(s => DateTime.Now.Date >= s.Start_Date &&   DateTime.Now.Date <= s.End_Date.Date);
 
-                    p.Interest_Payable = Math.Round((p.Amount * ((double)p.Interest_Rate / 100)) / periodValue, 2);
-                    p.Total_Interest = p.Interest_Payable + p.Quantity_Interest_Arrears;
-                    p.Vat = Math.Round(p.Total_Interest * ((double)vat / 100), 2);
+                    if (currenPeriod >= 0)
+                        p.MyInvestmentDetails[currenPeriod].IsPeriodActual = true;
 
-                    if (!investor.Is_Moral_Person)
+                    p.MyInvestmentDetails.ForEach(detail =>
                     {
-                        p.Vat_Retention = Math.Round((p.Vat * 2) / 3, 2);
-                        p.Isr_Retention = Math.Round(p.Total_Interest * ((double)isr / 100), 2);
-                    }
+                        int periodValue = periods.FirstOrDefault(perdiod => perdiod.id == p.Period_Id).Period_Value;
 
-                    p.Net_Interest = p.Total_Interest + p.Vat - p.Vat_Retention - p.Isr_Retention;
-
-                    for (int i = 1; i <= periodValue; i++)
-                    {
-                        var newDetail = new MyInvestmentDetail()
+                        if (!detail.IsPayment)
                         {
-                            Period = i,
-                            Initial_Date = startDate,
-                            End_Date = startDate.AddMonths(periodValue),
-                            Outstanding_Balance = p.Amount,
-                            Principal_Payment = i == periodValue ? p.Amount : 0,
-                            Interest_Payment = i != periodValue ? Math.Round((p.Amount / periodValue) * ((double)p.Interest_Rate / 100), 2) : 0,
-                            Default_Interest = i == periodValue ?
-                                Math.Round((p.Amount / periodValue) * ((double)p.Interest_Arrears / 100), 2) : 0
-                        };
+                            if (detail.Principal_Payment == 0)
+                            {
+                                detail.Interest_Payment = Math.Round((detail.Outstanding_Balance * ((double)p.Interest_Rate / 100)) / periodValue);
+                            }
 
-                        newDetail.Vat = Math.Round((newDetail.Interest_Payment + newDetail.Default_Interest) * ((double)vat / 100), 2);
+                            if (!detail.IsPeriodActual)
+                            {
+                                if (DateTime.Now.Date > detail.Pay_Day_Limit)
+                                {
+                                    detail.Default_Interest = Math.Round((detail.Outstanding_Balance * ((double)p.Interest_Arrears / 100)) / periodValue);
+                                    p.Day_Overdue = (DateTime.Now.Date - detail.Pay_Day_Limit.Date).Days;
+                                }
+                            }
 
-                        if (!investor.Is_Moral_Person)
-                        {
-                            newDetail.Vat_Retention = Math.Round((newDetail.Vat * 2) / 3, 2);
-                            newDetail.Isr_Retention = Math.Round((newDetail.Interest_Payment + newDetail.Default_Interest) * ((double)isr / 100), 2);
+                            detail.Vat = Math.Round((detail.Interest_Payment + detail.Default_Interest) * ((double)vat / 100), 2);
+
+                            if (!investor.Is_Moral_Person)
+                            {
+                                detail.Vat_Retention = Math.Round((detail.Vat * 2) / 3, 2);
+                                detail.Isr_Retention = Math.Round((detail.Interest_Payment + detail.Default_Interest) * ((double)isr / 100));
+                            }
+
+                            detail.Payment = (detail.Principal_Payment + detail.Interest_Payment + detail.Default_Interest + detail.Vat) - (detail.Vat_Retention + detail.Isr_Retention);
                         }
+                    });
 
-                        if (i == periodValue)
-                            newDetail.Payment = p.Amount + newDetail.Interest_Payment + newDetail.Default_Interest + newDetail.Vat - newDetail.Vat_Retention - newDetail.Isr_Retention;
-                        else
-                            newDetail.Payment = newDetail.Interest_Payment + newDetail.Default_Interest + newDetail.Vat - newDetail.Vat_Retention - newDetail.Isr_Retention;
-
-                        p.MyInvestmentDetails.Add(newDetail);
-
-                        startDate = startDate.AddMonths(periodValue);
+                    var detailShow = p.MyInvestmentDetails.FirstOrDefault(p => !p.IsPayment);
+                    
+                    if (detailShow != null)
+                    {
+                        p.Interest_Payable = detailShow.Interest_Payment;
+                        p.Quantity_Interest_Arrears = detailShow.Default_Interest;
+                        p.Total_Interest = p.Interest_Payable + p.Quantity_Interest_Arrears;
+                        p.Vat = detailShow.Vat;
+                        p.Vat_Retention = detailShow.Vat_Retention;
+                        p.Isr_Retention = detailShow.Isr_Retention;
+                        p.Net_Interest = detailShow.Payment;
+                        p.Pay_Day_Limit = detailShow.Pay_Day_Limit;
                     }
                 });
             }
