@@ -18,5 +18,12 @@ namespace PrestaQi.Model.Enum
             Active = 1,
             NoActive = 2
         }
+
+        public enum PerdioAccredited
+        {
+            Semanal = 7,
+            Quincenal = 9,
+            Mensual = 10
+        }
     }
 }

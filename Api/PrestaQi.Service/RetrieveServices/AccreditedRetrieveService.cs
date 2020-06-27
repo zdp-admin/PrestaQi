@@ -25,10 +25,11 @@ namespace PrestaQi.Service.RetrieveServices
         public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
         {
             var list = this._Repository.Where(predicate);
+            var periods = this._PeriodRetrieveService.Where(p => p.Enabled == true).ToList();
 
             foreach (var item in list)
             {
-                item.Period_Name = this._PeriodRetrieveService.Find(item.Period_Id).Description;
+                item.Period_Name = periods.FirstOrDefault(p => p.id == item.Period_Id).Description;
             }
             return list;
 
