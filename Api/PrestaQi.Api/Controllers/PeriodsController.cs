@@ -34,5 +34,11 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._PeriodRetrieveService.Where(p => p.Enabled == true).ToList());
         }
 
+        [HttpGet, Route("GetByType")]
+        public IActionResult GetByType([FromQuery] int type)
+        {
+            return Ok(this._PeriodRetrieveService.Where(p => p.Enabled == true && p.User_Type == type).OrderBy(p => p.id).ToList());
+        }
+
     }
 }

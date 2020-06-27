@@ -3,6 +3,7 @@ using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System;
 using System.Collections.Generic;
@@ -37,7 +38,7 @@ namespace PrestaQi.Service.ProcessServices
             var accredited = this._AcreditedRetrieveService.Find(calculateAmount.Accredited_Id);
 
             int initialCommission = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "INITIAL_COMMISSION").FirstOrDefault().Configuration_Value);
-            double annualInterest = ((double)Convert.ToInt32(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "ANNUAL_INTEREST").FirstOrDefault().Configuration_Value) / 100);
+            double annualInterest = ((double)accredited.Interest_Rate / 100);
             int finantialDay = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "FINANCIAL_DAYS").FirstOrDefault().Configuration_Value);
 
             var period = this._PeriodRetrieveService.Find(accredited.Period_Id);
@@ -90,6 +91,42 @@ namespace PrestaQi.Service.ProcessServices
 
             return advanceCalculated;
                 
+        }
+
+        public CommisionAndInterestMaster ExecuteProcess(GetCommisionAndIntereset getCommisionAndIntereset)
+        {
+            List<Advance> advances = new List<Advance>();
+
+            if (getCommisionAndIntereset.Is_Specifid_Day)
+            {
+                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date == getCommisionAndIntereset.Start_Date).ToList();
+                getCommisionAndIntereset.End_Date = getCommisionAndIntereset.Start_Date;
+            }
+            else
+            {
+                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date >= getCommisionAndIntereset.Start_Date &&
+                p.Date_Advance.Date <= getCommisionAndIntereset.End_Date).ToList();
+            }
+
+            var listDetial = advances.GroupBy(p => p.Date_Advance.Date).Select(item => new CommissionAndInterestByDay()
+            {
+                 Date = item.Key,
+                  Commission = item.Sum(com => com.Comission),
+                  Interest = item.Sum(inte => inte.Total_Withhold - inte.Amount)
+            }).ToList();
+
+            CommisionAndInterestMaster commisionAndInterestMaster = new CommisionAndInterestMaster()
+            {
+                CommissionAndInterestByDays = listDetial,
+                Total_Interest = listDetial.Sum(p => p.Interest),
+                Total_Commission = listDetial.Sum(p => p.Commission),
+                Average_Commission = getCommisionAndIntereset.Is_Specifid_Day ? listDetial.Sum(p => p.Commission) / advances.Count :
+                    listDetial.Sum(p => p.Commission) / listDetial.Count, 
+                Average_Interest = getCommisionAndIntereset.Is_Specifid_Day ? listDetial.Sum(p => p.Interest) / advances.Count :
+                    listDetial.Sum(p => p.Interest) / listDetial.Count
+            };
+
+            return commisionAndInterestMaster;
         }
     }
 }

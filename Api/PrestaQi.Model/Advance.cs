@@ -21,6 +21,7 @@ namespace PrestaQi.Model
         public double Total_Withhold { get; set; }
         [Column("comission")]
         public int Comission { get; set; }
-
+        [Column("enabled")]
+        public bool Enabled { get; set; }
     }
 }

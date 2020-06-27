@@ -39,5 +39,11 @@ namespace PrestaQi.Api.Controllers
         {
             return Ok(this._AdvanceWriteService.Create(advance), "Generator Advance");
         }
+
+        [HttpGet, Route("GetByAccredited/id")]
+        public IActionResult GetByAccreedited(int id)
+        {
+            return Ok(this._AdvanceRetrieveService.Where(p => p.Accredited_Id == id));
+        }
     }
 }

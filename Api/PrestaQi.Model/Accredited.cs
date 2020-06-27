@@ -13,8 +13,8 @@ namespace PrestaQi.Model
         public string First_Name { get; set; }
         [Column("last_name")]
         public string Last_Name { get; set; }
-        [Column("company")]
-        public string Company { get; set; }
+        [Column("company_id")]
+        public int Company_Id { get; set; }
         [Column("identify")]
         public string Identify { get; set; }
         [Column("contract_number")]
