@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto;
+using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -15,13 +16,16 @@ namespace PrestaQi.Api.Controllers
     {
         IWriteService<Accredited> _AccreditedWriteService;
         IRetrieveService<Accredited> _AccreditedRetrieveService;
+        IProcessService<Accredited> _AccreditedProcessService;
 
         public AccreditedsController(
             IWriteService<Accredited> accreditedWriteService, 
-            IRetrieveService<Accredited> accreditedRetrieveService)
+            IRetrieveService<Accredited> accreditedRetrieveService,
+            IProcessService<Accredited> accreditedProcessService)
         {
             this._AccreditedWriteService = accreditedWriteService;
             this._AccreditedRetrieveService = accreditedRetrieveService;
+            this._AccreditedProcessService = accreditedProcessService;
         }
 
         [HttpGet, Route("[action]")]
@@ -51,5 +55,10 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._AccreditedWriteService.Create(accrediteds));
         }
 
+        [HttpGet, Route("ListAdvancesReceivable")]
+        public IActionResult ListAdvancesReceivable()
+        {
+            return Ok(this._AccreditedProcessService.ExecuteProcess<bool, List<AdvanceReceivable>>(true));
+        }
     }
 }

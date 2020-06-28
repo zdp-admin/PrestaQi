@@ -25,5 +25,12 @@ namespace PrestaQi.Model.Enum
             Quincenal = 9,
             Mensual = 10
         }
+
+        public enum AdvanceStatus
+        {
+            NoPagado = 0,
+            Pagado = 1,
+            PagadoParial = 2
+        }
     }
 }

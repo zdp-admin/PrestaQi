@@ -23,5 +23,7 @@ namespace PrestaQi.Model
         public int Comission { get; set; }
         [Column("enabled")]
         public bool Enabled { get; set; }
+        [Column("paid_status")]
+        public int Paid_Status { get; set; }
     }
 }

@@ -33,6 +33,10 @@ namespace PrestaQi.Model
 
         [Column("is_moral_person")]
         public bool Is_Moral_Person { get; set; }
+        [Column("mail")]
+        public string Mail { get; set; }
+        [Column("password")]
+        public string Password { get; set; }
         public List<Capital> Capitals { get; set; }
     }
 }

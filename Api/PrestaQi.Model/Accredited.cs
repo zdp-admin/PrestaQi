@@ -48,5 +48,11 @@ namespace PrestaQi.Model
         public int Moratoruim_Interest_Rate { get; set; }
         [Column("period_id")]
         public int Period_Id { get; set; }
+        [Column("mail")]
+        public string Mail { get; set; }
+        [Column("mail_mandate_latter")]
+        public string Mail_Mandate_Latter { get; set; }
+        [Column("password")]
+        public string Password { get; set; }
     }
 }

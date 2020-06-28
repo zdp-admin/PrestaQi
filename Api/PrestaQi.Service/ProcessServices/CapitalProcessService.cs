@@ -109,10 +109,10 @@ namespace PrestaQi.Service.ProcessServices
 
                             if (!detail.IsPeriodActual)
                             {
-                                if (DateTime.Now.Date > detail.Pay_Day_Limit)
+                                if (DateTime.Now.Date > detail.End_Date)
                                 {
                                     detail.Default_Interest = Math.Round((detail.Outstanding_Balance * ((double)p.Interest_Arrears / 100)) / periodValue);
-                                    p.Day_Overdue = (DateTime.Now.Date - detail.Pay_Day_Limit.Date).Days;
+                                    p.Day_Overdue = (DateTime.Now.Date - detail.End_Date).Days;
                                 }
                             }
 
@@ -145,6 +145,53 @@ namespace PrestaQi.Service.ProcessServices
             }
 
             return myInvestments;
+        }
+
+        public InvestmentDashboard ExecuteProcess(GetInvestment getInvestment)
+        {
+            List<CapitalDetail> capitalDetails = new List<CapitalDetail>();
+
+            if (getInvestment.Is_Specifid_Day)
+            {
+                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.updated_at.Date == getInvestment.Start_Date).ToList();
+                getInvestment.End_Date = getInvestment.Start_Date;
+            }
+            else
+            {
+                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.updated_at.Date >= getInvestment.Start_Date &&
+                p.updated_at.Date <= getInvestment.End_Date).ToList();
+            }
+
+            List<InvestmentDashboardDetail> details = new List<InvestmentDashboardDetail>();
+
+            while (getInvestment.Start_Date.Date <= getInvestment.End_Date.Date)
+            {
+                InvestmentDashboardDetail investmentDashboardDetail = new InvestmentDashboardDetail()
+                {
+                    Date = getInvestment.Start_Date,
+                    Interest_Paid = capitalDetails.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).Sum(p => p.Interest_Payment),
+                     Main_Return = capitalDetails.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).Sum(p => p.Principal_Payment)
+                    
+                };
+
+                details.Add(investmentDashboardDetail);
+                getInvestment.Start_Date = getInvestment.Start_Date.AddDays(1);
+            }
+
+            InvestmentDashboard investmentDashboard = new InvestmentDashboard()
+            {
+                InvestmentDashboardDetails = details,
+                Interest_Paid = details.Sum(p => p.Interest_Paid),
+                Main_Return = details.Sum(p => p.Main_Return),
+                Average_Interest_Paid = getInvestment.Is_Specifid_Day == true ?
+                        Math.Round(details.Sum(p => p.Interest_Paid) / capitalDetails.Where(p => p.Interest_Payment > 0).Count(), 2) :
+                        Math.Round(details.Sum(p => p.Interest_Paid) / details.Count),
+                Average_Main_Return = getInvestment.Is_Specifid_Day == true ?
+                        Math.Round(details.Sum(p => p.Main_Return) / capitalDetails.Where(p => p.Principal_Payment > 0).Count(), 2) :
+                        Math.Round(details.Sum(p => p.Main_Return) / details.Count)
+            };
+
+            return investmentDashboard;
         }
     }
 }

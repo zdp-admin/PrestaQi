@@ -14,15 +14,18 @@ namespace PrestaQi.Service.RetrieveServices
     {
         IRetrieveService<Period> _PeriodRetrieveService;
         IRetrieveService<Company> _CompanyRetrieveService;
+        IRetrieveService<Advance> _AdvanceRetrieveService;
 
         public AccreditedRetrieveService(
             IRetrieveRepository<Accredited> repository,
             IRetrieveService<Period> periodRetrieveService,
-            IRetrieveService<Company> companyRetrieveService
+            IRetrieveService<Company> companyRetrieveService,
+            IRetrieveService<Advance> advanceRetrieveService
             ) : base(repository)
         {
             this._PeriodRetrieveService = periodRetrieveService;
             this._CompanyRetrieveService = companyRetrieveService;
+            this._AdvanceRetrieveService = advanceRetrieveService;
         }
 
         public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
@@ -35,6 +38,7 @@ namespace PrestaQi.Service.RetrieveServices
             {
                 p.Period_Name = periods.FirstOrDefault(period => period.id == p.Period_Id).Description;
                 p.Company_Name = companies.FirstOrDefault(company => company.id == p.Company_Id).Description;
+                p.Advances = this._AdvanceRetrieveService.Where(advace => advace.Accredited_Id == p.id && (advace.Paid_Status == 0 || advace.Paid_Status == 2)).ToList();
             });
 
             return list;

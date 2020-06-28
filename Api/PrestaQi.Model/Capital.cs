@@ -35,6 +35,8 @@ namespace PrestaQi.Model
         public int Investment_Status { get; set; }
         [Column("files")]
         public string Files { get; set; }
+        [Column("extension_day")]
+        public int Extension_day { get; set; }
 
         [ForeignKey("investor_id")]
         public virtual Investor Investor { get; set; }

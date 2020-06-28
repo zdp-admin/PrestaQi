@@ -17,13 +17,19 @@ namespace PrestaQi.Api.Controllers
     public class DashboardController : CustomController
     {
         IProcessService<Advance> _AdvanceProcessService;
+        IProcessService<Liquidity> _LiquidityProcessService;
+        IProcessService<Capital> _CapitalProcessService;
 
         public DashboardController(
-            IProcessService<Advance> advanceProcessService
+            IProcessService<Advance> advanceProcessService,
+            IProcessService<Liquidity> liquidityProcessService,
+            IProcessService<Capital> capitalProcessService
             )
         {
-            _AdvanceProcessService = advanceProcessService;
-        }
+            this._AdvanceProcessService = advanceProcessService;
+            this._LiquidityProcessService = liquidityProcessService;
+            this._CapitalProcessService = capitalProcessService;
+    }
 
         [HttpPost, Route("GetCommissionAndInterest")]
         public IActionResult GetCommissionAndInterest(GetCommisionAndIntereset getCommisionAndIntereset)
@@ -31,5 +37,22 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._AdvanceProcessService.ExecuteProcess<GetCommisionAndIntereset, CommisionAndInterestMaster>(getCommisionAndIntereset));
         }
 
+        [HttpPost, Route("GetCredits")]
+        public IActionResult GetCredits(GetCredits getCredits)
+        {
+            return Ok(this._AdvanceProcessService.ExecuteProcess<GetCredits, CreditAverage>(getCredits));
+        }
+
+        [HttpPost, Route("GetLiquidity")]
+        public IActionResult GetLiquidity(GetLiquidity liquidity)
+        {
+            return Ok(this._LiquidityProcessService.ExecuteProcess<GetLiquidity, Liquidity>(liquidity));
+        }
+
+        [HttpPost, Route("GetInvestment")]
+        public IActionResult GetInvestment(GetInvestment getInvestment)
+        {
+            return Ok(this._CapitalProcessService.ExecuteProcess<GetInvestment, InvestmentDashboard>(getInvestment));
+        }
     }
 }

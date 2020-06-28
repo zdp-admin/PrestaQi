@@ -5,6 +5,7 @@ using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
+using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -69,16 +70,27 @@ namespace PrestaQi.Service.ProcessServices
                 case (int)PrestaQiEnum.PerdioAccredited.Mensual:
                     startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                     endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, (DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month) - 1));
-                    day = DateTime.Now.Day;
-                    break;
 
+                    day = DateTime.Now.Day;
+
+                    if (DateTime.Now.Day > 14)
+                        day = 14;    
+                    break;
+                case (int)PrestaQiEnum.PerdioAccredited.Semanal:
+                    startDate = DateTime.Now.StartOfWeek(DayOfWeek.Monday);
+                    endDate = DateTime.Now.StartOfWeek(DayOfWeek.Saturday);
+                    day = (DateTime.Now.Day - startDate.Day) + 1;
+                    break;
             }
 
             var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
             p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date).ToList();
             int commision = (initialCommission + day) - 1;
             double sumMaxAmount = Math.Round(advances.Count > 0 ? accredited.Net_Monthly_Salary - advances.Sum(p => p.Total_Withhold) : accredited.Net_Monthly_Salary);
-            double total_Withhold = Math.Round(calculateAmount.Amount + (((calculateAmount.Amount * annualInterest) / finantialDay) * (period.Period_Value - day) + commision), 2);
+
+            double total_Withhold = (accredited.Period_Id != (int)PrestaQiEnum.PerdioAccredited.Mensual) ? Math.Round(calculateAmount.Amount + (((calculateAmount.Amount * annualInterest) / finantialDay) * (period.Period_Value - day) + commision), 2) :
+                Math.Round(calculateAmount.Amount + (((calculateAmount.Amount * annualInterest) / finantialDay) * (period.Period_Value - DateTime.Now.Day) + commision), 2);
+
             Advance advanceCalculated = new Advance()
             {
                 Accredited_Id = accredited.id,
@@ -110,9 +122,9 @@ namespace PrestaQi.Service.ProcessServices
 
             var listDetial = advances.GroupBy(p => p.Date_Advance.Date).Select(item => new CommissionAndInterestByDay()
             {
-                 Date = item.Key,
-                  Commission = item.Sum(com => com.Comission),
-                  Interest = item.Sum(inte => inte.Total_Withhold - inte.Amount)
+                Date = item.Key,
+                Commission = item.Sum(com => com.Comission),
+                Interest = item.Sum(inte => inte.Total_Withhold - inte.Amount)
             }).ToList();
 
             CommisionAndInterestMaster commisionAndInterestMaster = new CommisionAndInterestMaster()
@@ -127,6 +139,39 @@ namespace PrestaQi.Service.ProcessServices
             };
 
             return commisionAndInterestMaster;
+        }
+
+        public CreditAverage ExecuteProcess(GetCredits getCredits)
+        {
+            List<Advance> advances = new List<Advance>();
+
+            if (getCredits.Is_Specifid_Day)
+            {
+                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date == getCredits.Start_Date).ToList();
+                getCredits.End_Date = getCredits.Start_Date;
+            }
+            else
+            {
+                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date >= getCredits.Start_Date &&
+                p.Date_Advance.Date <= getCredits.End_Date).ToList();
+            }
+
+            var detail = advances.GroupBy(p => p.Date_Advance.Date).Select(item => new CreditAvarageDetail()
+            {
+                Date = item.Key,
+                Amount = item.Sum(p => p.Amount)
+            }).ToList();
+
+            CreditAverage creditAverage = new CreditAverage()
+            {
+                Total_Credit = advances.Count,
+                CreditAvarageDetails = detail,
+                Credit_Average = advances.Count / detail.Count,
+                Amount_Average = getCredits.Is_Specifid_Day ? detail.Sum(p => p.Amount) / advances.Count :
+                 detail.Sum(p => p.Amount) / detail.Count
+            };
+
+            return creditAverage;
         }
     }
 }
