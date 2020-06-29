@@ -5,6 +5,7 @@ using Microsoft.VisualBasic;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto;
+using PrestaQi.Model.Dto.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,21 +15,27 @@ namespace PrestaQi.Service.WriteServices
 {
     public class AdvanceWriteService : WriteService<Advance>
     {
+        IProcessService<Advance> _AdvacenProcessService; 
+
         public AdvanceWriteService(
-            IWriteRepository<Advance> repository
+            IWriteRepository<Advance> repository,
+            IProcessService<Advance> advanceProcessService
             ) : base(repository)
         {
+            this._AdvacenProcessService = advanceProcessService;
         }
 
-        public override bool Create(Advance entity)
+        public bool Create(CalculateAmount calculateAmount)
         {
             try
             {
-                entity.Date_Advance = DateTime.Now;
-                entity.created_at = DateTime.Now;
-                entity.updated_at = DateTime.Now;
-
-                return base.Create(entity);
+                Advance advance = this._AdvacenProcessService.ExecuteProcess<CalculateAmount, Advance>(calculateAmount);
+                advance.Date_Advance = DateTime.Now;
+                advance.created_at = DateTime.Now;
+                advance.updated_at = DateTime.Now;
+                advance.Enabled = true;
+            
+                return base.Create(advance);
             }
             catch (Exception exception)
             {

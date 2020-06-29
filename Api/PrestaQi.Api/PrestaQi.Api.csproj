@@ -34,12 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Library\PrestaQi.DataAccess.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Library\PrestaQi.Service.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <Folder Include="Library\" />
   </ItemGroup>
 
 

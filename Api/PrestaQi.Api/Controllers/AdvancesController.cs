@@ -35,9 +35,9 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpPost]
-        public IActionResult Post(Advance advance)
+        public IActionResult Post(CalculateAmount calculateAmount)
         {
-            return Ok(this._AdvanceWriteService.Create(advance), "Generator Advance");
+            return Ok(this._AdvanceWriteService.Create<CalculateAmount, bool>(calculateAmount), "Generator Advance");
         }
 
         [HttpGet, Route("GetByAccredited/id")]

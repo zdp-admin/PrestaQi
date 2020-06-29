@@ -27,6 +27,7 @@ namespace PrestaQi.Service.WriteServices
         {
             try
             {
+                entity.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(entity.Password);
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
 

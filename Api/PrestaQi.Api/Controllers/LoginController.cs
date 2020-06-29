@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -33,25 +34,44 @@ namespace PrestaQi.Api.Controllers
         {
             IActionResult response = Unauthorized();
 
-            var user = this._UserRetrieveService.RetrieveResult<Login, User>(login);
+            var user = this._UserRetrieveService.RetrieveResult<Login, UserLogin>(login);
 
             if (user != null)
             {
                 var tokenString = GenerateJSONWebToken(user);
-                response = Ok(tokenString);
+                response = Ok(new { Token = tokenString, User = user.User });
             }
 
             return response;
         }
 
-        private string GenerateJSONWebToken(User user)
+        private string GenerateJSONWebToken(UserLogin user)
         {
+            string nameComplete = string.Empty;
+            string mail = string.Empty;
+
+            switch (user.Type)
+            {
+                case 1:
+                    nameComplete = $"{((User)user.User).First_Name} {((User)user.User).Last_Name}";
+                    mail = ((User)user.User).Mail;
+                    break;
+                case 2:
+                    nameComplete = $"{((Investor)user.User).First_Name} {((Investor)user.User).Last_Name}";
+                    mail = ((Investor)user.User).Mail;
+                    break;
+                case 3:
+                    nameComplete = $"{((Accredited)user.User).First_Name} {((Accredited)user.User).Last_Name}";
+                    mail = ((Accredited)user.User).Mail;
+                    break;
+            }
+
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_Configuration["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             var claims = new[] {
-                new Claim(JwtRegisteredClaimNames.GivenName, $"{user.First_Name} {user.Last_Name}"),
-                new Claim(JwtRegisteredClaimNames.Email, user.Mail),
+                new Claim(JwtRegisteredClaimNames.GivenName, nameComplete),
+                new Claim(JwtRegisteredClaimNames.Email, mail),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
