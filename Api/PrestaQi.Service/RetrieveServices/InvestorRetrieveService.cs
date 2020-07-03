@@ -67,8 +67,16 @@ namespace PrestaQi.Service.RetrieveServices
             var periods = this._PeriodRetrieveService.Where(p => p.Enabled == true).ToList();
             var institutions = this._InstitutionRetrieveService.Where(p => true).ToList();
 
-            var list = this._Repository.Where(p => p.Start_Date_Prestaqi.Date >= investorByDate.Start_Date.Date &&
-                p.Start_Date_Prestaqi.Date <= investorByDate.End_Date).Skip(investorByDate.Page).Take(investorByDate.NumRecord).ToList();
+            List<Investor> list = new List<Investor>();
+            if (investorByDate.Start_Date != null && investorByDate.End_Date != null)
+            {
+                list = this._Repository.Where(p => p.Start_Date_Prestaqi.Date >= ((DateTime)investorByDate.Start_Date).Date &&
+                    p.Start_Date_Prestaqi.Date <= ((DateTime)investorByDate.End_Date).Date).Skip(investorByDate.Page).Take(investorByDate.NumRecord).ToList();
+            }
+            else
+            {
+                list = this._Repository.Where(p => true).OrderBy(p => p.Start_Date_Prestaqi).Skip(investorByDate.Page).Take(investorByDate.NumRecord).ToList();
+            }
 
             if (list.Count > 0)
             {

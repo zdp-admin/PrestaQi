@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using DocumentFormat.OpenXml.Presentation;
 using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
+using MoreLinq.Extensions;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto;
@@ -22,17 +24,20 @@ namespace PrestaQi.Api.Controllers
         IRetrieveService<Accredited> _AccreditedRetrieveService;
         IProcessService<Accredited> _AccreditedProcessService;
         IProcessService<ExportFile> _ExportProcessService;
+        IProcessService<ExportAdvance> _ExportAdvanceProcessService;
 
         public AccreditedsController(
             IWriteService<Accredited> accreditedWriteService, 
             IRetrieveService<Accredited> accreditedRetrieveService,
             IProcessService<Accredited> accreditedProcessService,
-             IProcessService<ExportFile> exportProcessService)
+             IProcessService<ExportFile> exportProcessService,
+             IProcessService<ExportAdvance> exportAdvanceProcessService)
         {
             this._AccreditedWriteService = accreditedWriteService;
             this._AccreditedRetrieveService = accreditedRetrieveService;
             this._AccreditedProcessService = accreditedProcessService;
             this._ExportProcessService = exportProcessService;
+            this._ExportAdvanceProcessService = exportAdvanceProcessService;
         }
 
        [HttpPost, Route("GetList")]
@@ -83,6 +88,20 @@ namespace PrestaQi.Api.Controllers
         public IActionResult ListAdvancesReceivable()
         {
             return Ok(this._AccreditedProcessService.ExecuteProcess<bool, List<AdvanceReceivable>>(true));
+        }
+
+        [HttpPost, Route("ExportAdvanceByAccredited")]
+        public IActionResult ExportAdvanceByAccredited(ExportAdvance exportAdvance)
+        {
+            var file = this._ExportAdvanceProcessService.ExecuteProcess<ExportAdvance, MemoryStream>(exportAdvance);
+
+            return this.File(
+                    fileContents: file.ToArray(),
+                    contentType: exportAdvance.Type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                        "application/pdf",
+                    fileDownloadName: exportAdvance.Type == 1 ? "Advances" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                        "Advances" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+                );
         }
     }
 }

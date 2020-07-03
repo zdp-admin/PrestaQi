@@ -41,10 +41,27 @@ namespace PrestaQi.Service.ProcessServices
 
         public List<AnchorControl> ExecuteProcess(AnchorByFilter anchorByFilter)
         {
-            var investors = this._InvestorRetrieveService.Where(
-                p => p.Start_Date_Prestaqi.Date >= anchorByFilter.Start_Date && 
-                p.Start_Date_Prestaqi.Date <= anchorByFilter.End_Date.Date
-                ).ToList();
+            List<Investor> investors = new List<Investor>();
+
+            if (anchorByFilter.Page == 0 || anchorByFilter.NumRecord == 0)
+            {
+                anchorByFilter.Page = 1;
+                anchorByFilter.NumRecord = 20;
+            }
+
+            if (anchorByFilter.Start_Date != null && anchorByFilter.End_Date != null)
+            {
+                investors = this._InvestorRetrieveService.Where(
+                    p => p.Start_Date_Prestaqi.Date >= ((DateTime)anchorByFilter.Start_Date).Date &&
+                    p.Start_Date_Prestaqi.Date <= ((DateTime)anchorByFilter.End_Date).Date
+                    ).Skip(anchorByFilter.Page).Take(anchorByFilter.NumRecord).ToList();
+            }
+            else
+            {
+                investors = this._InvestorRetrieveService.Where(p => true).OrderBy(p => p.created_at)
+                    .Skip(anchorByFilter.Page).Take(anchorByFilter.NumRecord)
+                    .ToList();
+            }
 
             List<AnchorControl> result = new List<AnchorControl>();
 
