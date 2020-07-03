@@ -8,7 +8,7 @@ using System.Security.Principal;
 namespace PrestaQi.Model
 {
     [Table("investors")]
-    public class Investor : Entity<int>
+    public partial class Investor : Entity<int>
     {
         [Column("first_name")]
         public string First_Name { get; set; }
@@ -22,8 +22,8 @@ namespace PrestaQi.Model
         public DateTime Limit_Date { get; set; }
         [Column("rfc")]
         public string Rfc { get; set; }
-        [Column("bank")]
-        public string Bank { get; set; }
+        [Column("institution_id")]
+        public int Institution_Id { get; set; }
         [Column("clabe")]
         public string Clabe { get; set; }
         [Column("account_number")]

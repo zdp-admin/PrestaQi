@@ -14,5 +14,7 @@ namespace PrestaQi.Model
         public string Company_Name { get; set; }
         [NotMapped]
         public List<Advance> Advances { get; set; }
+        [NotMapped]
+        public string Institution_Name { get; set; }
     }
 }

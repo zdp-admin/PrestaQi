@@ -79,7 +79,7 @@ namespace PrestaQi.Service.ProcessServices
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
                     startDate = DateTime.Now.StartOfWeek(DayOfWeek.Monday);
                     endDate = DateTime.Now.StartOfWeek(DayOfWeek.Saturday);
-                    day = (DateTime.Now.Day - startDate.Day) + 1;
+                    day = (int)DateTime.Now.DayOfWeek; 
                     break;
             }
 
@@ -142,10 +142,10 @@ namespace PrestaQi.Service.ProcessServices
                 CommissionAndInterestByDays = listDetial,
                 Total_Interest = listDetial.Sum(p => p.Interest),
                 Total_Commission = listDetial.Sum(p => p.Commission),
-                Average_Commission = getCommisionAndIntereset.Is_Specifid_Day ? listDetial.Sum(p => p.Commission) / advances.Count :
-                    listDetial.Sum(p => p.Commission) / listDetial.Count, 
-                Average_Interest = getCommisionAndIntereset.Is_Specifid_Day ? listDetial.Sum(p => p.Interest) / advances.Count :
-                    listDetial.Sum(p => p.Interest) / listDetial.Count
+                Average_Commission = advances.Count > 0 ? getCommisionAndIntereset.Is_Specifid_Day ? listDetial.Sum(p => p.Commission) / advances.Count :
+                    listDetial.Sum(p => p.Commission) / listDetial.Count : 0, 
+                Average_Interest = advances.Count > 0 ? getCommisionAndIntereset.Is_Specifid_Day ? listDetial.Sum(p => p.Interest) / advances.Count :
+                    listDetial.Sum(p => p.Interest) / listDetial.Count : 0
             };
 
             return commisionAndInterestMaster;
@@ -176,9 +176,9 @@ namespace PrestaQi.Service.ProcessServices
             {
                 Total_Credit = advances.Count,
                 CreditAvarageDetails = detail,
-                Credit_Average = advances.Count / detail.Count,
-                Amount_Average = getCredits.Is_Specifid_Day ? detail.Sum(p => p.Amount) / advances.Count :
-                 detail.Sum(p => p.Amount) / detail.Count
+                Credit_Average = advances.Count > 0 ? advances.Count / detail.Count : 0,
+                Amount_Average = advances.Count > 0 ? getCredits.Is_Specifid_Day ? detail.Sum(p => p.Amount) / advances.Count :
+                 detail.Sum(p => p.Amount) / detail.Count : 0
             };
 
             return creditAverage;

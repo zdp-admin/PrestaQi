@@ -34,7 +34,7 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw new SystemValidationException("Error creating Company");
+                throw new SystemValidationException($"Error creating Company: {exception.Message}");
             }
 
         }
@@ -52,7 +52,7 @@ namespace PrestaQi.Service.WriteServices
             {
                 return base.Update(entity);
             }
-            catch (Exception exception) { throw new SystemValidationException("Error updating Company!");  }
+            catch (Exception exception) { throw new SystemValidationException($"Error updating Company: {exception.Message}");  }
         }
 
     }

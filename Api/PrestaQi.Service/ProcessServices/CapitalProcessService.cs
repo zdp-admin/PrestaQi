@@ -164,18 +164,21 @@ namespace PrestaQi.Service.ProcessServices
 
             List<InvestmentDashboardDetail> details = new List<InvestmentDashboardDetail>();
 
-            while (getInvestment.Start_Date.Date <= getInvestment.End_Date.Date)
+            if (capitalDetails.Count > 0)
             {
-                InvestmentDashboardDetail investmentDashboardDetail = new InvestmentDashboardDetail()
+                while (getInvestment.Start_Date.Date <= getInvestment.End_Date.Date)
                 {
-                    Date = getInvestment.Start_Date,
-                    Interest_Paid = capitalDetails.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).Sum(p => p.Interest_Payment),
-                     Main_Return = capitalDetails.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).Sum(p => p.Principal_Payment)
-                    
-                };
+                    InvestmentDashboardDetail investmentDashboardDetail = new InvestmentDashboardDetail()
+                    {
+                        Date = getInvestment.Start_Date,
+                        Interest_Paid = capitalDetails.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).Sum(p => p.Interest_Payment),
+                        Main_Return = capitalDetails.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).Sum(p => p.Principal_Payment)
 
-                details.Add(investmentDashboardDetail);
-                getInvestment.Start_Date = getInvestment.Start_Date.AddDays(1);
+                    };
+
+                    details.Add(investmentDashboardDetail);
+                    getInvestment.Start_Date = getInvestment.Start_Date.AddDays(1);
+                }
             }
 
             InvestmentDashboard investmentDashboard = new InvestmentDashboard()
@@ -183,12 +186,12 @@ namespace PrestaQi.Service.ProcessServices
                 InvestmentDashboardDetails = details,
                 Interest_Paid = details.Sum(p => p.Interest_Paid),
                 Main_Return = details.Sum(p => p.Main_Return),
-                Average_Interest_Paid = getInvestment.Is_Specifid_Day == true ?
+                Average_Interest_Paid = capitalDetails.Count > 0 ? getInvestment.Is_Specifid_Day == true ?
                         Math.Round(details.Sum(p => p.Interest_Paid) / capitalDetails.Where(p => p.Interest_Payment > 0).Count(), 2) :
-                        Math.Round(details.Sum(p => p.Interest_Paid) / details.Count),
-                Average_Main_Return = getInvestment.Is_Specifid_Day == true ?
+                        Math.Round(details.Sum(p => p.Interest_Paid) / details.Count) : 0,
+                Average_Main_Return = capitalDetails.Count > 0 ?  getInvestment.Is_Specifid_Day == true ?
                         Math.Round(details.Sum(p => p.Main_Return) / capitalDetails.Where(p => p.Principal_Payment > 0).Count(), 2) :
-                        Math.Round(details.Sum(p => p.Main_Return) / details.Count)
+                        Math.Round(details.Sum(p => p.Main_Return) / details.Count) : 0
             };
 
             return investmentDashboard;

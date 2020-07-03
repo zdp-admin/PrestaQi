@@ -1,15 +1,17 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using InsiscoCore.Base.Service;
+﻿using InsiscoCore.Base.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.CodeAnalysis.Operations;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
-using PrestaQi.Model.Dto;
+using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
+using System;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]"), Authorize]
     [ApiController]
     public class UsersController : CustomController
     {
@@ -18,7 +20,8 @@ namespace PrestaQi.Api.Controllers
 
         public UsersController(
             IWriteService<User> userWriteService, 
-            IRetrieveService<User> userRetrieveService)
+            IRetrieveService<User> userRetrieveService
+            )
         {
             this._UserWriteService = userWriteService;
             this._UserRetrieveService = userRetrieveService;
@@ -45,17 +48,21 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._UserWriteService.Update(user), "User updated!");
         }
 
-        [HttpPut, Route("[action]")]
-        public IActionResult ChangePassword(ChangePassword changePassword)
+        [HttpGet, Route("GetUser")]
+        public IActionResult GetUser()
         {
-            return Ok(this._UserWriteService.Update<ChangePassword, bool>(changePassword), "Password changed!");
+            int userId = Convert.ToInt32(HttpContext.User.FindFirst("UserId").Value);
+            int type = Convert.ToInt32(HttpContext.User.FindFirst("Type").Value);
+
+            var data = this._UserRetrieveService.RetrieveResult<UserByType, UserLogin>(new UserByType()
+            {
+                UserType = ((PrestaQiEnum.UserType)type),
+                User_Id = userId
+            });
+
+            return Ok(new { User = data.User, Type = type, TypeName = ((PrestaQiEnum.UserType)type).ToString() });
         }
 
-        [HttpPost, Route("[action]")]
-        public IActionResult CreateUsers(List<User> users)
-        {
-            return Ok(this._UserWriteService.Create(users));
-        }
-
+        
     }
 }

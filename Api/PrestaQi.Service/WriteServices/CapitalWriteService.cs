@@ -5,6 +5,7 @@ using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Enum;
+using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -16,37 +17,45 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Capital> _UserCapitalRetrieveService;
         IRetrieveService<Period> _PeriodRetrieveService;
         IWriteService<CapitalDetail> _CapitalDetailWriteService;
+        IRetrieveService<User> _UserRetrieveService;
 
 
         public CapitalWriteService(
             IWriteRepository<Capital> repository,
             IRetrieveService<Capital> userCapitalRetrieveService,
             IRetrieveService<Period> periodRetrieveService,
-            IWriteService<CapitalDetail> capitalDetailWriteService
+            IWriteService<CapitalDetail> capitalDetailWriteService,
+            IRetrieveService<User> userRetrieveService
             ) : base(repository)
         {
             this._UserCapitalRetrieveService = userCapitalRetrieveService;
             this._PeriodRetrieveService = periodRetrieveService;
             this._CapitalDetailWriteService = capitalDetailWriteService;
+            this._UserRetrieveService = userRetrieveService;
         }
 
         public override bool Create(Capital entity)
         {
+            var user = this._UserRetrieveService.Find(entity.Created_By);
+
+            if (user.Password != InsiscoCore.Utilities.Crypto.MD5.Encrypt(entity.Password))
+                throw new SystemValidationException("Incorrect Password!");
+
+            entity.Start_Date = DateTime.Now;
+            entity.End_Date = DateTime.Now;
+            entity.Capital_Status = (int)PrestaQiEnum.CapitalEnum.Requested;
+            entity.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActive;
+            entity.created_at = DateTime.Now;
+            entity.updated_at = DateTime.Now;
+
             try
             {
-                entity.Start_Date = DateTime.Now;
-                entity.End_Date = DateTime.Now;
-                entity.Capital_Status = (int)PrestaQiEnum.CapitalEnum.Requested;
-                entity.created_at = DateTime.Now;
-                entity.updated_at = DateTime.Now;
-
                 return base.Create(entity);
             }
             catch (Exception exception)
             {
-                throw new SystemValidationException("Error creating Capital!");
+                throw new SystemValidationException($"Error creating Capital: {exception.Message}");
             }
-
         }
 
         public bool Update(CapitalChangeStatus capitalChangeStatus)
@@ -67,6 +76,7 @@ namespace PrestaQi.Service.WriteServices
 
                 capital.Start_Date = DateTime.Now.AddMonths(1);
                 capital.End_Date = capital.Start_Date.AddYears(capital.Investment_Horizon);
+                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Active;
 
                 DateTime startDateTemp = capital.Start_Date;
 

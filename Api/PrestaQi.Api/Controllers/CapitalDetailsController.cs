@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using InsiscoCore.Base.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
@@ -11,7 +12,7 @@ using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]"), Authorize]
     [ApiController]
     public class CapitalDetailsController : CustomController
     {

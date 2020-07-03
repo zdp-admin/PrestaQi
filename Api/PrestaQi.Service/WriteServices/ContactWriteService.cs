@@ -31,7 +31,7 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw new SystemValidationException("Error creating Contact!");
+                throw new SystemValidationException($"Error creating Contact: {exception.Message}");
             }
         }
 
@@ -49,7 +49,7 @@ namespace PrestaQi.Service.WriteServices
             {
                 return base.Update(entity);
             }
-            catch (Exception) { throw new SystemValidationException("Error updating Contact!"); }
+            catch (Exception exception) { throw new SystemValidationException($"Error updating Contact: {exception.Message}"); }
         }
     }
 }

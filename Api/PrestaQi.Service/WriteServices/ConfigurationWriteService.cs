@@ -31,7 +31,7 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw new SystemValidationException("Error creating Configuration!");
+                throw new SystemValidationException($"Error creating Configuration: {exception.Message}");
             }
            
         }
@@ -50,7 +50,7 @@ namespace PrestaQi.Service.WriteServices
             {
                 return base.Update(entity);
             }
-            catch (Exception) { throw new SystemValidationException("Error updating Configuration!"); }
+            catch (Exception exception) { throw new SystemValidationException($"Error updating Configuration: {exception.Message}"); }
         }
     }
 }

@@ -46,6 +46,13 @@ namespace PrestaQi.Api
                 };
             });
 
+            services.AddCors(o => o.AddPolicy("PrestaQiPolicy", builder =>
+            {
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
+            }));
+
             services.AddMvc(config =>
             {
                 config.Filters.Add(new ExceptionHandling());
@@ -67,6 +74,7 @@ namespace PrestaQi.Api
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseCors("PrestaQiPolicy");
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();

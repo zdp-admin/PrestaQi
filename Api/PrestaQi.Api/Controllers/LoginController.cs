@@ -11,6 +11,7 @@ using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -39,7 +40,7 @@ namespace PrestaQi.Api.Controllers
             if (user != null)
             {
                 var tokenString = GenerateJSONWebToken(user);
-                response = Ok(new { Token = tokenString, User = user.User });
+                response = Ok(new { Token = tokenString, User = user.User, Type = user.Type, TypeName = ((PrestaQiEnum.UserType)user.Type).ToString() });
             }
 
             return response;
@@ -49,20 +50,24 @@ namespace PrestaQi.Api.Controllers
         {
             string nameComplete = string.Empty;
             string mail = string.Empty;
+            int id = 0;
 
             switch (user.Type)
             {
                 case 1:
                     nameComplete = $"{((User)user.User).First_Name} {((User)user.User).Last_Name}";
                     mail = ((User)user.User).Mail;
+                    id = ((User)user.User).id;
                     break;
                 case 2:
                     nameComplete = $"{((Investor)user.User).First_Name} {((Investor)user.User).Last_Name}";
                     mail = ((Investor)user.User).Mail;
+                    id = ((Investor)user.User).id;
                     break;
                 case 3:
                     nameComplete = $"{((Accredited)user.User).First_Name} {((Accredited)user.User).Last_Name}";
                     mail = ((Accredited)user.User).Mail;
+                    id = ((Accredited)user.User).id;
                     break;
             }
 
@@ -72,13 +77,15 @@ namespace PrestaQi.Api.Controllers
             var claims = new[] {
                 new Claim(JwtRegisteredClaimNames.GivenName, nameComplete),
                 new Claim(JwtRegisteredClaimNames.Email, mail),
+                new Claim("Type", user.Type.ToString()),
+                new Claim("UserId", id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
             var token = new JwtSecurityToken(_Configuration["Jwt:Issuer"],
               _Configuration["Jwt:Issuer"],
               claims,
-              expires: DateTime.Now.AddMinutes(120),
+              expires: DateTime.Now.AddMinutes(Convert.ToInt32(_Configuration["Jwt:Duration"])),
               signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

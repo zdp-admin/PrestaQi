@@ -11,5 +11,7 @@ namespace PrestaQi.Model
         public string Period_Name { get; set; }
         [NotMapped]
         public bool Enabled { get; set; }
+        [NotMapped]
+        public string Password { get; set; }
     }
 }

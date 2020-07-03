@@ -32,5 +32,12 @@ namespace PrestaQi.Model.Enum
             Pagado = 1,
             PagadoParial = 2
         }
+
+        public enum UserType
+        {
+            Administrador = 1,
+            Inversionista = 2,
+            Acreditado = 3
+        }
     }
 }

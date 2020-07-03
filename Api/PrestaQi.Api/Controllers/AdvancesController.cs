@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using InsiscoCore.Base.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto;
@@ -10,38 +13,43 @@ using PrestaQi.Model.Dto.Input;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]"), Authorize]
     [ApiController]
     public class AdvancesController : CustomController
     {
         IWriteService<Advance> _AdvanceWriteService;
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IProcessService<Advance> _AdvanceProcessService;
+        public IConfiguration Configuration { get; }
 
         public AdvancesController(
             IWriteService<Advance> advanceWriteService, 
             IRetrieveService<Advance> advanceRetrieveService,
-            IProcessService<Advance> advanceProcessService)
+            IProcessService<Advance> advanceProcessService,
+             IConfiguration configuration)
         {
             this._AdvanceWriteService = advanceWriteService;
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._AdvanceProcessService = advanceProcessService;
+            Configuration = configuration;
         }
 
         [HttpPost, Route("CalculateAdvance")]
         public IActionResult CalculateAdvance(CalculateAmount calculateAmount)
         {
+            calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
             return Ok(this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(calculateAmount));
         }
 
         [HttpPost]
         public IActionResult Post(CalculateAmount calculateAmount)
         {
+            calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
             return Ok(this._AdvanceWriteService.Create<CalculateAmount, bool>(calculateAmount), "Generator Advance");
         }
 
-        [HttpGet, Route("GetByAccredited/id")]
-        public IActionResult GetByAccreedited(int id)
+        [HttpGet, Route("GetByAccredited/{id}")]
+        public IActionResult GetByAccredited(int id)
         {
             return Ok(this._AdvanceRetrieveService.Where(p => p.Accredited_Id == id));
         }

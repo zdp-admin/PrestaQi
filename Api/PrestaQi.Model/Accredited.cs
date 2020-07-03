@@ -35,8 +35,8 @@ namespace PrestaQi.Model
         public int Age { get; set; }
         [Column("gender_id")]
         public int Gender_Id { get; set; }
-        [Column("bank")]
-        public string Bank { get; set; }
+        [Column("institution_id")]
+        public int Institution_Id { get; set; }
         [Column("clabe")]
         public string Clabe { get; set; }
         [Column("account_number")]

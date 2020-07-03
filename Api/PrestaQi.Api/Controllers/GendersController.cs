@@ -1,12 +1,13 @@
 ﻿using System.Linq;
 using InsiscoCore.Base.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]")/*, Authorize*/]
+    [Route("api/[controller]"), Authorize]
     [ApiController]
     public class GendersController : CustomController
     {

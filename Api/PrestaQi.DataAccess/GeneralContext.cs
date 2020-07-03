@@ -22,6 +22,9 @@ namespace PrestaQi.DataAccess
         public DbSet<CapitalDetail> CapitalDetails { get; set; }
         public DbSet<Advance> Advances { get; set; }
         public DbSet<Company> Companies { get; set; }
+        public DbSet<Module> Modules { get; set; }
+        public DbSet<Institution> Institution { get; set; }
+        public DbSet<SpeiResponse> SpeiResponses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

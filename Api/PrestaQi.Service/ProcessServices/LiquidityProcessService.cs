@@ -41,19 +41,22 @@ namespace PrestaQi.Service.ProcessServices
 
             List<LiquidityDetail> liquidityDetails = new List<LiquidityDetail>();
 
-            while (getLiquidity.Start_Date.Date <= getLiquidity.End_Date.Date)
+            if (capitals.Count != 0 || investors.Count != 0 || advances.Count != 0)
             {
-                LiquidityDetail liquidityDetail = new LiquidityDetail()
+                while (getLiquidity.Start_Date.Date <= getLiquidity.End_Date.Date)
                 {
-                    Date = getLiquidity.Start_Date,
-                    Amount_Call_Capital = capitals.Where(p => p.created_at.Date == getLiquidity.Start_Date.Date).Sum(p => p.Amount),
-                    Amount_Capital = investors.Where(p => p.created_at.Date == getLiquidity.Start_Date.Date).Sum(p => p.Total_Amount_Agreed),
-                    Amount_Advance = advances.Where(p => p.Date_Advance.Date == getLiquidity.Start_Date.Date).Sum(p => p.Amount)
-                };
+                    LiquidityDetail liquidityDetail = new LiquidityDetail()
+                    {
+                        Date = getLiquidity.Start_Date,
+                        Amount_Call_Capital = capitals.Where(p => p.created_at.Date == getLiquidity.Start_Date.Date).Sum(p => p.Amount),
+                        Amount_Capital = investors.Where(p => p.created_at.Date == getLiquidity.Start_Date.Date).Sum(p => p.Total_Amount_Agreed),
+                        Amount_Advance = advances.Where(p => p.Date_Advance.Date == getLiquidity.Start_Date.Date).Sum(p => p.Amount)
+                    };
 
-                liquidityDetails.Add(liquidityDetail);
+                    liquidityDetails.Add(liquidityDetail);
 
-                getLiquidity.Start_Date = getLiquidity.Start_Date.AddDays(1);
+                    getLiquidity.Start_Date = getLiquidity.Start_Date.AddDays(1);
+                }
             }
 
             Liquidity liquidity = new Liquidity();
@@ -63,12 +66,17 @@ namespace PrestaQi.Service.ProcessServices
             liquidity.Commited_Capital = liquidityDetails.Sum(p => p.Amount_Capital);
             liquidity.Total_Advances = liquidityDetails.Sum(p => p.Amount_Advance);
 
-            liquidity.Average_Call_Capital = getLiquidity.Is_Specifid_Day ? Math.Round(liquidity.Call_Capital / capitals.Count, 2) :
-                Math.Round(liquidity.Call_Capital / liquidityDetails.Count, 2);
-            liquidity.Average_Capital = getLiquidity.Is_Specifid_Day ? Math.Round(liquidity.Commited_Capital / investors.Count, 2) :
-                Math.Round(liquidity.Commited_Capital / liquidityDetails.Count, 2);
-            liquidity.Average_Advances = getLiquidity.Is_Specifid_Day ? Math.Round(liquidity.Total_Advances / advances.Count, 2) :
-                Math.Round(liquidity.Total_Advances / liquidityDetails.Count, 2);
+            if (liquidity.Call_Capital > 0)
+                liquidity.Average_Call_Capital = getLiquidity.Is_Specifid_Day ? Math.Round(liquidity.Call_Capital / capitals.Count, 2) :
+                    Math.Round(liquidity.Call_Capital / liquidityDetails.Count, 2);
+
+            if (liquidity.Commited_Capital > 0)
+                liquidity.Average_Capital = getLiquidity.Is_Specifid_Day ? Math.Round(liquidity.Commited_Capital / investors.Count, 2) :
+                    Math.Round(liquidity.Commited_Capital / liquidityDetails.Count, 2);
+
+            if (liquidity.Total_Advances > 0)
+                liquidity.Average_Advances = getLiquidity.Is_Specifid_Day ? Math.Round(liquidity.Total_Advances / advances.Count, 2) :
+                    Math.Round(liquidity.Total_Advances / liquidityDetails.Count, 2);
 
             return liquidity;
         }
