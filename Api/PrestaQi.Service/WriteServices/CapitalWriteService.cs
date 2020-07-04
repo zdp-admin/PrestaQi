@@ -91,7 +91,7 @@ namespace PrestaQi.Service.WriteServices
                         Outstanding_Balance = capital.Amount,
                         created_at = DateTime.Now,
                         updated_at = DateTime.Now,
-                        Pay_Day_Limit = startDateTemp.AddMonths(monthNum).AddDays(capital.Bussiness_Day),
+                        Pay_Day_Limit = startDateTemp.AddMonths(monthNum),//startDateTemp.AddMonths(monthNum).AddDays(capital.Bussiness_Day),
                         Principal_Payment = i == period.Period_Value ? capital.Amount : 0
                     });
 

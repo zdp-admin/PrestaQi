@@ -70,8 +70,8 @@ namespace PrestaQi.Service.ProcessServices
                     workSheet.Cell(row, 1).Value = item.Id;
                     workSheet.Cell(row, 2).Value = item.NameComplete;
                     workSheet.Cell(row, 3).Value = item.Limit_Date.ToString("dd/MM/yyyy");
-                    workSheet.Cell(row, 4).Value = $"${item.Commited_Amount}";
-                    workSheet.Cell(row, 5).Value = $"${item.AmountExercised}";
+                    workSheet.Cell(row, 4).Value = $"{item.Commited_Amount:C}";
+                    workSheet.Cell(row, 5).Value = $"{item.AmountExercised:C}";
 
                     if (item.CapitalDatas.Count == 0)
                         row += 1;
@@ -79,7 +79,7 @@ namespace PrestaQi.Service.ProcessServices
                     item.CapitalDatas.ForEach(p =>
                     {
                         workSheet.Cell(row, 6).Value = $"{p.Interest_Rate}%";
-                        workSheet.Cell(row, 7).Value = $"${p.Amount}";
+                        workSheet.Cell(row, 7).Value = $"{p.Amount:C}";
                         workSheet.Cell(row, 8).Value = p.Start_Date.ToString("dd/MM/yyyy");
                         workSheet.Cell(row, 9).Value = p.End_Date.ToString("dd/MM/yyyy");
                         workSheet.Cell(row, 10).Value = p.Capital_Status;
@@ -146,12 +146,12 @@ namespace PrestaQi.Service.ProcessServices
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
-                      .Add(new Paragraph($"${item.Commited_Amount}")));
+                      .Add(new Paragraph($"{item.Commited_Amount:C}")));
 
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
-                      .Add(new Paragraph($"${item.AmountExercised}")));
+                      .Add(new Paragraph($"{item.AmountExercised:C}")));
 
                     if (item.CapitalDatas.Count > 0)
                     {
@@ -171,7 +171,7 @@ namespace PrestaQi.Service.ProcessServices
                             cells.Add(new Cell(1, 1)
                                 .SetTextAlignment(TextAlignment.CENTER)
                                 .SetFontSize(8)
-                                .Add(new Paragraph($"${data.Amount}")));
+                                .Add(new Paragraph($"{data.Amount:C}")));
 
                             cells.Add(new Cell(1, 1)
                                 .SetTextAlignment(TextAlignment.CENTER)
@@ -257,7 +257,7 @@ namespace PrestaQi.Service.ProcessServices
                     workSheet.Cell(row, 2).Value = item.Company_Name;
                     workSheet.Cell(row, 3).Value = item.Contract_number;
                     workSheet.Cell(row, 4).Value = $"{item.First_Name} {item.Last_Name}";
-                    workSheet.Cell(row, 5).Value = $"${item.Net_Monthly_Salary}";
+                    workSheet.Cell(row, 5).Value = $"{item.Net_Monthly_Salary:C}";
                     workSheet.Cell(row, 6).Value = $"{item.Interest_Rate}%";
                     workSheet.Cell(row, 7).Value = item.Rfc;
                     workSheet.Cell(row, 8).Value = item.Institution_Name;
@@ -331,7 +331,7 @@ namespace PrestaQi.Service.ProcessServices
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
-                      .Add(new Paragraph($"${item.Net_Monthly_Salary}")));
+                      .Add(new Paragraph($"{item.Net_Monthly_Salary:C}")));
 
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)

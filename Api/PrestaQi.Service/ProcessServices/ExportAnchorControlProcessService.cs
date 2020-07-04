@@ -74,12 +74,12 @@ namespace PrestaQi.Service.ProcessServices
 
                     item.MyInvestments.ForEach(p =>
                     {
-                        workSheet.Cell(row, 3).Value = $"${p.Amount}";
+                        workSheet.Cell(row, 3).Value = $"{p.Amount:C}";
                         workSheet.Cell(row, 4).Value = p.Start_Date.ToString("dd/MM/yyyy");
                         workSheet.Cell(row, 5).Value = p.End_Date.ToString("dd/MM/yyyy");
                         workSheet.Cell(row, 6).Value = $"{p.Interest_Rate}%";
-                        workSheet.Cell(row, 7).Value = $"${p.Interest_Payable}";
-                        workSheet.Cell(row, 8).Value = $"${p.Quantity_Interest_Arrears}";
+                        workSheet.Cell(row, 7).Value = $"{p.Interest_Payable:C}";
+                        workSheet.Cell(row, 8).Value = $"{p.Quantity_Interest_Arrears:C}";
                         workSheet.Cell(row, 9).Value = p.Pay_Day_Limit.ToString("dd/MM/yyyy");
                         workSheet.Cell(row, 10).Value = p.Enabled == true ? "Activo" : "No Activo";
                         workSheet.Cell(row, 11).Value = p.Principal_Payment;
@@ -98,7 +98,7 @@ namespace PrestaQi.Service.ProcessServices
                 rangeTotalText.Style.Font.Bold = true;
                 rangeTotalText.Style.Font.SetFontSize(14);
 
-                workSheet.Cell(row + 1, 7).Value = $"${total}";
+                workSheet.Cell(row + 1, 7).Value = $"{total:C}";
                 workSheet.Cell(row + 1, 7).Style.Font.Bold = true;
                 workSheet.Cell(row + 1, 7).Style.Font.SetFontSize(14);
 
@@ -168,7 +168,7 @@ namespace PrestaQi.Service.ProcessServices
                             cells.Add(new Cell(1, 1)
                                 .SetTextAlignment(TextAlignment.CENTER)
                                 .SetFontSize(8)
-                                .Add(new Paragraph($"${data.Amount}")));
+                                .Add(new Paragraph($"{data.Amount:C}")));
 
                             cells.Add(new Cell(1, 1)
                                 .SetTextAlignment(TextAlignment.CENTER)
@@ -189,12 +189,12 @@ namespace PrestaQi.Service.ProcessServices
                             cells.Add(new Cell(1, 1)
                                 .SetTextAlignment(TextAlignment.CENTER)
                                 .SetFontSize(8)
-                                .Add(new Paragraph($"${data.Interest_Payable}")));
+                                .Add(new Paragraph($"{data.Interest_Payable:C}")));
 
                             cells.Add(new Cell(1, 1)
                                 .SetTextAlignment(TextAlignment.CENTER)
                                 .SetFontSize(8)
-                                .Add(new Paragraph($"${data.Quantity_Interest_Arrears}")));
+                                .Add(new Paragraph($"{data.Quantity_Interest_Arrears:C}")));
 
                             cells.Add(new Cell(1, 1)
                                 .SetTextAlignment(TextAlignment.CENTER)
@@ -224,7 +224,7 @@ namespace PrestaQi.Service.ProcessServices
                     table.AddCell(p);
                 });
 
-                Paragraph totalText = new Paragraph($"Monto a pagar en fecha próxima ${total}")
+                Paragraph totalText = new Paragraph($"Monto a pagar en fecha próxima {total:C}")
                     .SetTextAlignment(TextAlignment.CENTER)
                     .SetFontSize(14);
 

@@ -48,9 +48,10 @@ namespace PrestaQi.Service.ProcessServices
                 var workBook = new XLWorkbook();
                 var workSheet = workBook.Worksheets.Add("Data");
 
-                workSheet.Cell(1, 1).Value = $"ID {accredited.Identify}";
-                workSheet.Cell(1, 1).Style.Font.Bold = true;
-                workSheet.Cell(1, 1).Style.Font.SetFontSize(20);
+                var rangeId = workSheet.Range(1, 1, 1, columns.Count);
+                rangeId.Value = $"ID {accredited.Identify}";
+                rangeId.Style.Font.Bold = true;
+                rangeId.Style.Font.SetFontSize(20);
 
                 var rangeName = workSheet.Range(3, 1, 3, columns.Count);
                 rangeName.Merge();
@@ -74,12 +75,12 @@ namespace PrestaQi.Service.ProcessServices
 
                 foreach (var item in accredited.Advances)
                 {
-                    workSheet.Cell(row, 1).Value = $"${item.Amount}";
+                    workSheet.Cell(row, 1).Value = $"{item.Amount:C}";
                     workSheet.Cell(row, 2).Value = item.Date_Advance.ToString("dd/MM/yyyy");
                     workSheet.Cell(row, 3).Value = item.Requested_Day;
                     workSheet.Cell(row, 4).Value = $"{accredited.Interest_Rate}%";
                     workSheet.Cell(row, 5).Value = item.Comission;
-                    workSheet.Cell(row, 6).Value = $"${item.Total_Withhold}";
+                    workSheet.Cell(row, 6).Value = $"{item.Total_Withhold:C}";
                     workSheet.Cell(row, 7).Value = item.Paid_Status == (int)PrestaQiEnum.AdvanceStatus.Pagado ? "No Activo" : "Activo";
 
                     row += 1;
@@ -157,7 +158,7 @@ namespace PrestaQi.Service.ProcessServices
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
-                      .Add(new Paragraph($"${item.Total_Withhold}")));
+                      .Add(new Paragraph($"{item.Total_Withhold:C}")));
 
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)
