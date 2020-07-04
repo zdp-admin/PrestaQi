@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -19,15 +20,18 @@ namespace PrestaQi.Api.Controllers
         IWriteService<Capital> _CapitalWriteService;
         IRetrieveService<Capital> _CapitalRetrieveService;
         IProcessService<Capital> _CapitalProcessService;
+        IProcessService<ExportAnchorControl> _ExportAnchorProcessService;
 
         public CapitalsController(
             IWriteService<Capital> capitalWriteService, 
             IRetrieveService<Capital> capitalRetrieveService,
-            IProcessService<Capital> capitalProcessService)
+            IProcessService<Capital> capitalProcessService,
+            IProcessService<ExportAnchorControl> exportAnchorProcessService)
         {
             this._CapitalWriteService = capitalWriteService;
             this._CapitalRetrieveService = capitalRetrieveService;
             this._CapitalProcessService = capitalProcessService;
+            this._ExportAnchorProcessService = exportAnchorProcessService;
         }
 
         [HttpGet, Route("[action]/{id}")]
@@ -57,7 +61,27 @@ namespace PrestaQi.Api.Controllers
         [HttpPost, Route("[action]")]
         public IActionResult GetAnchorControl(AnchorByFilter anchorByFilter)
         {
-            return Ok(this._CapitalProcessService.ExecuteProcess<AnchorByFilter, List<AnchorControl>>(anchorByFilter));
+            var list = this._CapitalProcessService.ExecuteProcess<AnchorByFilter, List<AnchorControl>>(anchorByFilter);
+
+            if (anchorByFilter.Type == 0)
+                return Ok(list);
+            else
+            {
+                var msFile = this._ExportAnchorProcessService.ExecuteProcess<ExportAnchorControl, MemoryStream>(new ExportAnchorControl()
+                {
+                    Type = anchorByFilter.Type,
+                    AnchorControls = list
+                });
+
+                return this.File(
+                    fileContents: msFile.ToArray(),
+                    contentType: anchorByFilter.Type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                        "application/pdf",
+                    fileDownloadName: anchorByFilter.Type == 1 ? "AnchorControl" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                        "AnchorControl" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+                );
+            }
+
         }
 
         [HttpPost, Route("ChangeStatus")]

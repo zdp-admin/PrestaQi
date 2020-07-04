@@ -27,5 +27,6 @@ namespace PrestaQi.Model.Dto.Output
         public DateTime Pay_Day_Limit { get; set; }
         public int Day_Overdue { get; set; }
         public List<CapitalDetail> MyInvestmentDetails { get; set; }
+        public string Principal_Payment { get; set; }
     }
 }

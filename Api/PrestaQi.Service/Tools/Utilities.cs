@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using iText.Layout.Element;
+using iText.Layout.Properties;
+using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using System;
@@ -77,6 +79,17 @@ namespace PrestaQi.Service.Tools
             request = null;
 
             return file;
+        }
+
+        public static void GenerateEmptyCell(int num, List<Cell> cells)
+        {
+            for (int i = 0; i < num; i++)
+            {
+                cells.Add(new Cell(1, 1)
+                    .SetTextAlignment(TextAlignment.CENTER)
+                    .SetFontSize(8)
+                    .Add(new Paragraph(string.Empty)));
+            }
         }
     }
 }

@@ -10,5 +10,6 @@ namespace PrestaQi.Model.Dto.Input
         public DateTime? End_Date { get; set; }
         public int Page { get; set; }
         public int NumRecord { get; set; }
+        public int Type { get; set; }
     }
 }

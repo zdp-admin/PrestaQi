@@ -157,6 +157,7 @@ namespace PrestaQi.Service.ProcessServices
                         p.Isr_Retention = detailShow.Isr_Retention;
                         p.Net_Interest = detailShow.Payment;
                         p.Pay_Day_Limit = detailShow.Pay_Day_Limit;
+                        p.Principal_Payment = detailShow.Principal_Payment > 0 ? detailShow.ToString() : "No Aplica";
                     }
                 });
             }

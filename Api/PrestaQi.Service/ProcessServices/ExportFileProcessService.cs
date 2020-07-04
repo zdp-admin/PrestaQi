@@ -159,31 +159,8 @@ namespace PrestaQi.Service.ProcessServices
                         {
                             if (index != 0)
                             {
-                                cells.Add(new Cell(1, 1)
-                                  .SetTextAlignment(TextAlignment.CENTER)
-                                  .SetFontSize(8)
-                                  .Add(new Paragraph(string.Empty)));
-
-                                cells.Add(new Cell(1, 1)
-                                  .SetTextAlignment(TextAlignment.CENTER)
-                                  .SetFontSize(8)
-                                  .Add(new Paragraph(string.Empty)));
-
-
-                                cells.Add(new Cell(1, 1)
-                                  .SetTextAlignment(TextAlignment.CENTER)
-                                  .SetFontSize(8)
-                                  .Add(new Paragraph(string.Empty)));
-
-                                cells.Add(new Cell(1, 1)
-                                  .SetTextAlignment(TextAlignment.CENTER)
-                                  .SetFontSize(8)
-                                  .Add(new Paragraph(string.Empty)));
-
-                                cells.Add(new Cell(1, 1)
-                                  .SetTextAlignment(TextAlignment.CENTER)
-                                  .SetFontSize(8)
-                                  .Add(new Paragraph(string.Empty)));
+                                Utilities.GenerateEmptyCell(5, cells);
+                               
                             }
 
                             cells.Add(new Cell(1, 1)
@@ -224,40 +201,7 @@ namespace PrestaQi.Service.ProcessServices
                     }
                     else
                     {
-                        cells.Add(new Cell(1, 1)
-                                .SetTextAlignment(TextAlignment.CENTER)
-                                .SetFontSize(8)
-                                .Add(new Paragraph(string.Empty)));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(string.Empty)));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(string.Empty)));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(string.Empty)));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(string.Empty)));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(string.Empty)));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(string.Empty)));
+                        Utilities.GenerateEmptyCell(7, cells);
                     }
                 }
 
