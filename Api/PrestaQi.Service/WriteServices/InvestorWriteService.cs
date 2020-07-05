@@ -41,6 +41,8 @@ namespace PrestaQi.Service.WriteServices
             {
                 string password = Utilities.GetPasswordRandom();
 
+                entity.Enabled = true;
+                entity.First_Login = true;
                 entity.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
@@ -95,6 +97,8 @@ namespace PrestaQi.Service.WriteServices
 
                 entities.ToList().ForEach(p =>
                 {
+                    p.Enabled = true;
+                    p.First_Login = true;
                     string password = Utilities.GetPasswordRandom();
                     p.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
                     p.created_at = DateTime.Now;

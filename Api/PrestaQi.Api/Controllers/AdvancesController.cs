@@ -20,17 +20,21 @@ namespace PrestaQi.Api.Controllers
         IWriteService<Advance> _AdvanceWriteService;
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IProcessService<Advance> _AdvanceProcessService;
+        IProcessService<PaidAdvance> _PaidAdvanceProcessService;
         public IConfiguration Configuration { get; }
 
         public AdvancesController(
             IWriteService<Advance> advanceWriteService, 
             IRetrieveService<Advance> advanceRetrieveService,
             IProcessService<Advance> advanceProcessService,
-             IConfiguration configuration)
+            IProcessService<PaidAdvance> paidAdvanceProcessService,
+            IConfiguration configuration
+            )
         {
             this._AdvanceWriteService = advanceWriteService;
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._AdvanceProcessService = advanceProcessService;
+            this._PaidAdvanceProcessService = paidAdvanceProcessService;
             Configuration = configuration;
         }
 
@@ -52,6 +56,12 @@ namespace PrestaQi.Api.Controllers
         public IActionResult GetByAccredited(int id)
         {
             return Ok(this._AdvanceRetrieveService.Where(p => p.Accredited_Id == id));
+        }
+
+        [HttpPost, Route("SetPaidAdvance")]
+        public IActionResult SetPaidAdvance(SetPayAdvance setPayAdvance)
+        {
+            return Ok(this._PaidAdvanceProcessService.ExecuteProcess<SetPayAdvance, bool>(setPayAdvance));
         }
     }
 }

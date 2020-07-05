@@ -8,7 +8,7 @@ using System.Security.Principal;
 namespace PrestaQi.Model
 {
     [Table("users")]
-    public class User : Entity<int>
+    public partial class User : Entity<int>
     {
         [Column("first_name")]
         public string First_Name { get; set; }
@@ -24,6 +24,8 @@ namespace PrestaQi.Model
         public string Phone { get; set; }
         [Column("enabled")]
         public bool Enabled { get; set; }
+        [Column("deleted_at")]
+        public DateTime? Deleted_At { get; set; }
         [NotMapped]
         public List<UserModule> Modules { get; set; }
     }

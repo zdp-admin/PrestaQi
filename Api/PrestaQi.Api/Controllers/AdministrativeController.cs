@@ -15,12 +15,14 @@ namespace PrestaQi.Api.Controllers
     [ApiController]
     public class AdministrativeController : CustomController
     {
+        IRetrieveService<User> _UserRetrieveService;
         IWriteService<User> _UserWriteService;
         IWriteService<Investor> _InvestorWriteService;
         IWriteService<Accredited> _AccreditedWriteService;
         IProcessService<User> _UserProcessService;
 
         public AdministrativeController(
+            IRetrieveService<User> _UserRetrieveService,
             IWriteService<Investor> investorWriteService,
             IWriteService<Accredited> accreditedWriteService,
             IProcessService<User> userProcessService,
@@ -31,6 +33,7 @@ namespace PrestaQi.Api.Controllers
             this._AccreditedWriteService = accreditedWriteService;
             this._UserProcessService = userProcessService;
             this._UserWriteService = userWriteService;
+            this._UserRetrieveService = _UserRetrieveService;
         }
 
         [HttpPut, Route("[action]"), Authorize]
@@ -102,6 +105,23 @@ namespace PrestaQi.Api.Controllers
             }
 
             return Ok(true, response.Message.Length > 0 ? response.Message.ToString() : string.Empty);
+        }
+
+        [HttpPut, Route("ChangeStatusUser"), Authorize]
+        public IActionResult ChangeStatusUser(DisableUser disableUser)
+        {
+            var user = this._UserRetrieveService.RetrieveResult<DisableUser, UserLogin>(disableUser);
+
+            bool success = false;
+
+            if (disableUser.Type == 1)
+                success = this._UserWriteService.Update(user.User as User);
+            if (disableUser.Type == 2)
+                success = this._InvestorWriteService.Update(user.User as Investor);
+            if (disableUser.Type == 3)
+                success = this._AccreditedWriteService.Update(user.User as Accredited);
+
+            return Ok(success);
         }
     }
 }

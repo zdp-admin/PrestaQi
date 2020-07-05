@@ -42,7 +42,7 @@ namespace PrestaQi.Service.ProcessServices
                 GeneratePdfInvestor(exportInvestor.InvestorDatas, columns);
         }
 
-        MemoryStream GenerateExcelInvestor(List<InvestorData> investorDatas, List<string> columns)
+        MemoryStream GenerateExcelInvestor(List<Investor> investorDatas, List<string> columns)
         {
             
             using (MemoryStream memoryStream = new MemoryStream())
@@ -67,10 +67,10 @@ namespace PrestaQi.Service.ProcessServices
 
                 foreach (var item in investorDatas)
                 {
-                    workSheet.Cell(row, 1).Value = item.Id;
+                    workSheet.Cell(row, 1).Value = item.id;
                     workSheet.Cell(row, 2).Value = item.NameComplete;
                     workSheet.Cell(row, 3).Value = item.Limit_Date.ToString("dd/MM/yyyy");
-                    workSheet.Cell(row, 4).Value = $"{item.Commited_Amount:C}";
+                    workSheet.Cell(row, 4).Value = $"{item.Total_Amount_Agreed:C}";
                     workSheet.Cell(row, 5).Value = $"{item.AmountExercised:C}";
 
                     if (item.CapitalDatas.Count == 0)
@@ -98,7 +98,7 @@ namespace PrestaQi.Service.ProcessServices
             }
         }
 
-        MemoryStream GeneratePdfInvestor(List<InvestorData> investorDatas, List<string> columns)
+        MemoryStream GeneratePdfInvestor(List<Investor> investorDatas, List<string> columns)
         {
             using (MemoryStream memoryStream = new MemoryStream())
             {
@@ -130,7 +130,7 @@ namespace PrestaQi.Service.ProcessServices
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
-                      .Add(new Paragraph(item.Id.ToString())));
+                      .Add(new Paragraph(item.id.ToString())));
 
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)
@@ -146,7 +146,7 @@ namespace PrestaQi.Service.ProcessServices
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
-                      .Add(new Paragraph($"{item.Commited_Amount:C}")));
+                      .Add(new Paragraph($"{item.Total_Amount_Agreed:C}")));
 
                     cells.Add(new Cell(1, 1)
                       .SetTextAlignment(TextAlignment.CENTER)

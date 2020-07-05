@@ -183,5 +183,7 @@ namespace PrestaQi.Service.ProcessServices
 
             return creditAverage;
         }
+
+        
     }
 }

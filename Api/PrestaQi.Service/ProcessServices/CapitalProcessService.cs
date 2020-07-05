@@ -34,12 +34,13 @@ namespace PrestaQi.Service.ProcessServices
             this._CapitalDetailRetrieveService = capitalDetailRetrieveService;
         }
 
-        public List<MyInvestment> ExecuteProcess(int id)
+        public MyInvestmentPagination ExecuteProcess(GetMyInvestment getInvestment)
         {
-            return GenerateInvestments(id);
+            var result = GenerateInvestments(getInvestment);
+            return new MyInvestmentPagination() { TotalRecord = result.Item2, MyInvestments = result.Item1 };
         }
 
-        public List<AnchorControl> ExecuteProcess(AnchorByFilter anchorByFilter)
+        public AnchorControlPagination ExecuteProcess(AnchorByFilter anchorByFilter)
         {
             List<Investor> investors = new List<Investor>();
 
@@ -48,18 +49,26 @@ namespace PrestaQi.Service.ProcessServices
                 anchorByFilter.Page = 1;
                 anchorByFilter.NumRecord = 20;
             }
+            int totalRecord = 0;
 
             if (anchorByFilter.Start_Date != null && anchorByFilter.End_Date != null)
             {
+                totalRecord = this._InvestorRetrieveService.Where(
+                    p => p.Start_Date_Prestaqi.Date >= ((DateTime)anchorByFilter.Start_Date).Date &&
+                    p.Start_Date_Prestaqi.Date <= ((DateTime)anchorByFilter.End_Date).Date && p.Deleted_At == null
+                    ).ToList().Count;
+
                 investors = this._InvestorRetrieveService.Where(
                     p => p.Start_Date_Prestaqi.Date >= ((DateTime)anchorByFilter.Start_Date).Date &&
                     p.Start_Date_Prestaqi.Date <= ((DateTime)anchorByFilter.End_Date).Date
-                    ).Skip(anchorByFilter.Page).Take(anchorByFilter.NumRecord).ToList();
+                    && p.Deleted_At == null).Skip((anchorByFilter.Page - 1) * anchorByFilter.NumRecord).Take(anchorByFilter.NumRecord).ToList();
             }
             else
             {
-                investors = this._InvestorRetrieveService.Where(p => true).OrderBy(p => p.created_at)
-                    .Skip(anchorByFilter.Page).Take(anchorByFilter.NumRecord)
+                totalRecord = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).ToList().Count;
+
+                investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).OrderBy(p => p.created_at)
+                    .Skip((anchorByFilter.Page - 1) * anchorByFilter.NumRecord).Take(anchorByFilter.NumRecord)
                     .ToList();
             }
 
@@ -70,23 +79,43 @@ namespace PrestaQi.Service.ProcessServices
                 result = investors.Select(p => new AnchorControl
                 {
                     Investor_Id = p.id,
-                    MyInvestments = GenerateInvestments(p.id),
+                    MyInvestments = GenerateInvestments(new GetMyInvestment() { Investor_Id = p.id }).Item1,
                     Name_Complete = $"{p.First_Name} {p.Last_Name}"
                 }).ToList();
             }
 
-            return result;
+            return new AnchorControlPagination() { AnchorControls = result, TotalRecord = totalRecord };
         }
 
-        List<MyInvestment> GenerateInvestments(int investor_id)
+        (List<MyInvestment>, int) GenerateInvestments(GetMyInvestment getMyInvestment)
         {
-            var investor = this._InvestorRetrieveService.Find(investor_id);
+            int totalRecord = 0;
+
+            if (getMyInvestment.Source == 1 && (getMyInvestment.Page == 0 || getMyInvestment.NumRecord == 0))
+            {
+                getMyInvestment.Page = 1;
+                getMyInvestment.NumRecord = 20;
+            }
+
+            var investor = this._InvestorRetrieveService.Find(getMyInvestment.Investor_Id);
             int vat = Convert.ToInt32(this._ConfigurationRetrieveService.Where(p => p.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value);
             int isr = Convert.ToInt32(this._ConfigurationRetrieveService.Where(p => p.Configuration_Name == "ISR").FirstOrDefault().Configuration_Value);
 
             var periods = this._PeriodRetrieveService.Where(p => p.Enabled == true && p.User_Type == 1);
 
-            var listCapitalByInvestor = this._CapitalRetrieveService.Where(p => p.investor_id == investor_id).ToList();
+            List<Capital> listCapitalByInvestor = new List<Capital>();
+
+            totalRecord = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id).ToList().Count;
+
+            if (getMyInvestment.Source == 1)
+            {
+                listCapitalByInvestor = this._CapitalRetrieveService
+                    .Where(p => p.investor_id == getMyInvestment.Investor_Id)
+                    .OrderBy(p => p.id).Skip((getMyInvestment.Page - 1) * getMyInvestment.NumRecord).Take(getMyInvestment.NumRecord).ToList();
+            }
+            else
+                listCapitalByInvestor = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id).OrderBy(p => p.id).ToList();
+            
             List<MyInvestment> myInvestments = new List<MyInvestment>();
 
             if (listCapitalByInvestor.Count > 0)
@@ -103,7 +132,7 @@ namespace PrestaQi.Service.ProcessServices
                     Total = Math.Round(p.Amount + (p.Amount * ((double)p.Interest_Rate / 100)), 2),
                     Period_Id = p.period_id,
                     MyInvestmentDetails = this._CapitalDetailRetrieveService.Where(detail => detail.Capital_Id == p.id).OrderBy(p => p.Period).ToList(),
-                    Enabled = p.End_Date.Date >= DateTime.Now.Date ? true : false,
+                    Enabled = p.Enabled,
                 }).ToList();
 
                 myInvestments.ForEach(p =>
@@ -162,7 +191,7 @@ namespace PrestaQi.Service.ProcessServices
                 });
             }
 
-            return myInvestments;
+            return (myInvestments, totalRecord);
         }
 
         public InvestmentDashboard ExecuteProcess(GetInvestment getInvestment)

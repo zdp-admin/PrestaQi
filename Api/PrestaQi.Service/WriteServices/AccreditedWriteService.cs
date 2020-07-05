@@ -17,6 +17,8 @@ namespace PrestaQi.Service.WriteServices
 {
     public class AccreditedWriteService : WriteService<Accredited>
     {
+        IRetrieveService<Company> _CompanyRetrieveService;
+        IWriteService<Company> _CompanyWriteService;
         IRetrieveService<Accredited> _AccreditedRetrieveService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IProcessService<User> _UserProcessService;
@@ -25,12 +27,16 @@ namespace PrestaQi.Service.WriteServices
             IWriteRepository<Accredited> repository,
             IRetrieveService<Accredited> accreditedRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IProcessService<User> userProcessService
+            IProcessService<User> userProcessService,
+            IRetrieveService<Company> companyRetrieveService,
+            IWriteService<Company> companyWriteService
             ) : base(repository)
         {
             this._AccreditedRetrieveService = accreditedRetrieveService;
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._UserProcessService = userProcessService;
+            this._CompanyWriteService = companyWriteService;
+            this._CompanyRetrieveService = companyRetrieveService;
         }
 
         public override bool Create(Accredited entity)
@@ -39,6 +45,16 @@ namespace PrestaQi.Service.WriteServices
 
             try
             {
+                var company = this._CompanyRetrieveService.Where(p => p.Description.ToLower().Trim() ==
+                    entity.Company_Name.ToLower().Trim()).FirstOrDefault();
+
+                if (company == null)
+                {
+                    company = new Company() { Description = entity.Company_Name };
+                    this._CompanyWriteService.Create(company);
+                }
+
+                entity.Company_Id = company.id;
                 string password = Utilities.GetPasswordRandom();
                 entity.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
                 entity.created_at = DateTime.Now;
@@ -98,7 +114,7 @@ namespace PrestaQi.Service.WriteServices
                     p.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
                     p.created_at = DateTime.Now;
                     p.updated_at = DateTime.Now;
-
+                    p.Enabled = true;
                     mails.Add(p.Mail, password);
                 });
 

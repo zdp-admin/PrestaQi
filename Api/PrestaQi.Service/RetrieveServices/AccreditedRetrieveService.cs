@@ -4,6 +4,8 @@ using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,8 +39,9 @@ namespace PrestaQi.Service.RetrieveServices
             return GetList(list);
         }
 
-        public IEnumerable<Accredited> RetrieveResult(AccreditedByPagination accreditedByPagination)
+        public AccreditedPagination RetrieveResult(AccreditedByPagination accreditedByPagination)
         {
+            int totalRecord = 0;
             if (accreditedByPagination.Page == 0 || accreditedByPagination.NumRecord == 0)
             {
                 accreditedByPagination.Page = 1;
@@ -49,16 +52,15 @@ namespace PrestaQi.Service.RetrieveServices
 
             if (accreditedByPagination.Type == 0)
             {
-                accrediteds = accreditedByPagination.OnlyActive ?
-                    this._Repository.Where(p => p.Enabled == true).Skip(accreditedByPagination.Page).Take(accreditedByPagination.NumRecord).ToList() :
-                    this._Repository.Where(p => true).Skip(accreditedByPagination.Page).Take(accreditedByPagination.NumRecord).ToList();
+                totalRecord = this._Repository.Where(p => p.Deleted_At == null).ToList().Count;
+                accrediteds = this._Repository.Where(p => p.Deleted_At == null).Skip((accreditedByPagination.Page - 1) * accreditedByPagination.NumRecord).Take(accreditedByPagination.NumRecord).ToList();
             }
             else
             {
-                accrediteds = this._Repository.Where(p => true).ToList();
+                accrediteds = this._Repository.Where(p => p.Deleted_At == null).ToList();
             }
 
-            return GetList(accrediteds);
+            return new AccreditedPagination() { Accrediteds = GetList(accrediteds).ToList(), TotalRecord = totalRecord };
         }  
 
         IEnumerable<Accredited> GetList(List<Accredited> list)
@@ -74,6 +76,8 @@ namespace PrestaQi.Service.RetrieveServices
                 p.Period_Name = periods.FirstOrDefault(period => period.id == p.Period_Id).Description;
                 p.Company_Name = companies.FirstOrDefault(company => company.id == p.Company_Id).Description;
                 p.Advances = this._AdvanceRetrieveService.Where(advace => advace.Accredited_Id == p.id && (advace.Paid_Status == 0 || advace.Paid_Status == 2)).ToList();
+                p.Type = (int)PrestaQiEnum.UserType.Acreditado;
+                p.TypeName = PrestaQiEnum.UserType.Acreditado.ToString();
             });
 
             return list;

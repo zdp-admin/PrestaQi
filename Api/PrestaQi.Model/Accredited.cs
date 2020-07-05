@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using System.Text;
 
 namespace PrestaQi.Model
@@ -54,5 +55,7 @@ namespace PrestaQi.Model
         public string Mail_Mandate_Latter { get; set; }
         [Column("password")]
         public string Password { get; set; }
+        [Column("deleted_at")]
+        public DateTime? Deleted_At { get; set; }
     }
 }

@@ -44,6 +44,7 @@ namespace PrestaQi.Service.WriteServices
             {
                 string password = Utilities.GetPasswordRandom();
 
+                entity.Enabled = true;
                 entity.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
@@ -141,6 +142,7 @@ namespace PrestaQi.Service.WriteServices
                     p.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
                     p.created_at = DateTime.Now;
                     p.updated_at = DateTime.Now;
+                    p.Enabled = true;
 
                     mails.Add(p.Mail, password);
                 });

@@ -25,25 +25,28 @@ namespace PrestaQi.Api.Controllers
         IProcessService<Accredited> _AccreditedProcessService;
         IProcessService<ExportFile> _ExportProcessService;
         IProcessService<ExportAdvance> _ExportAdvanceProcessService;
+        IProcessService<ExportAdvanceReceivable> _ExportAdvanceReceivableProcessService;
 
         public AccreditedsController(
             IWriteService<Accredited> accreditedWriteService, 
             IRetrieveService<Accredited> accreditedRetrieveService,
             IProcessService<Accredited> accreditedProcessService,
-             IProcessService<ExportFile> exportProcessService,
-             IProcessService<ExportAdvance> exportAdvanceProcessService)
+            IProcessService<ExportFile> exportProcessService,
+            IProcessService<ExportAdvance> exportAdvanceProcessService,
+            IProcessService<ExportAdvanceReceivable> exportAdvanceReceivableProcessService)
         {
             this._AccreditedWriteService = accreditedWriteService;
             this._AccreditedRetrieveService = accreditedRetrieveService;
             this._AccreditedProcessService = accreditedProcessService;
             this._ExportProcessService = exportProcessService;
             this._ExportAdvanceProcessService = exportAdvanceProcessService;
+            this._ExportAdvanceReceivableProcessService = exportAdvanceReceivableProcessService;
         }
 
        [HttpPost, Route("GetList")]
         public IActionResult GetList(AccreditedByPagination accreditedByPagination)
         {
-            var result = this._AccreditedRetrieveService.RetrieveResult<AccreditedByPagination, List<Accredited>>(accreditedByPagination);
+            var result = this._AccreditedRetrieveService.RetrieveResult<AccreditedByPagination, AccreditedPagination>(accreditedByPagination);
 
             if (accreditedByPagination.Type == 0)
                 return Ok(result);
@@ -52,7 +55,7 @@ namespace PrestaQi.Api.Controllers
                 var msFile = this._ExportProcessService.ExecuteProcess<ExportAccredited, MemoryStream>(new ExportAccredited()
                 {
                     Type = accreditedByPagination.Type,
-                    Accrediteds = result
+                    Accrediteds = result.Accrediteds
                 });
 
                 return this.File(
@@ -85,9 +88,28 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("ListAdvancesReceivable")]
-        public IActionResult ListAdvancesReceivable()
+        public IActionResult ListAdvancesReceivable([FromQuery] int type)
         {
-            return Ok(this._AccreditedProcessService.ExecuteProcess<bool, List<AdvanceReceivable>>(true));
+            var list = this._AccreditedProcessService.ExecuteProcess<bool, List<AdvanceReceivable>>(true).ToList();
+
+            if (type == 0)
+                return Ok(list);
+            else
+            {
+                var msFile = this._ExportAdvanceReceivableProcessService.ExecuteProcess<ExportAdvanceReceivable, MemoryStream>(new ExportAdvanceReceivable()
+                {
+                    Type = type,
+                     AdvanceReceivables = list
+                });
+
+                return this.File(
+                    fileContents: msFile.ToArray(),
+                    contentType: type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                        "application/pdf",
+                    fileDownloadName: type == 1 ? "AdvanceReceivable" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                        "AdvanceReceivable" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+                );
+            }
         }
 
         [HttpPost, Route("ExportAdvanceByAccredited")]

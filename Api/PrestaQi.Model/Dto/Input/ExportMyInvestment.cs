@@ -5,9 +5,9 @@ using System.Text;
 
 namespace PrestaQi.Model.Dto.Input
 {
-    public class ExportInvestor
+    public class ExportMyInvestment
     {
         public int Type { get; set; }
-        public List<Investor> InvestorDatas { get; set; }
+        public List<MyInvestment> MyInvestments { get; set; }
     }
 }

@@ -40,6 +40,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Documents\AccreditedContract.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Documents\InvestorContract.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Key\prueba.p12">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

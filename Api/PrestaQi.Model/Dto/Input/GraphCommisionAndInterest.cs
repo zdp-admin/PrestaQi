@@ -5,9 +5,8 @@ using System.Text;
 
 namespace PrestaQi.Model.Dto.Input
 {
-    public class ExportInvestor
+    public class GraphCommisionAndInterest
     {
-        public int Type { get; set; }
-        public List<Investor> InvestorDatas { get; set; }
+        public CommisionAndInterestMaster Data { get; set; }
     }
 }

@@ -30,7 +30,7 @@ namespace PrestaQi.Model.Enum
         {
             NoPagado = 0,
             Pagado = 1,
-            PagadoParial = 2
+            PagadoParcial = 2
         }
 
         public enum UserType

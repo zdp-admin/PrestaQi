@@ -77,6 +77,7 @@ namespace PrestaQi.Service.WriteServices
                 capital.Start_Date = DateTime.Now.AddMonths(1);
                 capital.End_Date = capital.Start_Date.AddYears(capital.Investment_Horizon);
                 capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Active;
+                capital.Enabled = true;
 
                 DateTime startDateTemp = capital.Start_Date;
 

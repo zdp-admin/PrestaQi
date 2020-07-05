@@ -15,8 +15,6 @@ using System.IO;
 using iText.Kernel.Colors;
 using iText.Kernel.Geom;
 using System;
-using iText.StyledXmlParser.Node;
-using PrestaQi.Model.Enum;
 
 namespace PrestaQi.Service.ProcessServices
 {

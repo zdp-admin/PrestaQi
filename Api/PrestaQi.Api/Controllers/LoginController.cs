@@ -21,13 +21,25 @@ namespace PrestaQi.Api.Controllers
     {
         IRetrieveService<User> _UserRetrieveService;
         IConfiguration _Configuration;
+        IWriteService<Investor> _InvestorWriteService;
+        IWriteService<Accredited> _AccreditedWriteService;
+        IProcessService<DocumentUser> _DocumentUserWriteService;
 
         public LoginController(
             IConfiguration configuration,
-            IRetrieveService<User> userRetrieveService)
+            IRetrieveService<User> userRetrieveService,
+            IWriteService<Investor> investorWriteService,
+            IWriteService<Accredited> accreditedWriteService,
+            IProcessService<DocumentUser> documentUserWriteService
+            )
         {
             this._UserRetrieveService = userRetrieveService;
             this._Configuration = configuration;
+
+            this._InvestorWriteService = investorWriteService;
+            this._AccreditedWriteService = accreditedWriteService;
+
+            this._DocumentUserWriteService = documentUserWriteService;
         }
 
         [HttpPost, AllowAnonymous]
@@ -36,14 +48,53 @@ namespace PrestaQi.Api.Controllers
             IActionResult response = Unauthorized();
 
             var user = this._UserRetrieveService.RetrieveResult<Login, UserLogin>(login);
+            string contract = string.Empty;
 
             if (user != null)
             {
                 var tokenString = GenerateJSONWebToken(user);
-                response = Ok(new { Token = tokenString, User = user.User, Type = user.Type, TypeName = ((PrestaQiEnum.UserType)user.Type).ToString() });
+
+                if (user.Type == (int)PrestaQiEnum.UserType.Inversionista)
+                {
+                    var investor = user.User as Investor;
+
+                    if (investor.First_Login && !login.Contract_Accepted)
+                    {
+                        return Ok(new
+                        {
+                            contract = this._DocumentUserWriteService.ExecuteProcess<Investor, string>(investor)
+                        });
+                    }
+
+                    if (investor.First_Login && login.Contract_Accepted)
+                    {
+                        investor.First_Login = false;
+                        investor.updated_at = DateTime.Now;
+                        this._InvestorWriteService.Update(investor);
+                    }
+
+                    return Ok(new
+                    {
+                        User = user.User,
+                        Type = user.Type,
+                        TypeName = ((PrestaQiEnum.UserType)user.Type).ToString(),
+                        Token = tokenString,
+                    });
+
+                }
+                else
+                {
+                    return Ok(new
+                    {
+                        Token = tokenString,
+                        User = user.User,
+                        Type = user.Type,
+                        TypeName = ((PrestaQiEnum.UserType)user.Type).ToString()
+                    });
+                }
             }
 
-            return response;
+            return Success("User not found");
         }
 
         private string GenerateJSONWebToken(UserLogin user)
@@ -78,6 +129,7 @@ namespace PrestaQi.Api.Controllers
                 new Claim(JwtRegisteredClaimNames.GivenName, nameComplete),
                 new Claim(JwtRegisteredClaimNames.Email, mail),
                 new Claim("Type", user.Type.ToString()),
+                new Claim("TypeName", ((PrestaQiEnum.UserType)user.Type).ToString()),
                 new Claim("UserId", id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

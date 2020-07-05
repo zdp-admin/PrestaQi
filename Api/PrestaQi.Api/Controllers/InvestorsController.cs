@@ -11,6 +11,7 @@ using PrestaQi.Model;
 using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -44,7 +45,7 @@ namespace PrestaQi.Api.Controllers
         [HttpPost, Route("GetInvestors")]
         public IActionResult GetInvestors(InvestorByDate investorByDate)
         {
-            var result = this._InvestorRetrieveService.RetrieveResult<InvestorByDate, List<InvestorData>>(investorByDate);
+            var result = this._InvestorRetrieveService.RetrieveResult<InvestorByDate, InvestorPagination>(investorByDate);
 
             if (investorByDate.Type == 0)
                 return Ok(result);
@@ -53,7 +54,7 @@ namespace PrestaQi.Api.Controllers
                 var msFile = this._ExportProcessService.ExecuteProcess<ExportInvestor, MemoryStream>(new ExportInvestor()
                 {
                     Type = investorByDate.Type,
-                    InvestorDatas = result
+                    InvestorDatas = result.InvestorDatas
                 });
 
                 return this.File(

@@ -6,6 +6,7 @@ namespace PrestaQi.Model.Dto.Output
 {
     public class AdvanceReceivableAccredited
     {
+        public int Accredited_Id { get; set; }
         public int Company_Id { get; set; }
         public string Id { get; set; }
         public string NameComplete { get; set; }

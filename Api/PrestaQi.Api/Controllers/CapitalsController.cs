@@ -24,19 +24,22 @@ namespace PrestaQi.Api.Controllers
         IProcessService<Capital> _CapitalProcessService;
         IProcessService<ExportAnchorControl> _ExportAnchorProcessService;
         IProcessService<ExportCapitalDetail> _ExportCapitalDetailProcessService;
+        IProcessService<ExportMyInvestment> _ExportMyInvestmentProcessService;
 
         public CapitalsController(
             IWriteService<Capital> capitalWriteService, 
             IRetrieveService<Capital> capitalRetrieveService,
             IProcessService<Capital> capitalProcessService,
             IProcessService<ExportAnchorControl> exportAnchorProcessService,
-            IProcessService<ExportCapitalDetail> exportCapitalDetailProcessService)
+            IProcessService<ExportCapitalDetail> exportCapitalDetailProcessService,
+            IProcessService<ExportMyInvestment> exportMyInvestmentProcessService)
         {
             this._CapitalWriteService = capitalWriteService;
             this._CapitalRetrieveService = capitalRetrieveService;
             this._CapitalProcessService = capitalProcessService;
             this._ExportAnchorProcessService = exportAnchorProcessService;
             this._ExportCapitalDetailProcessService = exportCapitalDetailProcessService;
+            this._ExportMyInvestmentProcessService = exportMyInvestmentProcessService;
         }
 
         [HttpGet, Route("[action]/{id}")]
@@ -57,25 +60,46 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._CapitalWriteService.Create(userCapital), "Record created!");
         }
 
-        [HttpGet, Route("GetMyInvestments/{id}")]
-        public IActionResult GetMyInvestments(int id)
+        [HttpPost, Route("GetMyInvestments")]
+        public IActionResult GetMyInvestments(GetMyInvestment getMyInvestment)
         {
-            return Ok(this._CapitalProcessService.ExecuteProcess<int, List<MyInvestment>>(id));
+            getMyInvestment.Investor_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+            getMyInvestment.Source = 1;
+            var result = this._CapitalProcessService.ExecuteProcess<GetMyInvestment, MyInvestmentPagination>(getMyInvestment);
+
+            if (getMyInvestment.Type == 0)
+                return Ok(result);
+            else
+            {
+                var msFile = this._ExportMyInvestmentProcessService.ExecuteProcess<ExportMyInvestment, MemoryStream>(new ExportMyInvestment()
+                {
+                    Type = getMyInvestment.Type,
+                    MyInvestments = result.MyInvestments
+                });
+
+                return this.File(
+                    fileContents: msFile.ToArray(),
+                    contentType: getMyInvestment.Type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                        "application/pdf",
+                    fileDownloadName: getMyInvestment.Type == 1 ? "MyInvestment" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                        "MyInvestment" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+                );
+            }
         }
 
         [HttpPost, Route("GetAnchorControl")]
         public IActionResult GetAnchorControl(AnchorByFilter anchorByFilter)
         {
-            var list = this._CapitalProcessService.ExecuteProcess<AnchorByFilter, List<AnchorControl>>(anchorByFilter);
+            var result = this._CapitalProcessService.ExecuteProcess<AnchorByFilter, AnchorControlPagination>(anchorByFilter);
 
             if (anchorByFilter.Type == 0)
-                return Ok(list);
+                return Ok(result);
             else
             {
                 var msFile = this._ExportAnchorProcessService.ExecuteProcess<ExportAnchorControl, MemoryStream>(new ExportAnchorControl()
                 {
                     Type = anchorByFilter.Type,
-                    AnchorControls = list
+                    AnchorControls = result.AnchorControls
                 });
 
                 return this.File(
@@ -89,7 +113,7 @@ namespace PrestaQi.Api.Controllers
 
         }
 
-        [HttpGet, Route("ExportDetailCapital")]
+        [HttpPost, Route("ExportDetailCapital")]
         public IActionResult ExportCapitalDetail(ExportCapitalDetail exportCapitalDetail)
         {
             var msFile = this._ExportCapitalDetailProcessService.ExecuteProcess<ExportCapitalDetail, MemoryStream>(exportCapitalDetail);
@@ -102,7 +126,6 @@ namespace PrestaQi.Api.Controllers
                         "AccountStatus" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
                 );
         }
-
 
         [HttpPost, Route("ChangeStatus")]
         public IActionResult ChangeStatus(CapitalChangeStatus capitalChangeStatus)

@@ -27,6 +27,7 @@ namespace PrestaQi.Service.WriteServices
         {
             try
             {
+                entity.Enabled = true;
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
 

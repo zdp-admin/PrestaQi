@@ -31,8 +31,8 @@ namespace PrestaQi.Api.Controllers
         public IActionResult GetList([FromQuery] bool onlyActive)
         {
             return Ok(
-                onlyActive == true ? this._UserRetrieveService.Where(p => p.Enabled == true) :
-                this._UserRetrieveService.Where(p => true)
+                onlyActive == true ? this._UserRetrieveService.Where(p => p.Deleted_At == null && p.Enabled == true) :
+                this._UserRetrieveService.Where(p => p.Deleted_At == null)
                 );
         }
 

@@ -7,6 +7,7 @@ using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 using PrestaQi.Model.Spei;
 using System;
 using System.Collections.Generic;
@@ -35,18 +36,19 @@ namespace PrestaQi.Service.WriteServices
 
         public bool Create(CalculateAmount calculateAmount)
         {
-           
-                Advance advance = this._AdvacenProcessService.ExecuteProcess<CalculateAmount, Advance>(calculateAmount);
-                advance.Date_Advance = DateTime.Now;
-                advance.created_at = DateTime.Now;
-                advance.updated_at = DateTime.Now;
-                advance.Enabled = true;
 
-                var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
-                {
-                    Accredited_Id = calculateAmount.Accredited_Id,
-                    Advance = advance
-                });
+            Advance advance = this._AdvacenProcessService.ExecuteProcess<CalculateAmount, Advance>(calculateAmount);
+            advance.Date_Advance = DateTime.Now;
+            advance.created_at = DateTime.Now;
+            advance.updated_at = DateTime.Now;
+            advance.Enabled = true;
+            advance.Paid_Status = (int)PrestaQiEnum.AdvanceStatus.NoPagado;
+
+            var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
+            {
+                Accredited_Id = calculateAmount.Accredited_Id,
+                Advance = advance
+            });
 
             try
             {
@@ -58,11 +60,11 @@ namespace PrestaQi.Service.WriteServices
                     {
                         this._SpeiWriteService.Create(new SpeiResponse()
                         {
-                             created_at = DateTime.Now,
-                             updated_at = DateTime.Now,
-                             advance_id = advance.id,
-                             tracking_id = spei.resultado.id,
-                             tracking_key = spei.resultado.claveRastreo
+                            created_at = DateTime.Now,
+                            updated_at = DateTime.Now,
+                            advance_id = advance.id,
+                            tracking_id = spei.resultado.id,
+                            tracking_key = spei.resultado.claveRastreo
                         });
 
                         this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
@@ -77,7 +79,7 @@ namespace PrestaQi.Service.WriteServices
                 }
                 else
                     throw new SystemValidationException(spei.resultado.descripcionError);
-                
+
             }
             catch (Exception exception)
             {

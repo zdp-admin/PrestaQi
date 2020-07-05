@@ -25,10 +25,11 @@ namespace PrestaQi.DataAccess
         public DbSet<Module> Modules { get; set; }
         public DbSet<Institution> Institution { get; set; }
         public DbSet<SpeiResponse> SpeiResponses { get; set; }
+        public DbSet<PaidAdvance> PaidAdvances { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<Capital>().HasOne(x => x.Investor).WithMany(x => x.Capitals).HasForeignKey(x => x.investor_id);
+           // builder.Entity<Capital>().HasOne(x => x.Investor).WithMany(x => x.Capitals).HasForeignKey(x => x.investor_id);
             base.OnModelCreating(builder);
         }
     }

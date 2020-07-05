@@ -15,12 +15,12 @@ namespace PrestaQi.DataAccess
         {
         }
 
-        public override IEnumerable<Investor> Where(Func<Investor, bool> predicate)
+        /*public override IEnumerable<Investor> Where(Func<Investor, bool> predicate)
         {
             var result = this._dbContext.Set<Investor>()
                 .Include(p => p.Capitals)
                 .Where(predicate).ToList();
             return result;
-        }
+        }*/
     }
 }
