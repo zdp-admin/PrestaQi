@@ -52,6 +52,12 @@
     <None Update="Templates\Advance.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Templates\ChangePassword.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\RecoveryPassword.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Templates\WelcomeAccredited.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

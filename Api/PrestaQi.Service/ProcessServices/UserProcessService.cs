@@ -109,14 +109,18 @@ namespace PrestaQi.Service.ProcessServices
 
         public bool ExecuteProcess(SendMailRecoveryPassword sendMailRecoveryPassword)
         {
-            var configMail = this._ConfigurationRetrieveService.Where(p => p.Configuration_Name == "EMAIL_CONFIG").FirstOrDefault();
-            var configMessage = this._ConfigurationRetrieveService.Where(p => p.Configuration_Name == "RECOVERY_PASSWORD").FirstOrDefault();
-
-            configMessage.Configuration_Value = configMessage.Configuration_Value.Replace("{Password}", sendMailRecoveryPassword.Password);
-
             try
             {
-                Utilities.SendEmail(new List<string>() { sendMailRecoveryPassword.Mail }, null, configMail);
+                var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
+                var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "RECOVERY_PASSWORD");
+                var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+                textHtml = textHtml.Replace("{Password}", sendMailRecoveryPassword.Password);
+                
+                messageMail.Message = textHtml;
+
+                Utilities.SendEmail(new List<string> { sendMailRecoveryPassword.Mail }, messageMail, mailConf);
             }
             catch (Exception)
             {
