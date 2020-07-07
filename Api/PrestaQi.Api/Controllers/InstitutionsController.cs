@@ -29,8 +29,8 @@ namespace PrestaQi.Api.Controllers
         public IActionResult GetList([FromQuery] bool onlyActive)
         {
             return Ok(
-                onlyActive == true ? this._InstitutionRetrieveService.Where(p => p.Enabled == true) :
-                this._InstitutionRetrieveService.Where(p => true)
+                onlyActive == true ? this._InstitutionRetrieveService.Where(p => p.Enabled == true).OrderBy(p => p.Description) :
+                this._InstitutionRetrieveService.Where(p => true).OrderBy(p => p.Description)
                 );
         }
 

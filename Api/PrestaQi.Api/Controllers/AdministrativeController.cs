@@ -115,11 +115,11 @@ namespace PrestaQi.Api.Controllers
             bool success = false;
 
             if (disableUser.Type == 1)
-                success = this._UserWriteService.Update(user.User as User);
+                success = this._UserWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() {  User = user.User});
             if (disableUser.Type == 2)
-                success = this._InvestorWriteService.Update(user.User as Investor);
+                success = this._InvestorWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() { User = user.User });
             if (disableUser.Type == 3)
-                success = this._AccreditedWriteService.Update(user.User as Accredited);
+                success = this._AccreditedWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() { User = user.User });
 
             return Ok(success);
         }

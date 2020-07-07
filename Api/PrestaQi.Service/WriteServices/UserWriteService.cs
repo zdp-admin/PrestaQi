@@ -19,6 +19,7 @@ namespace PrestaQi.Service.WriteServices
     {
         IProcessService<User> _UserProcessService;
         IRetrieveService<User> _UserRetrieveService;
+        IRetrieveService<UserModule> _UserModuleRetrieveService;
         IWriteService<UserModule> _UserModuleWriteService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
 
@@ -27,13 +28,15 @@ namespace PrestaQi.Service.WriteServices
             IRetrieveService<User> userRetrieveService,
             IWriteService<UserModule> userModuleWriteService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IProcessService<User> userProcessService
+            IProcessService<User> userProcessService,
+            IRetrieveService<UserModule> userModuleRetrieveService
             ) : base(repository)
         {
             this._UserRetrieveService = userRetrieveService;
             this._UserModuleWriteService = userModuleWriteService;
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._UserProcessService = userProcessService;
+            this._UserModuleRetrieveService = userModuleRetrieveService;
         }
 
         public override bool Create(User entity)
@@ -97,6 +100,20 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception) { throw new SystemValidationException($"Error updating User: {exception.Message}");  }
         }
+
+        public bool Update(ChangeStatusUser changeStatusUser)
+        {
+            try
+            {
+                var user = changeStatusUser.User as User;
+                user.updated_at = DateTime.Now;
+                return base.Update(user);
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error change status! {exception.Message}");
+            }
+        } 
 
         public bool Update(ChangePassword changePassword)
         {
@@ -172,12 +189,17 @@ namespace PrestaQi.Service.WriteServices
 
         void SaveModules(List<UserModule> userModules, int id)
         {
+            var list = this._UserModuleRetrieveService.Where(p => p.user_id == id).ToList();
+            if (list.Count > 0)
+                this._UserModuleWriteService.Delete(list);
+
             if (userModules != null)
             {
                 if (userModules.Count > 0)
                 {
                     userModules.ForEach(p =>
                     {
+
                         p.user_id = id; p.created_at = DateTime.Now;
                         p.updated_at = DateTime.Now;
                     });

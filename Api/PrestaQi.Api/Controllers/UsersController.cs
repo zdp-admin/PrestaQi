@@ -2,12 +2,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Operations;
+using MoreLinq;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System;
+using System.Linq;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -31,8 +33,11 @@ namespace PrestaQi.Api.Controllers
         public IActionResult GetList([FromQuery] bool onlyActive)
         {
             return Ok(
-                onlyActive == true ? this._UserRetrieveService.Where(p => p.Deleted_At == null && p.Enabled == true) :
-                this._UserRetrieveService.Where(p => p.Deleted_At == null)
+                onlyActive == true ? this._UserRetrieveService.Where(p => p.Deleted_At == null &&
+                p.Enabled == true &&
+                p.id != Convert.ToInt32(HttpContext.User.FindFirst("UserId").Value)).OrderBy(p => p.First_Name) :
+                this._UserRetrieveService.Where(p => p.Deleted_At == null &&
+                p.id != Convert.ToInt32(HttpContext.User.FindFirst("UserId").Value)).OrderBy(p => p.First_Name)
                 );
         }
 

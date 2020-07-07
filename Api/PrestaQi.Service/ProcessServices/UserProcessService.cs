@@ -55,11 +55,9 @@ namespace PrestaQi.Service.ProcessServices
 
         public bool ExecuteProcess(string mail)
         {
-            var userMail = this._UserRetrieveService.Where(p => p.Mail == mail).FirstOrDefault();
-            var accreditedMail = this._AccreditedRetrieveService.Where(p => p.Mail == mail).FirstOrDefault();
-            var investorMail = this._InvestorRetrieveService.Where(p => p.Mail == mail).FirstOrDefault();
-
-            if (userMail != null || accreditedMail != null || investorMail != null)
+            bool exist = VerifiyMail(mail);
+           
+            if (!exist)
                 throw new SystemValidationException("The mail is already registered");
 
             return true;
@@ -392,11 +390,10 @@ namespace PrestaQi.Service.ProcessServices
 
         bool VerifiyMail(string mail)
         {
-            var userCount = this._UserRetrieveService.Where(p => p.Mail == mail).ToList().Count;
-            var accreditedCount = this._AccreditedRetrieveService.Where(p => p.Mail == mail).ToList().Count;
-            var investorCount = this._InvestorRetrieveService.Where(p => p.Mail == mail).ToList().Count;
-
-            if (userCount > 0 || accreditedCount > 0 || investorCount > 0)
+            var userCount = this._UserRetrieveService.Where(p => p.Mail == mail && p.Deleted_At == null).FirstOrDefault();
+            var accreditedCount = this._AccreditedRetrieveService.Where(p => p.Mail == mail && p.Deleted_At == null).FirstOrDefault();
+            var investorCount = this._InvestorRetrieveService.Where(p => p.Mail == mail && p.Deleted_At == null).FirstOrDefault();
+            if (userCount != null || accreditedCount != null || investorCount != null)
                 return false;
 
             return true;

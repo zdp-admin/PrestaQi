@@ -1,4 +1,5 @@
-﻿using InsiscoCore.Base.Data;
+﻿using DocumentFormat.OpenXml.Office2013.Word;
+using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using PrestaQi.Model;
@@ -52,15 +53,41 @@ namespace PrestaQi.Service.RetrieveServices
 
             if (accreditedByPagination.Type == 0)
             {
-                totalRecord = this._Repository.Where(p => p.Deleted_At == null).ToList().Count;
-                accrediteds = this._Repository.Where(p => p.Deleted_At == null).Skip((accreditedByPagination.Page - 1) * accreditedByPagination.NumRecord).Take(accreditedByPagination.NumRecord).ToList();
+                if (string.IsNullOrEmpty(accreditedByPagination.Filter))
+                { 
+                    totalRecord = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.id).ToList().Count;
+                    accrediteds = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.id).Skip((accreditedByPagination.Page - 1) * accreditedByPagination.NumRecord).Take(accreditedByPagination.NumRecord).ToList();
+                }
+                else
+                {
+                    accrediteds = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.id).ToList();
+                }
+
             }
             else
             {
-                accrediteds = this._Repository.Where(p => p.Deleted_At == null).ToList();
+                accrediteds = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.id).ToList();
             }
 
-            return new AccreditedPagination() { Accrediteds = GetList(accrediteds).ToList(), TotalRecord = totalRecord };
+            accrediteds = GetList(accrediteds).ToList();
+            
+            if (accreditedByPagination.Type == 0 && accreditedByPagination.Filter.Length > 0)
+            {
+                var stringProperties = typeof(Accredited).GetProperties().Where(prop =>
+                    prop.PropertyType == accreditedByPagination.Filter.GetType());
+
+                totalRecord = accrediteds
+                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(accreditedByPagination.Filter.ToLower())))
+                        .OrderBy(p => p.id).ToList().Count;
+
+                accrediteds = accrediteds
+                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(accreditedByPagination.Filter.ToLower())))
+                        .OrderBy(p => p.id)
+                        .Skip((accreditedByPagination.Page - 1) * accreditedByPagination.NumRecord)
+                        .Take(accreditedByPagination.NumRecord).ToList();
+            }
+
+            return new AccreditedPagination() { Accrediteds = accrediteds, TotalRecord = totalRecord };
         }  
 
         IEnumerable<Accredited> GetList(List<Accredited> list)
@@ -81,6 +108,14 @@ namespace PrestaQi.Service.RetrieveServices
             });
 
             return list;
+        }
+
+        public override Accredited Find(object id)
+        {
+            var accredited = base.Find(id);
+            accredited = GetList(new List<Accredited>() { accredited }).FirstOrDefault();
+
+            return accredited;
         }
     }
 }

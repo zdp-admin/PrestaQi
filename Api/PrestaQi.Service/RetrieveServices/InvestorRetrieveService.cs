@@ -122,5 +122,16 @@ namespace PrestaQi.Service.RetrieveServices
 
             return new InvestorPagination() { InvestorDatas = list, TotalRecord = totalRecord };
         }
+
+        public override Investor Find(object id)
+        {
+            var institutions = this._InstitutionRetrieveService.Where(p => true).ToList();
+
+
+            var investor = base.Find(id);
+            investor.Institution_Name = institutions.Find(p => p.id == investor.Institution_Id).Description;
+
+            return investor;
+        }
     }
 }

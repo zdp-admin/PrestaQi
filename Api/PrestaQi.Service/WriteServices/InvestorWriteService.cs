@@ -165,5 +165,18 @@ namespace PrestaQi.Service.WriteServices
             Utilities.SendEmail(new List<string> { mail }, messageMail, mailConf);
         }
 
+        public bool Update(ChangeStatusUser changeStatusUser)
+        {
+            try
+            {
+                var user = changeStatusUser.User as Investor;
+                user.updated_at = DateTime.Now;
+                return base.Update(user);
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error change status! {exception.Message}");
+            }
+        }
     }
 }

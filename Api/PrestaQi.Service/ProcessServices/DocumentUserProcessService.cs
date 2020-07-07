@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
 
 namespace PrestaQi.Service.ProcessServices
 {
@@ -43,6 +45,9 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{INSTITUTION_NAME}", institution.Description);
                 textHtml = textHtml.Replace("{CLABE}", investor.Clabe);
                 textHtml = textHtml.Replace("{ACCOUNT_NUMBER}", investor.Account_Number);
+                textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
+
+                textHtml = HttpUtility.HtmlDecode(textHtml);
 
                 return textHtml;
 
