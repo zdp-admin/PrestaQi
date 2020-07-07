@@ -55,38 +55,29 @@ namespace PrestaQi.Service.RetrieveServices
 
         }
 
-        public InvestorPagination RetrieveResult(InvestorByDate investorByDate)
+        public InvestorPagination RetrieveResult(InvestorByFilter investorByFiler)
         {
             int totalRecord = 0;
 
-            if (investorByDate.Page == 0 || investorByDate.NumRecord == 0)
-            {
-                investorByDate.Page = 1;
-                investorByDate.NumRecord = 20;
-            }
-
-            //List<InvestorData> investorDatas = new List<InvestorData>();
             var periods = this._PeriodRetrieveService.Where(p => p.Enabled == true).ToList();
             var institutions = this._InstitutionRetrieveService.Where(p => true).ToList();
 
             List<Investor> list = new List<Investor>();
-            if (investorByDate.Start_Date != null && investorByDate.End_Date != null)
-            {
-                totalRecord = this._Repository.Where(p => p.Start_Date_Prestaqi.Date >= ((DateTime)investorByDate.Start_Date).Date &&
-                    p.Start_Date_Prestaqi.Date <= ((DateTime)investorByDate.End_Date).Date && p.Deleted_At == null).ToList().Count;
 
-                list = this._Repository.Where(p => p.Start_Date_Prestaqi.Date >= ((DateTime)investorByDate.Start_Date).Date &&
-                    p.Start_Date_Prestaqi.Date <= ((DateTime)investorByDate.End_Date).Date && p.Deleted_At == null).Skip((investorByDate.Page - 1) * investorByDate.NumRecord).Take(investorByDate.NumRecord).ToList();
+            if (investorByFiler.Type == 0)
+            {
+                if (string.IsNullOrEmpty(investorByFiler.Filter))
+                {
+                    totalRecord = this._Repository.Where(p => p.Deleted_At == null).ToList().Count;
+                    list = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.Start_Date_Prestaqi).Skip((investorByFiler.Page - 1) * investorByFiler.NumRecord).Take(investorByFiler.NumRecord).ToList();
+                }
+                else
+                    list = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.Start_Date_Prestaqi).ToList();
             }
             else
-            {
-                totalRecord = this._Repository.Where(p => p.Deleted_At == null).ToList().Count;
+                list = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.Start_Date_Prestaqi).ToList();
 
-                list = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.Start_Date_Prestaqi).Skip((investorByDate.Page - 1) * investorByDate.NumRecord).Take(investorByDate.NumRecord).ToList();
-            }
 
-            if (list.Count > 0)
-            {
                 list.ForEach(p =>
                 {
                     p.Type = (int)PrestaQiEnum.UserType.Inversionista;
@@ -110,17 +101,22 @@ namespace PrestaQi.Service.RetrieveServices
                     }).ToList();
                 });
 
-                /*investorDatas = list.Select(p => new InvestorData()
-                {
-                    Id = p.id,
-                    Commited_Amount = p.Total_Amount_Agreed,
-                    NameComplete = $"{p.First_Name} {p.Last_Name}",
-                    Limit_Date = p.Limit_Date
-                }).ToList();*/
+            if (investorByFiler.Type == 0 && investorByFiler.Filter.Length > 0)
+            {
+                var stringProperties = typeof(Investor).GetProperties().Where(prop =>
+                   prop.PropertyType == investorByFiler.Filter.GetType());
 
+                totalRecord = list
+                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(investorByFiler.Filter.ToLower())))
+                        .ToList().Count;
+
+                list = list
+                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(investorByFiler.Filter.ToLower())))
+                        .Skip((investorByFiler.Page - 1) * investorByFiler.NumRecord)
+                        .Take(investorByFiler.NumRecord).ToList();
             }
 
-            return new InvestorPagination() { InvestorDatas = list, TotalRecord = totalRecord };
+                return new InvestorPagination() { InvestorDatas = list, TotalRecord = totalRecord };
         }
 
         public override Investor Find(object id)

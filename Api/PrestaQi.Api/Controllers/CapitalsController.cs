@@ -91,26 +91,30 @@ namespace PrestaQi.Api.Controllers
         public IActionResult GetAnchorControl(AnchorByFilter anchorByFilter)
         {
             var result = this._CapitalProcessService.ExecuteProcess<AnchorByFilter, AnchorControlPagination>(anchorByFilter);
+            return Ok(result);
+        }
 
-            if (anchorByFilter.Type == 0)
-                return Ok(result);
-            else
+        [HttpGet, Route("GetFile")]
+        public IActionResult GetFile([FromQuery] int type)
+        {
+            var result = this._CapitalProcessService.ExecuteProcess<AnchorByFilter, AnchorControlPagination>(new AnchorByFilter()
             {
-                var msFile = this._ExportAnchorProcessService.ExecuteProcess<ExportAnchorControl, MemoryStream>(new ExportAnchorControl()
-                {
-                    Type = anchorByFilter.Type,
-                    AnchorControls = result.AnchorControls
-                });
+                Type = type
+            });
 
-                return this.File(
-                    fileContents: msFile.ToArray(),
-                    contentType: anchorByFilter.Type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
-                        "application/pdf",
-                    fileDownloadName: anchorByFilter.Type == 1 ? "AnchorControl" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
-                        "AnchorControl" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
-                );
-            }
+            var msFile = this._ExportAnchorProcessService.ExecuteProcess<ExportAnchorControl, MemoryStream>(new ExportAnchorControl()
+            {
+                Type = type,
+                AnchorControls = result.AnchorControls
+            });
 
+            return this.File(
+                fileContents: msFile.ToArray(),
+                contentType: type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                    "application/pdf",
+                fileDownloadName: type == 1 ? "AnchorControl" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                    "AnchorControl" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+            );
         }
 
         [HttpPost, Route("ExportDetailCapital")]

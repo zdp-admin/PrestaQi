@@ -43,28 +43,33 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpPost, Route("GetInvestors")]
-        public IActionResult GetInvestors(InvestorByDate investorByDate)
+        public IActionResult GetInvestors(InvestorByFilter investorByDate)
         {
-            var result = this._InvestorRetrieveService.RetrieveResult<InvestorByDate, InvestorPagination>(investorByDate);
+            var result = this._InvestorRetrieveService.RetrieveResult<InvestorByFilter, InvestorPagination>(investorByDate);
+            return Ok(result);
+        }
 
-            if (investorByDate.Type == 0)
-                return Ok(result);
-            else
+        [HttpGet, Route("GetFile")]
+        public IActionResult GetFile([FromQuery] int type)
+        {
+            var result = this._InvestorRetrieveService.RetrieveResult<InvestorByFilter, InvestorPagination>(new InvestorByFilter()
             {
-                var msFile = this._ExportProcessService.ExecuteProcess<ExportInvestor, MemoryStream>(new ExportInvestor()
-                {
-                    Type = investorByDate.Type,
-                    InvestorDatas = result.InvestorDatas
-                });
+                Type  = type
+            });
 
-                return this.File(
-                    fileContents: msFile.ToArray(),
-                    contentType: investorByDate.Type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
-                        "application/pdf",
-                    fileDownloadName: investorByDate.Type == 1 ? "Investors_" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
-                        "Investors_" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
-                );
-            }
+            var msFile = this._ExportProcessService.ExecuteProcess<ExportInvestor, MemoryStream>(new ExportInvestor()
+            {
+                Type = type,
+                InvestorDatas = result.InvestorDatas
+            });
+
+            return this.File(
+                fileContents: msFile.ToArray(),
+                contentType: type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                    "application/pdf",
+                fileDownloadName: type == 1 ? "Investors_" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                    "Investors_" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+            );
         }
 
         [HttpPost]

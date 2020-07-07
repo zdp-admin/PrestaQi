@@ -65,11 +65,21 @@ namespace PrestaQi.Service.ProcessServices
             }
             else
             {
-                totalRecord = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).ToList().Count;
+                if (anchorByFilter.Type == 0)
+                {
+                    if (string.IsNullOrEmpty(anchorByFilter.Filter))
+                    {
+                        totalRecord = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).ToList().Count;
 
-                investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).OrderBy(p => p.created_at)
-                    .Skip((anchorByFilter.Page - 1) * anchorByFilter.NumRecord).Take(anchorByFilter.NumRecord)
-                    .ToList();
+                        investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).OrderBy(p => p.created_at)
+                            .Skip((anchorByFilter.Page - 1) * anchorByFilter.NumRecord).Take(anchorByFilter.NumRecord)
+                            .ToList();
+                    }
+                    else
+                        investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).OrderBy(p => p.created_at).ToList();
+                }
+                else
+                    investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).OrderBy(p => p.created_at).ToList();
             }
 
             List<AnchorControl> result = new List<AnchorControl>();
@@ -80,8 +90,24 @@ namespace PrestaQi.Service.ProcessServices
                 {
                     Investor_Id = p.id,
                     MyInvestments = GenerateInvestments(new GetMyInvestment() { Investor_Id = p.id }).Item1,
-                    Name_Complete = $"{p.First_Name} {p.Last_Name}"
+                    Name_Complete = $"{p.First_Name} {p.Last_Name}",
                 }).ToList();
+
+            }
+
+            if (anchorByFilter.Type == 0 && anchorByFilter.Filter.Length > 0)
+            {
+                var stringProperties = typeof(AnchorControl).GetProperties().Where(prop =>
+                    prop.PropertyType == anchorByFilter.Filter.GetType());
+
+                totalRecord = result
+                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(anchorByFilter.Filter.ToLower())))
+                        .ToList().Count;
+
+                result = result
+                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(anchorByFilter.Filter.ToLower())))
+                        .Skip((anchorByFilter.Page - 1) * anchorByFilter.NumRecord)
+                        .Take(anchorByFilter.NumRecord).ToList();
             }
 
             return new AnchorControlPagination() { AnchorControls = result, TotalRecord = totalRecord };

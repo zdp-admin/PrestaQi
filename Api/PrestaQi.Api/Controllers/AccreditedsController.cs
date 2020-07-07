@@ -43,30 +43,34 @@ namespace PrestaQi.Api.Controllers
             this._ExportAdvanceReceivableProcessService = exportAdvanceReceivableProcessService;
         }
 
-       [HttpPost, Route("GetList")]
+        [HttpPost, Route("GetList")]
         public IActionResult GetList(AccreditedByPagination accreditedByPagination)
         {
             var result = this._AccreditedRetrieveService.RetrieveResult<AccreditedByPagination, AccreditedPagination>(accreditedByPagination);
+            return Ok(result);
+        }
 
-            if (accreditedByPagination.Type == 0)
-                return Ok(result);
-            else
+        [HttpGet, Route("GetFile")]
+        public IActionResult GetFile([FromQuery] int type)
+        {
+            var result = this._AccreditedRetrieveService.RetrieveResult<AccreditedByPagination, AccreditedPagination>(new AccreditedByPagination()
             {
-                var msFile = this._ExportProcessService.ExecuteProcess<ExportAccredited, MemoryStream>(new ExportAccredited()
-                {
-                    Type = accreditedByPagination.Type,
-                    Accrediteds = result.Accrediteds
-                });
+                Type = type
+            });
 
-                return this.File(
-                    fileContents: msFile.ToArray(),
-                    contentType: accreditedByPagination.Type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
-                        "application/pdf",
-                    fileDownloadName: accreditedByPagination.Type == 1 ? "Accrediteds" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
-                        "Accrediteds" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
-                );
-            }
+            var msFile = this._ExportProcessService.ExecuteProcess<ExportAccredited, MemoryStream>(new ExportAccredited()
+            {
+                Type = type,
+                Accrediteds = result.Accrediteds
+            });
 
+            return this.File(
+                fileContents: msFile.ToArray(),
+                contentType: type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                    "application/pdf",
+                fileDownloadName: type == 1 ? "Accrediteds" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                    "Accrediteds" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+            );
         }
 
         [HttpPost]
@@ -88,28 +92,30 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("ListAdvancesReceivable")]
-        public IActionResult ListAdvancesReceivable([FromQuery] int type)
+        public IActionResult ListAdvancesReceivable()
+        {
+            var list = this._AccreditedProcessService.ExecuteProcess<bool, List<AdvanceReceivable>>(true).ToList();
+            return Ok(list);
+        }
+
+        [HttpGet, Route("GetFileAdvances")]
+        public IActionResult GetFileAdvances([FromQuery] int type)
         {
             var list = this._AccreditedProcessService.ExecuteProcess<bool, List<AdvanceReceivable>>(true).ToList();
 
-            if (type == 0)
-                return Ok(list);
-            else
+            var msFile = this._ExportAdvanceReceivableProcessService.ExecuteProcess<ExportAdvanceReceivable, MemoryStream>(new ExportAdvanceReceivable()
             {
-                var msFile = this._ExportAdvanceReceivableProcessService.ExecuteProcess<ExportAdvanceReceivable, MemoryStream>(new ExportAdvanceReceivable()
-                {
-                    Type = type,
-                     AdvanceReceivables = list
-                });
+                Type = type,
+                AdvanceReceivables = list
+            });
 
-                return this.File(
-                    fileContents: msFile.ToArray(),
-                    contentType: type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
-                        "application/pdf",
-                    fileDownloadName: type == 1 ? "AdvanceReceivable" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
-                        "AdvanceReceivable" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
-                );
-            }
+            return this.File(
+                fileContents: msFile.ToArray(),
+                contentType: type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                    "application/pdf",
+                fileDownloadName: type == 1 ? "AdvanceReceivable" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                    "AdvanceReceivable" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+            );
         }
 
         [HttpPost, Route("ExportAdvanceByAccredited")]

@@ -54,15 +54,12 @@ namespace PrestaQi.Service.RetrieveServices
             if (accreditedByPagination.Type == 0)
             {
                 if (string.IsNullOrEmpty(accreditedByPagination.Filter))
-                { 
+                {
                     totalRecord = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.id).ToList().Count;
                     accrediteds = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.id).Skip((accreditedByPagination.Page - 1) * accreditedByPagination.NumRecord).Take(accreditedByPagination.NumRecord).ToList();
                 }
                 else
-                {
                     accrediteds = this._Repository.Where(p => p.Deleted_At == null).OrderBy(p => p.id).ToList();
-                }
-
             }
             else
             {
