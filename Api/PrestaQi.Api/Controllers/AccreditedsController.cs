@@ -92,9 +92,13 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("ListAdvancesReceivable")]
-        public IActionResult ListAdvancesReceivable()
+        public IActionResult ListAdvancesReceivable([FromQuery] string filter)
         {
-            var list = this._AccreditedProcessService.ExecuteProcess<bool, List<AdvanceReceivable>>(true).ToList();
+            var list = this._AccreditedProcessService.ExecuteProcess<AdvancesReceivableByFilter, List<AdvanceReceivable>>(new AdvancesReceivableByFilter()
+            {
+                Filter = filter
+            }).ToList();
+
             return Ok(list);
         }
 

@@ -2,6 +2,7 @@
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using PrestaQi.Model;
+using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using System;
 using System.Collections.Generic;
@@ -30,15 +31,28 @@ namespace PrestaQi.Service.ProcessServices
             this._PaidAdvanceRetrieveService = paidAdvanceRetrieveService;
         }
 
-        public List<AdvanceReceivable> ExecuteProcess(bool parameter)
+        public List<AdvanceReceivable> ExecuteProcess(AdvancesReceivableByFilter filter)
         {
+            List<Accredited> accrediteds = new List<Accredited>();
+            List<Company> companies = new List<Company>();
+
             var advances = this._AdvanceRetrieveService.Where(p => p.Paid_Status == 0 || p.Paid_Status == 2).ToList();
             var accreditIds = advances.Select(p => p.Accredited_Id).Distinct();
-            var accrediteds = this._AccreditedRetrieveService.Where(p => accreditIds.Contains(p.id) && p.Deleted_At == null).ToList();
-            var companyIds = accrediteds.Select(p => p.Company_Id).Distinct();
-            var companies = this._CompanyRetrieveService.Where(p => companyIds.Contains(p.id)).ToList();
 
-           var detail = accrediteds.Select(accredited => new AdvanceReceivableAccredited()
+            accrediteds = this._AccreditedRetrieveService.Where(p => accreditIds.Contains(p.id) && p.Deleted_At == null).ToList();
+
+            if (!string.IsNullOrEmpty(filter.Filter))
+            {
+                accrediteds = accrediteds.Where(p => accreditIds.Contains(p.id) && p.Deleted_At == null &&
+                (p.First_Name.ToLower().Contains(filter.Filter.ToLower()) || p.Last_Name.ToLower().Contains(filter.Filter.ToLower()) ||
+                p.Contract_number.ToLower().Contains(filter.Filter.ToLower()) ||
+                p.Company_Name.ToLower().Contains(filter.Filter.ToLower()))).ToList();
+            }
+
+            var companyIds = accrediteds.Select(p => p.Company_Id).Distinct();
+            companies = this._CompanyRetrieveService.Where(p => companyIds.Contains(p.id)).ToList();
+
+            var detail = accrediteds.Select(accredited => new AdvanceReceivableAccredited()
             {
                Accredited_Id = accredited.id,
                 Company_Id = accredited.Company_Id,
