@@ -8,6 +8,7 @@ using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -20,13 +21,15 @@ namespace PrestaQi.Api.Controllers
         IWriteService<Investor> _InvestorWriteService;
         IWriteService<Accredited> _AccreditedWriteService;
         IProcessService<User> _UserProcessService;
+        IRetrieveService<Contact> _ContactRetrieveService;
 
         public AdministrativeController(
             IRetrieveService<User> _UserRetrieveService,
             IWriteService<Investor> investorWriteService,
             IWriteService<Accredited> accreditedWriteService,
             IProcessService<User> userProcessService,
-            IWriteService<User> userWriteService
+            IWriteService<User> userWriteService,
+            IRetrieveService<Contact> contactRetrieveService
             )
         {
             this._InvestorWriteService = investorWriteService;
@@ -34,6 +37,7 @@ namespace PrestaQi.Api.Controllers
             this._UserProcessService = userProcessService;
             this._UserWriteService = userWriteService;
             this._UserRetrieveService = _UserRetrieveService;
+            this._ContactRetrieveService = contactRetrieveService;
         }
 
         [HttpPut, Route("[action]"), Authorize]
@@ -57,16 +61,27 @@ namespace PrestaQi.Api.Controllers
         [HttpPut, Route("RecoveryPassword"), AllowAnonymous]
         public IActionResult RecoveryPassword(RecoveryPassword recoveryPassword)
         {
-            var result = this._UserProcessService.ExecuteProcess<RecoveryPassword, RecoveryPasswordData>(recoveryPassword);
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
 
+            var result = this._UserProcessService.ExecuteProcess<RecoveryPassword, RecoveryPasswordData>(recoveryPassword);
+            string name = string.Empty;
             bool recovery = false;
 
             if (result.UserType == Model.Enum.PrestaQiEnum.UserType.Administrador)
+            {
                 recovery = this._UserWriteService.Update(result.Data as User);
+                name = (result.Data as User).First_Name;
+            }
             if (result.UserType == Model.Enum.PrestaQiEnum.UserType.Inversionista)
+            {
                 recovery = this._InvestorWriteService.Update(result.Data as Investor);
+                name = (result.Data as Investor).First_Name;
+            }
             if (result.UserType == Model.Enum.PrestaQiEnum.UserType.Acreditado)
+            {
                 recovery = this._AccreditedWriteService.Update(result.Data as Accredited);
+                name = (result.Data as Accredited).First_Name;
+            }
 
             if (recovery)
             {
@@ -74,8 +89,10 @@ namespace PrestaQi.Api.Controllers
                     new SendMailRecoveryPassword()
                         {
                             Mail = result.Mail,
-                            Password = result.Password
-                        }
+                            Password = result.Password,
+                            Name = name,
+                            Contacts = contacts
+                    }
                     ));
             }
 
