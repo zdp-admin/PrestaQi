@@ -70,7 +70,6 @@ namespace PrestaQi.Service.WriteServices
                         this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
                         {
                             Amount = advance.Amount,
-                            Tracking_Key = spei.resultado.claveRastreo,
                             Accredited_Id = calculateAmount.Accredited_Id
                         });
                     }

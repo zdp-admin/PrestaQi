@@ -52,6 +52,9 @@
     <None Update="Templates\Advance.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Templates\Capital.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Templates\ChangePassword.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

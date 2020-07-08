@@ -3,6 +3,7 @@ using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -224,15 +225,25 @@ namespace PrestaQi.Service.ProcessServices
         {
             List<CapitalDetail> capitalDetails = new List<CapitalDetail>();
 
+            if (getInvestment.Filter != "range-dates" && getInvestment.Filter != "specific-day")
+            {
+                var resultDate = Utilities.CalcuateDates(getInvestment.Filter);
+                getInvestment.Start_Date = resultDate.Item1;
+                getInvestment.End_Date = resultDate.Item2;
+                getInvestment.Is_Specifid_Day = resultDate.Item3;
+            }
+            if (getInvestment.Start_Date.Date == getInvestment.End_Date.Date && getInvestment.Is_Specifid_Day == false)
+                getInvestment.Is_Specifid_Day = true;
+
             if (getInvestment.Is_Specifid_Day)
             {
-                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.updated_at.Date == getInvestment.Start_Date).ToList();
+                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).ToList();
                 getInvestment.End_Date = getInvestment.Start_Date;
             }
             else
             {
-                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.updated_at.Date >= getInvestment.Start_Date &&
-                p.updated_at.Date <= getInvestment.End_Date).ToList();
+                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.updated_at.Date >= getInvestment.Start_Date.Date &&
+                p.updated_at.Date <= getInvestment.End_Date.Date).ToList();
             }
 
             List<InvestmentDashboardDetail> details = new List<InvestmentDashboardDetail>();

@@ -4,6 +4,7 @@ using MoreLinq;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +33,17 @@ namespace PrestaQi.Service.ProcessServices
 
         public Liquidity ExecuteProcess(GetLiquidity getLiquidity)
         {
+            if (getLiquidity.Filter != "range-dates" && getLiquidity.Filter != "specific-day")
+            {
+                var resultDate = Utilities.CalcuateDates(getLiquidity.Filter);
+                getLiquidity.Start_Date = resultDate.Item1;
+                getLiquidity.End_Date = resultDate.Item2;
+                getLiquidity.Is_Specifid_Day = resultDate.Item3;
+            }
+
+            if (getLiquidity.Start_Date.Date == getLiquidity.End_Date.Date && getLiquidity.Is_Specifid_Day == false)
+                getLiquidity.Is_Specifid_Day = true;
+
             if (getLiquidity.Is_Specifid_Day)
                 getLiquidity.End_Date = getLiquidity.Start_Date;
 

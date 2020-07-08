@@ -22,13 +22,15 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<Institution> _InstitutionRetrieveService;
+        IRetrieveService<Contact> _ContactRetrieveService;
 
 
         public OrdenPagoProcessService(
            IRetrieveService<Accredited> accreditedRetrieveService,
            IRetrieveService<Configuration> configurationRetrieveService,
            IRetrieveService<Advance> advanceRetrieveService,
-           IRetrieveService<Institution> institutionRetrieveService
+           IRetrieveService<Institution> institutionRetrieveService,
+           IRetrieveService<Contact> contactRetrieveService
             )
         {
             
@@ -36,6 +38,7 @@ namespace PrestaQi.Service.ProcessServices
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._InstitutionRetrieveService = institutionRetrieveService;
+            this._ContactRetrieveService = contactRetrieveService;
         }
 
         public ResponseSpei ExecuteProcess(OrderPayment orderPayment)
@@ -132,6 +135,7 @@ namespace PrestaQi.Service.ProcessServices
         {
             try
             {
+                var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
                 var accredited = this._AccreditedRetrieveService.Find(sendSpeiMail.Accredited_Id);
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
 
@@ -141,8 +145,11 @@ namespace PrestaQi.Service.ProcessServices
                 var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
 
                 string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
-                textHtml = textHtml.Replace("{KEY_TRACKING}", sendSpeiMail.Tracking_Key);
-                textHtml = textHtml.Replace("{AMOUNT}", $"${sendSpeiMail.Amount.ToString()}");
+                textHtml = textHtml.Replace("{NAME}", accredited.First_Name);
+                textHtml = textHtml.Replace("{AMOUNT}", sendSpeiMail.Amount.ToString("C"));
+                textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
+                textHtml = textHtml.Replace("{MAIL_SOPORTE}", contacts.Find(p => p.id == 2).Contact_Data);
+                textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
                 messageMail.Message = textHtml;
 
                 Utilities.SendEmail(new List<string> { accredited.Mail }, messageMail, mailConf);

@@ -78,7 +78,7 @@ namespace PrestaQi.Service.ProcessServices
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
                     startDate = DateTime.Now.StartOfWeek(DayOfWeek.Monday);
-                    endDate = DateTime.Now.StartOfWeek(DayOfWeek.Saturday);
+                    endDate = startDate.AddDays(5);//DateTime.Now.(DayOfWeek.Saturday);
                     day = (int)DateTime.Now.DayOfWeek; 
                     break;
             }
@@ -119,15 +119,26 @@ namespace PrestaQi.Service.ProcessServices
         {
             List<Advance> advances = new List<Advance>();
 
+            if (getCommisionAndIntereset.Filter != "range-dates" && getCommisionAndIntereset.Filter != "specific-day")
+            {
+                var resultDate = Utilities.CalcuateDates(getCommisionAndIntereset.Filter);
+                getCommisionAndIntereset.Start_Date = resultDate.Item1;
+                getCommisionAndIntereset.End_Date = resultDate.Item2;
+                getCommisionAndIntereset.Is_Specifid_Day = resultDate.Item3;
+            }
+
+            if (getCommisionAndIntereset.Start_Date.Date == getCommisionAndIntereset.End_Date.Date && getCommisionAndIntereset.Is_Specifid_Day == false)
+                getCommisionAndIntereset.Is_Specifid_Day = true;
+
             if (getCommisionAndIntereset.Is_Specifid_Day)
             {
-                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date == getCommisionAndIntereset.Start_Date).ToList();
+                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date == getCommisionAndIntereset.Start_Date.Date).ToList();
                 getCommisionAndIntereset.End_Date = getCommisionAndIntereset.Start_Date;
             }
             else
             {
-                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date >= getCommisionAndIntereset.Start_Date &&
-                p.Date_Advance.Date <= getCommisionAndIntereset.End_Date).ToList();
+                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date >= getCommisionAndIntereset.Start_Date.Date &&
+                p.Date_Advance.Date <= getCommisionAndIntereset.End_Date.Date).ToList();
             }
 
             var listDetial = advances.GroupBy(p => p.Date_Advance.Date).Select(item => new CommissionAndInterestByDay()
@@ -155,15 +166,25 @@ namespace PrestaQi.Service.ProcessServices
         {
             List<Advance> advances = new List<Advance>();
 
+            if (getCredits.Filter != "range-dates" && getCredits.Filter != "specific-day")
+            {
+                var resultDate = Utilities.CalcuateDates(getCredits.Filter);
+                getCredits.Start_Date = resultDate.Item1;
+                getCredits.End_Date = resultDate.Item2;
+                getCredits.Is_Specifid_Day = resultDate.Item3;
+            }
+            if (getCredits.Start_Date.Date == getCredits.End_Date.Date && getCredits.Is_Specifid_Day == false)
+                getCredits.Is_Specifid_Day = true;
+
             if (getCredits.Is_Specifid_Day)
             {
-                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date == getCredits.Start_Date).ToList();
+                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date == getCredits.Start_Date.Date).ToList();
                 getCredits.End_Date = getCredits.Start_Date;
             }
             else
             {
-                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date >= getCredits.Start_Date &&
-                p.Date_Advance.Date <= getCredits.End_Date).ToList();
+                advances = this._AdvanceRetrieveService.Where(p => p.Date_Advance.Date >= getCredits.Start_Date.Date &&
+                p.Date_Advance.Date <= getCredits.End_Date.Date).ToList();
             }
 
             var detail = advances.GroupBy(p => p.Date_Advance.Date).Select(item => new CreditAvarageDetail()

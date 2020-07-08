@@ -20,17 +20,20 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Investor> _InvestorRetrieveService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IProcessService<User> _UserProcessService;
+        IRetrieveService<Contact> _ContactRetrieveService;
 
         public InvestorWriteService(
             IWriteRepository<Investor> repository,
             IRetrieveService<Investor> investorRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IProcessService<User> userProcessService
+            IProcessService<User> userProcessService,
+            IRetrieveService<Contact> contactRetrieveService
             ) : base(repository)
         {
             this._InvestorRetrieveService = investorRetrieveService;
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._UserProcessService = userProcessService;
+            this._ContactRetrieveService = contactRetrieveService;
         }
 
         public override bool Create(Investor entity)
@@ -53,7 +56,7 @@ namespace PrestaQi.Service.WriteServices
                 {
                     try
                     {
-                        SendMail(entity.Mail, password);
+                        SendMail(entity.Mail, password, entity.First_Name);
 
                     }
                     catch (Exception)
@@ -113,7 +116,7 @@ namespace PrestaQi.Service.WriteServices
                 {
                     try
                     {
-                        SendMail(p.Mail, mails[p.Mail]);
+                        SendMail(p.Mail, mails[p.Mail], p.First_Name);
                     }
                     catch (Exception)
                     {
@@ -130,6 +133,7 @@ namespace PrestaQi.Service.WriteServices
 
         public bool Update(ChangePassword changePassword)
         {
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
             var user = this._InvestorRetrieveService.Find(changePassword.User_Id);
             if (user == null)
                 throw new SystemValidationException("Investor not found");
@@ -143,15 +147,23 @@ namespace PrestaQi.Service.WriteServices
                 bool update = base.Update(user);
 
                 if (update)
-                    this._UserProcessService.ExecuteProcess<SendMailChangePassword, bool>(new SendMailChangePassword() { Mails = new List<string>() { user.Mail } });
+                {
+                    this._UserProcessService.ExecuteProcess<SendMailChangePassword, bool>(new SendMailChangePassword()
+                    {
+                        Mails = new List<string>() { user.Mail },
+                        Name = user.First_Name,
+                        Contacts = contacts
+                    });
+                }
 
                 return update;
             }
             catch (Exception exception) { throw new SystemValidationException($"Error change password: {exception.Message}"); }
         }
 
-        void SendMail(string mail, string password)
+        void SendMail(string mail, string password, string name)
         {
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
             var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
 
             var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
@@ -159,7 +171,12 @@ namespace PrestaQi.Service.WriteServices
 
             var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
             string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+            textHtml = textHtml.Replace("{NAME}", name);
+            textHtml = textHtml.Replace("{MAIL}", mail);
             textHtml = textHtml.Replace("{PASSWORD}", password);
+            textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
+            textHtml = textHtml.Replace("{MAIL_SOPORTE}", contacts.Find(p => p.id == 2).Contact_Data);
+            textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
             messageMail.Message = textHtml;
 
             Utilities.SendEmail(new List<string> { mail }, messageMail, mailConf);

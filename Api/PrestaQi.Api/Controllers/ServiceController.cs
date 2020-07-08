@@ -11,7 +11,7 @@ using PrestaQi.Model.Dto.Input;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]"), Authorize]
+    [Route("api/[controller]")]
     [ApiController]
     public class ServiceController : CustomController
     {

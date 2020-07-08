@@ -406,6 +406,10 @@ namespace PrestaQi.Service.ProcessServices
             var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "CHANGE_PASS");
             var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
             string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+            textHtml = textHtml.Replace("{NAME}", sendMailChangePassword.Name);
+            textHtml = textHtml.Replace("{WHATSAPP}", sendMailChangePassword.Contacts.Find(p => p.id == 1).Contact_Data);
+            textHtml = textHtml.Replace("{MAIL_SOPORTE}", sendMailChangePassword.Contacts.Find(p => p.id == 2).Contact_Data);
+            textHtml = textHtml.Replace("{PHONE}", sendMailChangePassword.Contacts.Find(p => p.id == 3).Contact_Data);
             messageMail.Message = textHtml;
 
             Utilities.SendEmail(sendMailChangePassword.Mails, messageMail, mailConf);

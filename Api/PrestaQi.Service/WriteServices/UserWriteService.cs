@@ -22,6 +22,7 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<UserModule> _UserModuleRetrieveService;
         IWriteService<UserModule> _UserModuleWriteService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
+        IRetrieveService<Contact> _ContactRetrieveService;
 
         public UserWriteService(
             IWriteRepository<User> repository,
@@ -29,7 +30,8 @@ namespace PrestaQi.Service.WriteServices
             IWriteService<UserModule> userModuleWriteService,
             IRetrieveService<Configuration> configurationRetrieveService,
             IProcessService<User> userProcessService,
-            IRetrieveService<UserModule> userModuleRetrieveService
+            IRetrieveService<UserModule> userModuleRetrieveService,
+            IRetrieveService<Contact> contactRetrieveService
             ) : base(repository)
         {
             this._UserRetrieveService = userRetrieveService;
@@ -37,6 +39,7 @@ namespace PrestaQi.Service.WriteServices
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._UserProcessService = userProcessService;
             this._UserModuleRetrieveService = userModuleRetrieveService;
+            this._ContactRetrieveService = contactRetrieveService;
         }
 
         public override bool Create(User entity)
@@ -117,6 +120,7 @@ namespace PrestaQi.Service.WriteServices
 
         public bool Update(ChangePassword changePassword)
         {
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
             var user = this._UserRetrieveService.Find(changePassword.User_Id);
             if (user == null)
                 throw new SystemValidationException("User not found");
@@ -133,7 +137,12 @@ namespace PrestaQi.Service.WriteServices
                 {
                     try
                     {
-                        this._UserProcessService.ExecuteProcess<SendMailChangePassword, bool>(new SendMailChangePassword() { Mails = new List<string>() { user.Mail } });
+                        this._UserProcessService.ExecuteProcess<SendMailChangePassword, bool>(new SendMailChangePassword()
+                        {
+                            Mails = new List<string>() { user.Mail },
+                            Name = user.First_Name,
+                            Contacts = contacts
+                        });
                     }
                     catch (Exception)
                     {
@@ -210,6 +219,7 @@ namespace PrestaQi.Service.WriteServices
 
         void SendMail(string mail, string password)
         {
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
             var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
 
             var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
@@ -217,7 +227,11 @@ namespace PrestaQi.Service.WriteServices
 
             var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
             string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+            textHtml = textHtml.Replace("{MAIL}", mail);
             textHtml = textHtml.Replace("{PASSWORD}", password);
+            textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
+            textHtml = textHtml.Replace("{MAIL_SOPORTE}", contacts.Find(p => p.id == 2).Contact_Data);
+            textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
             messageMail.Message = textHtml;
 
             Utilities.SendEmail(new List<string> { mail }, messageMail, mailConf);

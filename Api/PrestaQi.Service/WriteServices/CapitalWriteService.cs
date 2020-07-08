@@ -1,6 +1,7 @@
 ﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
@@ -8,6 +9,8 @@ using PrestaQi.Model.Enum;
 using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace PrestaQi.Service.WriteServices
@@ -18,20 +21,28 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Period> _PeriodRetrieveService;
         IWriteService<CapitalDetail> _CapitalDetailWriteService;
         IRetrieveService<User> _UserRetrieveService;
-
+        IRetrieveService<Configuration> _ConfigurationRetrieveService;
+        IRetrieveService<Contact> _ContactRetrieveService;
+        IRetrieveService<Investor> _InvestorRetrieveSercice;
 
         public CapitalWriteService(
             IWriteRepository<Capital> repository,
             IRetrieveService<Capital> userCapitalRetrieveService,
             IRetrieveService<Period> periodRetrieveService,
             IWriteService<CapitalDetail> capitalDetailWriteService,
-            IRetrieveService<User> userRetrieveService
+            IRetrieveService<User> userRetrieveService,
+            IRetrieveService<Contact> contactRetrieveService,
+            IRetrieveService<Configuration> configurationRetrieveService,
+            IRetrieveService<Investor> investorRetrieveSercice
             ) : base(repository)
         {
             this._UserCapitalRetrieveService = userCapitalRetrieveService;
             this._PeriodRetrieveService = periodRetrieveService;
             this._CapitalDetailWriteService = capitalDetailWriteService;
             this._UserRetrieveService = userRetrieveService;
+            this._ConfigurationRetrieveService = configurationRetrieveService;
+            this._InvestorRetrieveSercice = investorRetrieveSercice;
+            this._ContactRetrieveService = contactRetrieveService;
         }
 
         public override bool Create(Capital entity)
@@ -50,7 +61,21 @@ namespace PrestaQi.Service.WriteServices
 
             try
             {
-                return base.Create(entity);
+                bool create = base.Create(entity);
+
+                if (create)
+                {
+                    try
+                    {
+                        SendMail(entity.investor_id);
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                }
+
+                return create;
             }
             catch (Exception exception)
             {
@@ -108,5 +133,25 @@ namespace PrestaQi.Service.WriteServices
             return true;
         }
 
+        void SendMail(int investorId)
+        {
+            var investor = this._InvestorRetrieveSercice.Find(investorId);
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
+
+            var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+
+            var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
+            var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "CAPITAL_CREATE");
+
+            var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
+            string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+            textHtml = textHtml.Replace("{NAME}", investor.First_Name);
+            textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
+            textHtml = textHtml.Replace("{MAIL_SOPORTE}", contacts.Find(p => p.id == 2).Contact_Data);
+            textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
+            messageMail.Message = textHtml;
+
+            Utilities.SendEmail(new List<string> { investor.Mail }, messageMail, mailConf);
+        }
     }
 }

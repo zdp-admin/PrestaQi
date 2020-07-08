@@ -8,6 +8,6 @@ namespace PrestaQi.Model.Dto.Input
     {
         public int Accredited_Id { get; set; }
         public double Amount { get; set; }
-        public string Tracking_Key { get; set; }
+        public string Name { get; set; }
     }
 }

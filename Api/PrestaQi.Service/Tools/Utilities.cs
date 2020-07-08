@@ -1,5 +1,6 @@
 ﻿using iText.Layout.Element;
 using iText.Layout.Properties;
+using MoreLinq.Extensions;
 using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
@@ -90,6 +91,62 @@ namespace PrestaQi.Service.Tools
                     .SetFontSize(8)
                     .Add(new Paragraph(string.Empty)));
             }
+        }
+
+        public static (DateTime, DateTime, bool) CalcuateDates(string filter)
+        {
+            DateTime startDate = DateTime.Now;
+            DateTime endDate = DateTime.Now;
+            bool today = false;
+
+            switch (filter)
+            {
+                case "current-month":
+                    startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                    endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
+                    break;
+                case "today":
+                    today = true;
+                    break;
+                case "current-biweekly":
+                    if (DateTime.Now.Day > 15)
+                    {
+                        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 16);
+                        endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
+                    }
+                    else
+                    {
+                        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                        endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 15);
+                    }
+                    break;
+                case "before-biweekly":
+                    if (DateTime.Now.Day > 15)
+                    {
+                        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                        endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 15);
+                    }
+                    else
+                    {
+                        startDate = startDate.AddMonths(-1);
+
+                        startDate = new DateTime(startDate.Year, startDate.Month, 15);
+                        endDate = new DateTime(startDate.Year, startDate.Month, DateTime.DaysInMonth(startDate.Year, startDate.Month)); 
+                    }
+                    break;
+                case "current-week":
+                    startDate = DateTime.Now.StartOfWeek(DayOfWeek.Monday);
+                    endDate = startDate.AddDays(5);//DateTime.Now.StartOfWeek(DayOfWeek.Saturday);
+                    break;
+                case "before-week":
+                    startDate = DateTime.Now.StartOfWeek(DayOfWeek.Monday);
+
+                    startDate = startDate.AddDays(-7);
+                    endDate = startDate.AddDays(5);
+                    break;
+            }
+
+            return (startDate, endDate, today);
         }
     }
 }
