@@ -322,7 +322,7 @@ namespace PrestaQi.Service.ProcessServices
                                 Net_Monthly_Salary = Convert.ToDouble(fields[6]),
                                 Rfc = fields[7],
                                 Interest_Rate = Convert.ToInt32(fields[8]),
-                                Seniority_Company = Convert.ToInt32(fields[9]),
+                                Seniority_Company = fields[9],
                                 Birth_Date = Convert.ToDateTime(fields[10]),
                                 Age = Convert.ToInt32(fields[11]),
                                 Account_Number = fields[15],

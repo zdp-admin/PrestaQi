@@ -29,7 +29,7 @@ namespace PrestaQi.Model
         [Column("interest_rate")]
         public int Interest_Rate { get; set; }
         [Column("seniority_company")]
-        public int Seniority_Company { get; set; }
+        public string Seniority_Company { get; set; }
         [Column("birth_date")]
         public DateTime Birth_Date { get; set; }
         [Column("age")]

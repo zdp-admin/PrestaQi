@@ -26,6 +26,7 @@ namespace PrestaQi.DataAccess
         public DbSet<Institution> Institution { get; set; }
         public DbSet<SpeiResponse> SpeiResponses { get; set; }
         public DbSet<PaidAdvance> PaidAdvances { get; set; }
+        public DbSet<Repayment> Repayments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

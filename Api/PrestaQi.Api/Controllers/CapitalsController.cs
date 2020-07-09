@@ -65,26 +65,10 @@ namespace PrestaQi.Api.Controllers
         {
             getMyInvestment.Investor_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
             getMyInvestment.Source = 1;
+
             var result = this._CapitalProcessService.ExecuteProcess<GetMyInvestment, MyInvestmentPagination>(getMyInvestment);
 
-            if (getMyInvestment.Type == 0)
-                return Ok(result);
-            else
-            {
-                var msFile = this._ExportMyInvestmentProcessService.ExecuteProcess<ExportMyInvestment, MemoryStream>(new ExportMyInvestment()
-                {
-                    Type = getMyInvestment.Type,
-                    MyInvestments = result.MyInvestments
-                });
-
-                return this.File(
-                    fileContents: msFile.ToArray(),
-                    contentType: getMyInvestment.Type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
-                        "application/pdf",
-                    fileDownloadName: getMyInvestment.Type == 1 ? "MyInvestment" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
-                        "MyInvestment" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
-                );
-            }
+            return Ok(result);
         }
 
         [HttpPost, Route("GetAnchorControl")]
@@ -129,6 +113,32 @@ namespace PrestaQi.Api.Controllers
                     fileDownloadName: exportCapitalDetail.Type == 1 ? "AccountStatus" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
                         "AccountStatus" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
                 );
+        }
+
+        [HttpGet, Route("ExportMyInvestment")]
+        public IActionResult ExportMyInvestment([FromQuery] int type)
+        {
+            var result = this._CapitalProcessService.ExecuteProcess<GetMyInvestment, MyInvestmentPagination>(new GetMyInvestment()
+            {
+                Investor_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value),
+                Source = 1,
+                Type = type
+            });
+
+            var msFile = this._ExportMyInvestmentProcessService.ExecuteProcess<ExportMyInvestment, MemoryStream>(new ExportMyInvestment()
+            {
+                Type = type,
+                MyInvestments = result.MyInvestments
+            });
+
+            return this.File(
+                fileContents: msFile.ToArray(),
+                contentType: type == 1 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
+                    "application/pdf",
+                fileDownloadName: type == 1 ? "MyInvestment" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx" :
+                    "MyInvestment" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
+            );
+
         }
 
         [HttpPost, Route("ChangeStatus")]

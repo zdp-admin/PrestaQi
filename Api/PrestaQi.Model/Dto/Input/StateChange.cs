@@ -10,6 +10,6 @@ namespace PrestaQi.Model.Dto.Input
         public string Empresa { get; set; }
         public string FolioOrigen { get; set; }
         public string Estado { get; set; }
-        public string CausaDevolucion { get; set; }
+        public int CausaDevolucion { get; set; }
     }
 }

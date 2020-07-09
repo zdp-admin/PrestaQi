@@ -15,16 +15,19 @@ namespace PrestaQi.Api.Controllers
     [ApiController]
     public class ServiceController : CustomController
     {
+        IWriteService<SpeiResponse> _SpeiResponseWriteService;
 
-        public ServiceController()
+        public ServiceController(
+            IWriteService<SpeiResponse> speiResponseWriteService
+            )
         {
-
+            this._SpeiResponseWriteService = speiResponseWriteService;
         }
 
         [HttpPost, Route("stp/status")]
         public IActionResult GetStatusAccredited(StateChange stateChange)
         {
-            return Ok(stateChange, "Mensaje");
+            return Ok(this._SpeiResponseWriteService.Update<StateChange, bool>(stateChange));
         }
 
     }
