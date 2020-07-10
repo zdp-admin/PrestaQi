@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PrestaQi.Model.Enum
+﻿namespace PrestaQi.Model.Enum
 {
     public class PrestaQiEnum
     {

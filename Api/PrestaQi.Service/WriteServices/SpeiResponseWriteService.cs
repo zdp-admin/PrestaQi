@@ -1,17 +1,12 @@
-﻿using ClosedXML;
-using InsiscoCore.Base.Data;
+﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
-using Newtonsoft.Json.Schema;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
-using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace PrestaQi.Service.WriteServices
 {
@@ -77,6 +72,7 @@ namespace PrestaQi.Service.WriteServices
                 }
 
                 speiTransactionResult.Mail = accredited.Mail;
+                speiTransactionResult.UserId = accredited.id;
                 speiTransactionResult.Accredited = $"{accredited.First_Name} {accredited.Last_Name}";
                 speiTransactionResult.Success = base.Update(speiResponse);
 

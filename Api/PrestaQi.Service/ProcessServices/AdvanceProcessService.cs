@@ -8,9 +8,7 @@ using PrestaQi.Model.Enum;
 using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Text;
 
 namespace PrestaQi.Service.ProcessServices
 {

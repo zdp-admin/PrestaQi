@@ -1,15 +1,12 @@
-﻿using DocumentFormat.OpenXml.Drawing;
-using InsiscoCore.Base.Service;
+﻿using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Service.Tools;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 

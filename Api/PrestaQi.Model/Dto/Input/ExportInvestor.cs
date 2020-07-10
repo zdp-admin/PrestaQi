@@ -1,7 +1,4 @@
-﻿using PrestaQi.Model.Dto.Output;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace PrestaQi.Model.Dto.Input
 {

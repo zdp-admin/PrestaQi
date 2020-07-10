@@ -1,14 +1,9 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using InsiscoCore.Base.Service;
+﻿using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
-using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
 
 namespace PrestaQi.Api.Controllers

@@ -1,10 +1,6 @@
 ﻿using InsiscoCore.EFRepository;
 using Microsoft.EntityFrameworkCore;
 using PrestaQi.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace PrestaQi.DataAccess
 {

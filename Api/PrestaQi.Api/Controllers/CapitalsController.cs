@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using InsiscoCore.Base.Service;
+using iText.Forms.Xfdf;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -27,6 +25,7 @@ namespace PrestaQi.Api.Controllers
         IProcessService<ExportAnchorControl> _ExportAnchorProcessService;
         IProcessService<ExportCapitalDetail> _ExportCapitalDetailProcessService;
         IProcessService<ExportMyInvestment> _ExportMyInvestmentProcessService;
+        IWriteService<Model.Notification> _NotificationWriteService;
         IConfiguration _Configuration;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
 
@@ -39,6 +38,7 @@ namespace PrestaQi.Api.Controllers
             IProcessService<ExportCapitalDetail> exportCapitalDetailProcessService,
             IProcessService<ExportMyInvestment> exportMyInvestmentProcessService,
             NotificationsMessageHandler notificationsMessageHandler,
+            IWriteService<Model.Notification> notificationWriteService,
             IConfiguration configuration)
         {
             this._CapitalWriteService = capitalWriteService;
@@ -47,7 +47,7 @@ namespace PrestaQi.Api.Controllers
             this._ExportAnchorProcessService = exportAnchorProcessService;
             this._ExportCapitalDetailProcessService = exportCapitalDetailProcessService;
             this._ExportMyInvestmentProcessService = exportMyInvestmentProcessService;
-
+            this._NotificationWriteService = notificationWriteService;
             this._NotificationsMessageHandler = notificationsMessageHandler;
             this._Configuration = configuration;
         }
@@ -75,18 +75,30 @@ namespace PrestaQi.Api.Controllers
                 var socketAdmin = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
                 var socketClient = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
 
-                if (socketAdmin != null)
-                {
-                    var notificationAdmin = _Configuration.GetSection("Notification").GetSection("SendCapitalCall").Get<SendNotification>();
-                    notificationAdmin.Message = string.Format(notificationAdmin.Message, result.Investor);
+                var notificationAdmin = _Configuration.GetSection("Notification").GetSection("SendCapitalCall").Get<SendNotification>();
+                notificationAdmin.Message = string.Format(notificationAdmin.Message, result.Investor);
+                var notificationClient = _Configuration.GetSection("Notification").GetSection("NewCapitalCall").Get<SendNotification>();
 
+                if (socketAdmin != null)
                     _ = this._NotificationsMessageHandler.SendMessageAsync(socketAdmin, notificationAdmin);
-                }
 
                 if (socketClient != null)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socketClient, _Configuration.GetSection("Notification").GetSection("NewCapitalCall").Get<SendNotification>());
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socketClient, notificationClient);
 
-               
+                this._NotificationWriteService.Create(new Model.Notification(){
+                  User_Id = userCapital.Created_By,
+                  User_Type = (int)PrestaQiEnum.UserType.Administrador,
+                  Title = notificationAdmin.Title,
+                  Message = notificationAdmin.Message
+                });
+
+                this._NotificationWriteService.Create(new Model.Notification()
+                {
+                    User_Id = userCapital.investor_id,
+                    User_Type = (int)PrestaQiEnum.UserType.Inversionista,
+                    Title = notificationClient.Title,
+                    Message = notificationClient.Message
+                }); ;
             }
 
             return Ok(result.Success);
@@ -176,7 +188,28 @@ namespace PrestaQi.Api.Controllers
         [HttpPost, Route("ChangeStatus")]
         public IActionResult ChangeStatus(CapitalChangeStatus capitalChangeStatus)
         {
-            return Ok(this._CapitalWriteService.Update<CapitalChangeStatus, bool>(capitalChangeStatus));
+            var result = this._CapitalWriteService.Update<CapitalChangeStatus, CapitalChangeStatusResponse>(capitalChangeStatus);
+
+            if (result.Success)
+            {
+                var notificationAdmin = _Configuration.GetSection("Notification").GetSection("ChangeStatusCapital").Get<SendNotification>();
+                notificationAdmin.Message = string.Format(notificationAdmin.Message, result.CapitalId.ToString(_Configuration["Format:FolioCapital"]),
+                    ((PrestaQiEnum.CapitalEnum)capitalChangeStatus.Status).ToString());
+
+                var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
+                if (socket != null)
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notificationAdmin);
+
+                this._NotificationWriteService.Create(new Model.Notification()
+                {
+                    User_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value),
+                    User_Type = (int)PrestaQiEnum.UserType.Administrador,
+                    Title = notificationAdmin.Title,
+                    Message = notificationAdmin.Message
+                });
+            }
+
+            return Ok(result);
         }
     }
 }

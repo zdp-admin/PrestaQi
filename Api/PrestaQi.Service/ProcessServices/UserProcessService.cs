@@ -1,6 +1,5 @@
 ﻿using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
-using InsiscoCore.Utilities.IO;
 using Microsoft.VisualBasic.FileIO;
 using MoreLinq;
 using Newtonsoft.Json;
@@ -14,9 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
 using System.Text;
 
 namespace PrestaQi.Service.ProcessServices

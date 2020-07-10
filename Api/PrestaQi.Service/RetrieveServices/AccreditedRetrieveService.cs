@@ -1,9 +1,7 @@
-﻿using DocumentFormat.OpenXml.Office2013.Word;
-using InsiscoCore.Base.Data;
+﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using PrestaQi.Model;
-using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;

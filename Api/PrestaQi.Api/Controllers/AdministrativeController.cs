@@ -1,4 +1,5 @@
 ﻿using InsiscoCore.Base.Service;
+using iText.Forms.Xfdf;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +27,7 @@ namespace PrestaQi.Api.Controllers
         IRetrieveService<Contact> _ContactRetrieveService;
         IConfiguration _Configuration;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
+        IWriteService<Model.Notification> _NotificationWriteService;
 
 
         public AdministrativeController(
@@ -35,7 +37,8 @@ namespace PrestaQi.Api.Controllers
             IProcessService<User> userProcessService,
             IWriteService<User> userWriteService,
             IRetrieveService<Contact> contactRetrieveService,
-            IConfiguration configuration,
+            IWriteService<Model.Notification> notificationWriteService,
+        IConfiguration configuration,
             NotificationsMessageHandler notificationsMessageHandler
             ) : base()
         {
@@ -45,6 +48,7 @@ namespace PrestaQi.Api.Controllers
             this._UserWriteService = userWriteService;
             this._UserRetrieveService = _UserRetrieveService;
             this._ContactRetrieveService = contactRetrieveService;
+            this._NotificationWriteService = notificationWriteService;
             this._Configuration = configuration;
             this._NotificationsMessageHandler = notificationsMessageHandler;
         }
@@ -72,6 +76,14 @@ namespace PrestaQi.Api.Controllers
 
                 if (socket != null)
                     _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+
+                this._NotificationWriteService.Create(new Model.Notification()
+                {
+                    User_Id = changePassword.User_Id,
+                    User_Type = changePassword.Type,
+                    Title = notification.Title,
+                    Message = notification.Message
+                });
             }
 
             

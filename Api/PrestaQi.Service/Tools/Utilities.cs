@@ -1,6 +1,5 @@
 ﻿using iText.Layout.Element;
 using iText.Layout.Properties;
-using MoreLinq.Extensions;
 using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
@@ -9,8 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
-using System.Text.Json.Serialization;
 
 namespace PrestaQi.Service.Tools
 {

@@ -2,13 +2,11 @@
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using PrestaQi.Model;
-using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace PrestaQi.Service.RetrieveServices

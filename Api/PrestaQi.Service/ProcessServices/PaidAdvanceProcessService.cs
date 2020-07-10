@@ -4,9 +4,7 @@ using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Enum;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace PrestaQi.Service.ProcessServices
 {

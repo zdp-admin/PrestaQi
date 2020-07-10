@@ -14,7 +14,6 @@ using System.Linq;
 using System.IO;
 using iText.Kernel.Colors;
 using iText.Kernel.Geom;
-using System;
 
 namespace PrestaQi.Service.ProcessServices
 {

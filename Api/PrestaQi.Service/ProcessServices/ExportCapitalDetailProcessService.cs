@@ -4,7 +4,6 @@ using PrestaQi.Service.Tools;
 using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
-using PrestaQi.Model.Dto.Output;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
@@ -14,8 +13,6 @@ using System.Linq;
 using System.IO;
 using iText.Kernel.Colors;
 using iText.Kernel.Geom;
-using System;
-using DocumentFormat.OpenXml.Office.CustomUI;
 
 namespace PrestaQi.Service.ProcessServices
 {

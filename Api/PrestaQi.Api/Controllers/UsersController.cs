@@ -1,7 +1,6 @@
 ﻿using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.Operations;
 using MoreLinq;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;

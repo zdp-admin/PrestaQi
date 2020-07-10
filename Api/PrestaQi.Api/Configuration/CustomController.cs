@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PrestaQi.Model.Dto.Output;
-using System.Reflection;
 
 namespace PrestaQi.Api.Configuration
 {

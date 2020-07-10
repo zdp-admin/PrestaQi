@@ -3,11 +3,8 @@ using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
-using PrestaQi.Model.Dto;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace PrestaQi.Service.WriteServices
 {

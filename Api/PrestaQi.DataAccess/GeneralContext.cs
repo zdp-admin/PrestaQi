@@ -1,5 +1,4 @@
-﻿using InsiscoCore.EFRepository;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PrestaQi.Model;
 
 namespace PrestaQi.DataAccess
@@ -28,6 +27,7 @@ namespace PrestaQi.DataAccess
         public DbSet<PaidAdvance> PaidAdvances { get; set; }
         public DbSet<Repayment> Repayments { get; set; }
         public DbSet<Device> Devices { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

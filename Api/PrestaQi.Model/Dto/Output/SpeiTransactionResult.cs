@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PrestaQi.Model.Dto.Output
+﻿namespace PrestaQi.Model.Dto.Output
 {
     public class SpeiTransactionResult
     {
@@ -10,5 +6,6 @@ namespace PrestaQi.Model.Dto.Output
         public string Message { get; set; }
         public string Accredited { get; set; }
         public string Mail { get; set; }
+        public int UserId { get; set; }
     }
 }

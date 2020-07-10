@@ -2,8 +2,6 @@
 using InsiscoCore.Service;
 using PrestaQi.Model;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace PrestaQi.Service.WriteServices
 {

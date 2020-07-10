@@ -6,7 +6,6 @@ using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
-using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;

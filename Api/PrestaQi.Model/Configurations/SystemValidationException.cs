@@ -1,9 +1,4 @@
-﻿using PrestaQi.Model.Dto.Output;
-using PrestaQi.Model.General;
-using System;
-using System.Collections.Generic;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
+﻿using System;
 
 namespace PrestaQi.Model.Configurations
 {

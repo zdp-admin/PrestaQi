@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Principal;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrestaQi.Model
 {

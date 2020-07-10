@@ -1,15 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using InsiscoCore.Base.Service;
-using Microsoft.AspNetCore.Authorization;
+﻿using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
-using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -18,41 +14,51 @@ namespace PrestaQi.Api.Controllers
     public class ServiceController : CustomController
     {
         IWriteService<SpeiResponse> _SpeiResponseWriteService;
+        IWriteService<Model.Notification> _NotificationWriteService;
         IConfiguration _Configuration;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
 
         public ServiceController(
             IWriteService<SpeiResponse> speiResponseWriteService,
             IConfiguration configuration,
-            NotificationsMessageHandler notificationsMessageHandler
+            NotificationsMessageHandler notificationsMessageHandler,
+            IWriteService<Model.Notification> notificationWriteService
             )
         {
             this._SpeiResponseWriteService = speiResponseWriteService;
             this._Configuration = configuration;
             this._NotificationsMessageHandler = notificationsMessageHandler;
+            this._NotificationWriteService = notificationWriteService;
         }
 
         [HttpPost, Route("stp/status")]
         public IActionResult GetStatusAccredited(StateChange stateChange)
         {
             var result = this._SpeiResponseWriteService.Update<StateChange, SpeiTransactionResult>(stateChange);
-
             var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
 
-            if (socket != null)
+            if (result.Success)
             {
-                if (result.Success && stateChange.CausaDevolucion < 0)
-                {
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, _Configuration.GetSection("Notification").GetSection("AdvanceSuccess").Get<SendNotification>());
-                }
+                var notification = new SendNotification();
 
-                if (result.Success && stateChange.CausaDevolucion > 0)
+                if (stateChange.CausaDevolucion < 0)
+                    notification = _Configuration.GetSection("Notification").GetSection("AdvanceSuccess").Get<SendNotification>();
+                if (stateChange.CausaDevolucion > 0)
                 {
-                    var notification = _Configuration.GetSection("Notification").GetSection("AdvanceFail").Get<SendNotification>();
+                    notification = _Configuration.GetSection("Notification").GetSection("AdvanceFail").Get<SendNotification>();
                     notification.Message = string.Format(notification.Message, result.Message);
-
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
                 }
+
+                if (socket != null)
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+
+                this._NotificationWriteService.Create(new Model.Notification()
+                {
+                    Message = notification.Message,
+                    Title = notification.Title,
+                    User_Id = result.UserId,
+                    User_Type = (int)PrestaQiEnum.UserType.Acreditado
+                });
             }
 
             return Ok(result.Success);

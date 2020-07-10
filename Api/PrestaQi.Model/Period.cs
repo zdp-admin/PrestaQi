@@ -1,5 +1,4 @@
 ﻿using PrestaQi.Model.General;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrestaQi.Model

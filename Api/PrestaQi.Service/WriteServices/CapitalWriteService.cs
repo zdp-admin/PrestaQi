@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace PrestaQi.Service.WriteServices
 {
@@ -90,13 +89,17 @@ namespace PrestaQi.Service.WriteServices
             }
         }
 
-        public bool Update(CapitalChangeStatus capitalChangeStatus)
+        public CapitalChangeStatusResponse Update(CapitalChangeStatus capitalChangeStatus)
         {
+            CapitalChangeStatusResponse capitalChangeStatusResponse = new CapitalChangeStatusResponse();
+
             var capital = this._UserCapitalRetrieveService.Find(capitalChangeStatus.Capital_Id);
 
             if (capital == null)
                 throw new SystemValidationException("Capital not found");
-            
+
+            capitalChangeStatusResponse.CapitalId = capital.id;
+
             List<CapitalDetail> capitalDetails = new List<CapitalDetail>();
             var period = this._PeriodRetrieveService.Find(capital.period_id);
 
@@ -132,12 +135,12 @@ namespace PrestaQi.Service.WriteServices
                 }
             }
 
-            bool update = base.Update(capital);
+            capitalChangeStatusResponse.Success = base.Update(capital);
 
-            if (update && capitalDetails.Count > 0)
+            if (capitalChangeStatusResponse.Success && capitalDetails.Count > 0)
                 this._CapitalDetailWriteService.Create(capitalDetails);
 
-            return true;
+            return capitalChangeStatusResponse;
         }
 
         void SendMail(int investorId)

@@ -1,6 +1,4 @@
-﻿using PrestaQi.Model.Configurations;
-using PrestaQi.Model.Spei;
-using System;
+﻿using PrestaQi.Model.Spei;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
