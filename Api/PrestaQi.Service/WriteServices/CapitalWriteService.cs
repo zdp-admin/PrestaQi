@@ -49,6 +49,7 @@ namespace PrestaQi.Service.WriteServices
         public CreateCapital Create(Capital entity)
         {
             CreateCapital createCapital = new CreateCapital();
+
             var user = this._UserRetrieveService.Find(entity.Created_By);
             var investor = this._InvestorRetrieveSercice.Find(entity.investor_id);
 
@@ -69,6 +70,8 @@ namespace PrestaQi.Service.WriteServices
                 if (createCapital.Success)
                 {
                     createCapital.Investor = $"{investor.First_Name} {investor.Last_Name}";
+                    createCapital.Mail = investor.Mail;
+
                     try
                     {
                         SendMail(entity.investor_id);

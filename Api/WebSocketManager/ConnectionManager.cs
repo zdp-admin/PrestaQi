@@ -1,4 +1,7 @@
-﻿using System;
+﻿
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.WebSockets;
@@ -10,7 +13,14 @@ namespace WebSocketManager
     public class ConnectionManager
     {
         private ConcurrentDictionary<string, WebSocket> _sockets = new ConcurrentDictionary<string, WebSocket>();
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
+        public ConnectionManager(
+            IHttpContextAccessor httpContextAccessor
+            )
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
         public WebSocket GetSocketById(string id)
         {
             return _sockets.FirstOrDefault(p => p.Key == id).Value;
@@ -42,7 +52,8 @@ namespace WebSocketManager
 
         private string CreateConnectionId()
         {
-            return Guid.NewGuid().ToString();
+            return _httpContextAccessor.HttpContext.Request.Query["mail"].ToString();
+            //return Guid.NewGuid().ToString();
         }
     }
 }

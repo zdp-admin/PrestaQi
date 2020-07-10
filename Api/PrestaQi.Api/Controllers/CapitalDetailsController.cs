@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using InsiscoCore.Base.Service;
+﻿using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
-using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
@@ -18,29 +13,40 @@ namespace PrestaQi.Api.Controllers
     public class CapitalDetailsController : CustomController
     {
         IWriteService<CapitalDetail> _CapitalDetailWriteService;
-        IConfiguration _Configuration;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
+        IConfiguration _Configuration;
 
         public CapitalDetailsController(
             IWriteService<CapitalDetail> capitalDetailWriteService,
-            NotificationsMessageHandler notificationsMessageHandler,
-            IConfiguration configuration
+            IConfiguration configuration,
+            NotificationsMessageHandler notificationsMessageHandler
             )
         {
             this._CapitalDetailWriteService = capitalDetailWriteService;
-            this._NotificationsMessageHandler = notificationsMessageHandler;
             this._Configuration = configuration;
+            this._NotificationsMessageHandler = notificationsMessageHandler;
         }
 
         [HttpPut, Route("SetPaymentPeriod")]
         public IActionResult SetPaymentPeriod(CapitalDetail capitalDetail)
         {
-            var result = this._CapitalDetailWriteService.Update(capitalDetail);
+            var result = this._CapitalDetailWriteService.Update<CapitalDetail, SetPaymentPeriod>(capitalDetail);
 
-            if (result)
-                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(_Configuration["Notification:SetPaymentPeriod"]);
+            if (result.Success)
+            {
+                var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
 
-            return Ok(result);
+                if (socket != null)
+                {
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, 
+                        !result.PaymentTotal ?
+                         _Configuration.GetSection("Notification").GetSection("SetPaymentPeriod").Get<SendNotification>() :
+                         _Configuration.GetSection("Notification").GetSection("SetPaymentPeriodTotal").Get<SendNotification>()
+                        );
+                }
+            }
+
+            return Ok(result.Success);
         }
     }
 }

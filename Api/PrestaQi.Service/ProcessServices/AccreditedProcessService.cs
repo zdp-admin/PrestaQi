@@ -54,7 +54,7 @@ namespace PrestaQi.Service.ProcessServices
 
             var detail = accrediteds.Select(accredited => new AdvanceReceivableAccredited()
             {
-               Accredited_Id = accredited.id,
+                Accredited_Id = accredited.id,
                 Company_Id = accredited.Company_Id,
                 Advances = advances.Where(p => p.Accredited_Id == accredited.id).ToList(),
                 Id = accredited.Identify,
@@ -63,7 +63,7 @@ namespace PrestaQi.Service.ProcessServices
                 Date_Advance = advances.Where(p => p.Accredited_Id == accredited.id).FirstOrDefault().Date_Advance,
                 Interest_Rate = accredited.Interest_Rate,
                 NameComplete = $"{accredited.First_Name} {accredited.Last_Name}",
-                Payment = advances.Where(p => p.Accredited_Id == accredited.id).FirstOrDefault().Total_Withhold,
+                Payment = Math.Round(advances.Where(p => p.Accredited_Id == accredited.id).Sum(p => p.Total_Withhold), 2),
                 Requested_Day = advances.Where(p => p.Accredited_Id == accredited.id).FirstOrDefault().Requested_Day
             }).ToList();
 

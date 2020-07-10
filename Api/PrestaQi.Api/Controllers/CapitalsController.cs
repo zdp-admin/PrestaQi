@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Composition;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -28,6 +29,7 @@ namespace PrestaQi.Api.Controllers
         IProcessService<ExportMyInvestment> _ExportMyInvestmentProcessService;
         IConfiguration _Configuration;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
+
 
         public CapitalsController(
             IWriteService<Capital> capitalWriteService, 
@@ -67,8 +69,25 @@ namespace PrestaQi.Api.Controllers
             userCapital.Created_By = int.Parse(HttpContext.User.FindFirst("UserId").Value);
 
             var result = this._CapitalWriteService.Create<Capital, CreateCapital>(userCapital);
+
             if (result.Success)
-                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(string.Format(_Configuration["Notification:ChangePassword"], result.Investor));
+            {
+                var socketAdmin = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
+                var socketClient = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
+
+                if (socketAdmin != null)
+                {
+                    var notificationAdmin = _Configuration.GetSection("Notification").GetSection("SendCapitalCall").Get<SendNotification>();
+                    notificationAdmin.Message = string.Format(notificationAdmin.Message, result.Investor);
+
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socketAdmin, notificationAdmin);
+                }
+
+                if (socketClient != null)
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socketClient, _Configuration.GetSection("Notification").GetSection("NewCapitalCall").Get<SendNotification>());
+
+               
+            }
 
             return Ok(result.Success);
         }

@@ -10,6 +10,7 @@ using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -26,6 +27,7 @@ namespace PrestaQi.Api.Controllers
         IConfiguration _Configuration;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
 
+
         public AdministrativeController(
             IRetrieveService<User> _UserRetrieveService,
             IWriteService<Investor> investorWriteService,
@@ -33,9 +35,9 @@ namespace PrestaQi.Api.Controllers
             IProcessService<User> userProcessService,
             IWriteService<User> userWriteService,
             IRetrieveService<Contact> contactRetrieveService,
-            NotificationsMessageHandler notificationsMessageHandler,
-            IConfiguration configuration
-            )
+            IConfiguration configuration,
+            NotificationsMessageHandler notificationsMessageHandler
+            ) : base()
         {
             this._InvestorWriteService = investorWriteService;
             this._AccreditedWriteService = accreditedWriteService;
@@ -43,8 +45,8 @@ namespace PrestaQi.Api.Controllers
             this._UserWriteService = userWriteService;
             this._UserRetrieveService = _UserRetrieveService;
             this._ContactRetrieveService = contactRetrieveService;
-            this._NotificationsMessageHandler = notificationsMessageHandler;
             this._Configuration = configuration;
+            this._NotificationsMessageHandler = notificationsMessageHandler;
         }
 
         [HttpPut, Route("[action]"), Authorize]
@@ -62,9 +64,17 @@ namespace PrestaQi.Api.Controllers
             if (changePassword.Type == 3)
                 changed = this._AccreditedWriteService.Update<ChangePassword, bool>(changePassword);
 
-            if (changed)
-                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(_Configuration["Notification:ChangePassword"]);
 
+            if (changed)
+            {
+                var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
+                var notification = _Configuration.GetSection("Notification").GetSection("ChangePassword").Get<SendNotification>();
+
+                if (socket != null)
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+            }
+
+            
             return Ok(changed, "Password Changed!");
         }
 

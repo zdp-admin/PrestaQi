@@ -4,6 +4,7 @@ using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System;
 using System.Collections.Generic;
@@ -16,23 +17,32 @@ namespace PrestaQi.Service.WriteServices
     {
         IRetrieveService<CapitalDetail> _CapitalDetailRetrieveService;
         IRetrieveRepository<Capital> _CapitalRetrieveRepository;
-        IWriteRepository<Capital> _CapitaWriteRepository;
+        IRetrieveService<Investor> _InvestorRetrieveService;
+        IWriteRepository<Capital> _CapitalWriteService;
 
         public CapitalDetailWriteService(
             IWriteRepository<CapitalDetail> repository,
             IRetrieveService<CapitalDetail> capitalDetailRetrieveService,
             IRetrieveRepository<Capital> capitalRetrieveRepository,
-            IWriteRepository<Capital> capitaWriteRepository
+            IRetrieveService<Investor> investorRetrieveService,
+            IWriteRepository<Capital> capitalWriteService
             ) : base(repository)
         {
             this._CapitalDetailRetrieveService = capitalDetailRetrieveService;
             this._CapitalRetrieveRepository = capitalRetrieveRepository;
-            this._CapitaWriteRepository = capitaWriteRepository;
+            this._InvestorRetrieveService = investorRetrieveService;
+            this._CapitalWriteService = capitalWriteService;
         }
 
-        public override bool Update(CapitalDetail entity)
+        public SetPaymentPeriod Update(CapitalDetail entity)
         {
+            SetPaymentPeriod setPaymentPeriod = new SetPaymentPeriod();
+
             var entityFound = this._CapitalDetailRetrieveService.Find(entity.id);
+            var capital = this._CapitalRetrieveRepository.Find(entity.Capital_Id);
+            var investor = this._InvestorRetrieveService.Find(capital.investor_id);
+
+            setPaymentPeriod.Mail = investor.Mail;
 
             if (entityFound == null)
                 throw new SystemValidationException("Record not found");
@@ -41,16 +51,20 @@ namespace PrestaQi.Service.WriteServices
             entity.updated_at = DateTime.Now;
             entity.created_at = entityFound.created_at;
 
-            bool update = base.Update(entity);
+            setPaymentPeriod.Success = base.Update(entity);
 
-            if (update && this._CapitalDetailRetrieveService.Where(p => p.IsPayment == false).Count() == 0)
+            if (setPaymentPeriod.Success && this._CapitalDetailRetrieveService.Where(p => p.IsPayment == false).Count() == 0)
             {
-                var capital = this._CapitalRetrieveRepository.Find(entity.Capital_Id);
                 capital.Enabled = false;
                 capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActive;
+                capital.updated_at = DateTime.Now;
 
+                this._CapitalWriteService.Update(capital);
+
+                setPaymentPeriod.PaymentTotal = true;
             }
-            return update;
+
+            return setPaymentPeriod;
         }
 
     }

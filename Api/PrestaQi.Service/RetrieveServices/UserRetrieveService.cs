@@ -19,6 +19,7 @@ namespace PrestaQi.Service.RetrieveServices
         IRetrieveService<Accredited> _AccreditedRetrieveService;
         IRetrieveService<UserModule> _UserModuleRetrieveService;
 
+
         public UserRetrieveService(
             IRetrieveRepository<User> repository,
             IRetrieveService<Investor> investorRetrieveService,

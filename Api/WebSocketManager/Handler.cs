@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -25,10 +26,12 @@ namespace WebSocketManager
             await WebSocketConnectionManager.RemoveSocket(WebSocketConnectionManager.GetId(socket));
         }
 
-        public async Task SendMessageAsync(WebSocket socket, string message)
+        public async Task SendMessageAsync(WebSocket socket, object data)
         {
             if (socket.State != WebSocketState.Open)
                 return;
+
+            string message = JsonConvert.SerializeObject(data);
 
             await socket.SendAsync(buffer: new ArraySegment<byte>(array: Encoding.ASCII.GetBytes(message),
                                                                   offset: 0,

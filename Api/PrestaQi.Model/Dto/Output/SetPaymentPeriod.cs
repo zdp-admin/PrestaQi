@@ -4,11 +4,10 @@ using System.Text;
 
 namespace PrestaQi.Model.Dto.Output
 {
-    public class SpeiTransactionResult
+    public class SetPaymentPeriod
     {
         public bool Success { get; set; }
-        public string Message { get; set; }
-        public string Accredited { get; set; }
         public string Mail { get; set; }
+        public bool PaymentTotal { get; set; }
     }
 }

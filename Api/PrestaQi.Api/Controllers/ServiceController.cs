@@ -9,6 +9,7 @@ using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -18,36 +19,43 @@ namespace PrestaQi.Api.Controllers
     {
         IWriteService<SpeiResponse> _SpeiResponseWriteService;
         IConfiguration _Configuration;
-        IRetrieveService<Repayment> _Repayment;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
 
         public ServiceController(
             IWriteService<SpeiResponse> speiResponseWriteService,
-            NotificationsMessageHandler notificationsMessageHandler,
             IConfiguration configuration,
-            IRetrieveService<Repayment> repayment
+            NotificationsMessageHandler notificationsMessageHandler
             )
         {
             this._SpeiResponseWriteService = speiResponseWriteService;
-            this._NotificationsMessageHandler = notificationsMessageHandler;
             this._Configuration = configuration;
-            this._Repayment = repayment;
+            this._NotificationsMessageHandler = notificationsMessageHandler;
         }
 
         [HttpPost, Route("stp/status")]
         public IActionResult GetStatusAccredited(StateChange stateChange)
         {
-            var result = this._SpeiResponseWriteService.Update<StateChange, bool>(stateChange);
+            var result = this._SpeiResponseWriteService.Update<StateChange, SpeiTransactionResult>(stateChange);
 
-            if (result && stateChange.CausaDevolucion < 0)
-                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(_Configuration["Notification:AdvanceSuccess"]);
-            if (result && stateChange.CausaDevolucion > 0)
+            var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
+
+            if (socket != null)
             {
-                string message = this._Repayment.Find(stateChange.CausaDevolucion).Description;
-                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(string.Format(_Configuration["Notification:AdvanceFail"], message));
+                if (result.Success && stateChange.CausaDevolucion < 0)
+                {
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, _Configuration.GetSection("Notification").GetSection("AdvanceSuccess").Get<SendNotification>());
+                }
+
+                if (result.Success && stateChange.CausaDevolucion > 0)
+                {
+                    var notification = _Configuration.GetSection("Notification").GetSection("AdvanceFail").Get<SendNotification>();
+                    notification.Message = string.Format(notification.Message, result.Message);
+
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+                }
             }
 
-            return Ok(result);
+            return Ok(result.Success);
         }
 
     }

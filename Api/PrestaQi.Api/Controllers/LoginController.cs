@@ -6,14 +6,18 @@ using System.Text;
 using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using PrestaQi.Api.Configuration;
+using PrestaQi.Api.Notification.Hubs;
+using PrestaQi.Api.Notification.Interfaces;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
+using WebSocketManager;
 
 namespace PrestaQi.Api.Controllers
 {

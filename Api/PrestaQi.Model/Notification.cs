@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PrestaQi.Model.Dto.Output
+namespace PrestaQi.Model
 {
-    class ChangeStatusCapital
+    public class Notification
     {
     }
 }

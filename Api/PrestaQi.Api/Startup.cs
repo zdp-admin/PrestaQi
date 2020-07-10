@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using PrestaQi.Api.Configuration;
+using PrestaQi.Api.Notification.Hubs;
+using PrestaQi.Api.Notification.Interfaces;
 using PrestaQi.DataAccess;
 using System;
 using System.Text;
@@ -24,7 +27,6 @@ namespace PrestaQi.Api
             _Environment = env;
         }
 
-       
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -55,6 +57,9 @@ namespace PrestaQi.Api
                        .AllowAnyHeader();
             }));
 
+            services.AddHttpContextAccessor();
+            services.AddWebSocketManager();
+
             services.AddMvc(config =>
             {
                 config.Filters.Add(new ExceptionHandling());
@@ -64,8 +69,7 @@ namespace PrestaQi.Api
                 .AddNewtonsoftJson(options =>
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             );
-
-            services.AddWebSocketManager();
+            
             services.AddControllers();
         }
 
@@ -84,13 +88,20 @@ namespace PrestaQi.Api
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
+
             app.UseWebSockets();
             app.MapWebSocketManager("/ws", serviceProvider.GetService<NotificationsMessageHandler>());
+
+            app.UseStaticFiles();
+            app.UseWebSockets();
+
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
+            
         }
 
     }

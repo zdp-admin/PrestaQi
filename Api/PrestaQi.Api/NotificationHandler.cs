@@ -1,4 +1,7 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.AspNetCore.Http;
+using System;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,8 +12,13 @@ namespace PrestaQi.Api
 {
     public class NotificationsMessageHandler : WebSocketHandler
     {
-        public NotificationsMessageHandler(ConnectionManager webSocketConnectionManager) : base(webSocketConnectionManager)
+
+        public ConnectionManager _ConnectionManager { get; set; }
+        public NotificationsMessageHandler(
+            ConnectionManager webSocketConnectionManager
+            ) : base(webSocketConnectionManager)
         {
+            this._ConnectionManager = webSocketConnectionManager;
         }
 
         public override async Task OnConnected(WebSocket socket)
@@ -28,5 +36,6 @@ namespace PrestaQi.Api
 
             await SendMessageToAllAsync(message);
         }
+
     }
 }
