@@ -10,6 +10,7 @@ using PrestaQi.Api.Configuration;
 using PrestaQi.DataAccess;
 using System;
 using System.Text;
+using WebSocketManager;
 
 namespace PrestaQi.Api
 {
@@ -64,12 +65,16 @@ namespace PrestaQi.Api
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             );
 
+            services.AddWebSocketManager();
             services.AddControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            var serviceScopeFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
+            var serviceProvider = serviceScopeFactory.CreateScope().ServiceProvider;
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -79,6 +84,8 @@ namespace PrestaQi.Api
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseWebSockets();
+            app.MapWebSocketManager("/ws", serviceProvider.GetService<NotificationsMessageHandler>());
 
             app.UseEndpoints(endpoints =>
             {

@@ -1,6 +1,7 @@
 ﻿using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto;
@@ -22,6 +23,8 @@ namespace PrestaQi.Api.Controllers
         IWriteService<Accredited> _AccreditedWriteService;
         IProcessService<User> _UserProcessService;
         IRetrieveService<Contact> _ContactRetrieveService;
+        IConfiguration _Configuration;
+        private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
 
         public AdministrativeController(
             IRetrieveService<User> _UserRetrieveService,
@@ -29,7 +32,9 @@ namespace PrestaQi.Api.Controllers
             IWriteService<Accredited> accreditedWriteService,
             IProcessService<User> userProcessService,
             IWriteService<User> userWriteService,
-            IRetrieveService<Contact> contactRetrieveService
+            IRetrieveService<Contact> contactRetrieveService,
+            NotificationsMessageHandler notificationsMessageHandler,
+            IConfiguration configuration
             )
         {
             this._InvestorWriteService = investorWriteService;
@@ -38,6 +43,8 @@ namespace PrestaQi.Api.Controllers
             this._UserWriteService = userWriteService;
             this._UserRetrieveService = _UserRetrieveService;
             this._ContactRetrieveService = contactRetrieveService;
+            this._NotificationsMessageHandler = notificationsMessageHandler;
+            this._Configuration = configuration;
         }
 
         [HttpPut, Route("[action]"), Authorize]
@@ -54,6 +61,9 @@ namespace PrestaQi.Api.Controllers
                 changed = this._InvestorWriteService.Update<ChangePassword, bool>(changePassword);
             if (changePassword.Type == 3)
                 changed = this._AccreditedWriteService.Update<ChangePassword, bool>(changePassword);
+
+            if (changed)
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(_Configuration["Notification:ChangePassword"]);
 
             return Ok(changed, "Password Changed!");
         }

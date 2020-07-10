@@ -8,9 +8,9 @@ namespace PrestaQi.Model.Enum
     {
         public enum CapitalEnum
         {
-            Requested = 1,
-            Sent = 2,
-            Finished
+            Solicitado = 1,
+            Enviado = 2,
+            Terminado = 3
         }
 
         public enum InvestmentEnum

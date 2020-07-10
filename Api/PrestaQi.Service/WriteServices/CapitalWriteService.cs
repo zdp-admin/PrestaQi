@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using PrestaQi.Service.Tools;
 using System;
@@ -45,26 +46,29 @@ namespace PrestaQi.Service.WriteServices
             this._ContactRetrieveService = contactRetrieveService;
         }
 
-        public override bool Create(Capital entity)
+        public CreateCapital Create(Capital entity)
         {
+            CreateCapital createCapital = new CreateCapital();
             var user = this._UserRetrieveService.Find(entity.Created_By);
+            var investor = this._InvestorRetrieveSercice.Find(entity.investor_id);
 
             if (user.Password != InsiscoCore.Utilities.Crypto.MD5.Encrypt(entity.Password))
                 throw new SystemValidationException("Incorrect Password!");
 
             entity.Start_Date = DateTime.Now;
             entity.End_Date = DateTime.Now;
-            entity.Capital_Status = (int)PrestaQiEnum.CapitalEnum.Requested;
+            entity.Capital_Status = (int)PrestaQiEnum.CapitalEnum.Solicitado;
             entity.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActive;
             entity.created_at = DateTime.Now;
             entity.updated_at = DateTime.Now;
 
             try
             {
-                bool create = base.Create(entity);
+                createCapital.Success = base.Create(entity);
 
-                if (create)
+                if (createCapital.Success)
                 {
+                    createCapital.Investor = $"{investor.First_Name} {investor.Last_Name}";
                     try
                     {
                         SendMail(entity.investor_id);
@@ -75,7 +79,7 @@ namespace PrestaQi.Service.WriteServices
                     }
                 }
 
-                return create;
+                return createCapital;
             }
             catch (Exception exception)
             {
@@ -95,7 +99,7 @@ namespace PrestaQi.Service.WriteServices
 
             capital.Capital_Status = capitalChangeStatus.Status;
 
-            if (capital.Capital_Status == (int)PrestaQiEnum.CapitalEnum.Finished)
+            if (capital.Capital_Status == (int)PrestaQiEnum.CapitalEnum.Terminado)
             {
                 int monthNum = (12 * capital.Investment_Horizon) / period.Period_Value;
 

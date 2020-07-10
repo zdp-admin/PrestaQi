@@ -8,6 +8,7 @@ using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
@@ -25,6 +26,8 @@ namespace PrestaQi.Api.Controllers
         IProcessService<ExportAnchorControl> _ExportAnchorProcessService;
         IProcessService<ExportCapitalDetail> _ExportCapitalDetailProcessService;
         IProcessService<ExportMyInvestment> _ExportMyInvestmentProcessService;
+        IConfiguration _Configuration;
+        private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
 
         public CapitalsController(
             IWriteService<Capital> capitalWriteService, 
@@ -32,7 +35,9 @@ namespace PrestaQi.Api.Controllers
             IProcessService<Capital> capitalProcessService,
             IProcessService<ExportAnchorControl> exportAnchorProcessService,
             IProcessService<ExportCapitalDetail> exportCapitalDetailProcessService,
-            IProcessService<ExportMyInvestment> exportMyInvestmentProcessService)
+            IProcessService<ExportMyInvestment> exportMyInvestmentProcessService,
+            NotificationsMessageHandler notificationsMessageHandler,
+            IConfiguration configuration)
         {
             this._CapitalWriteService = capitalWriteService;
             this._CapitalRetrieveService = capitalRetrieveService;
@@ -40,6 +45,9 @@ namespace PrestaQi.Api.Controllers
             this._ExportAnchorProcessService = exportAnchorProcessService;
             this._ExportCapitalDetailProcessService = exportCapitalDetailProcessService;
             this._ExportMyInvestmentProcessService = exportMyInvestmentProcessService;
+
+            this._NotificationsMessageHandler = notificationsMessageHandler;
+            this._Configuration = configuration;
         }
 
         [HttpGet, Route("[action]/{id}")]
@@ -57,7 +65,12 @@ namespace PrestaQi.Api.Controllers
         public IActionResult Post(Capital userCapital)
         {
             userCapital.Created_By = int.Parse(HttpContext.User.FindFirst("UserId").Value);
-            return Ok(this._CapitalWriteService.Create(userCapital), "Record created!");
+
+            var result = this._CapitalWriteService.Create<Capital, CreateCapital>(userCapital);
+            if (result.Success)
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(string.Format(_Configuration["Notification:ChangePassword"], result.Investor));
+
+            return Ok(result.Success);
         }
 
         [HttpPost, Route("GetMyInvestments")]

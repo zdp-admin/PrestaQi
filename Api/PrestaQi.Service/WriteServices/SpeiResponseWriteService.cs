@@ -15,6 +15,8 @@ namespace PrestaQi.Service.WriteServices
     public class SpeiResponseWriteService : WriteService<SpeiResponse>
     {
         IRetrieveService<SpeiResponse> _SpeiResponseRetrieveService;
+        
+        
         public SpeiResponseWriteService(
             IWriteRepository<SpeiResponse> repository,
             IRetrieveService<SpeiResponse> speiResponseRetrieveService

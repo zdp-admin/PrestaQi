@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30104.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrestaQi.Api", "PrestaQi.Api\PrestaQi.Api.csproj", "{3A0B008B-ABD9-4DB7-9B0A-0677AE45297F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrestaQi.Api", "PrestaQi.Api\PrestaQi.Api.csproj", "{3A0B008B-ABD9-4DB7-9B0A-0677AE45297F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrestaQi.Model", "PrestaQi.Model\PrestaQi.Model.csproj", "{565C0D0E-CBC9-4E33-A1E3-D696A56261F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrestaQi.Model", "PrestaQi.Model\PrestaQi.Model.csproj", "{565C0D0E-CBC9-4E33-A1E3-D696A56261F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrestaQi.DataAccess", "PrestaQi.DataAccess\PrestaQi.DataAccess.csproj", "{D51F9F2B-02E8-40FD-9687-B0AED3B35FDC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrestaQi.DataAccess", "PrestaQi.DataAccess\PrestaQi.DataAccess.csproj", "{D51F9F2B-02E8-40FD-9687-B0AED3B35FDC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrestaQi.Service", "PrestaQi.Service\PrestaQi.Service.csproj", "{3508FB57-BFFB-4616-B093-4B9DC16C519C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrestaQi.Service", "PrestaQi.Service\PrestaQi.Service.csproj", "{3508FB57-BFFB-4616-B093-4B9DC16C519C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSocketManager", "WebSocketManager\WebSocketManager.csproj", "{00104E38-2ED8-46A1-8A8C-E3F05516DA26}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{3508FB57-BFFB-4616-B093-4B9DC16C519C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3508FB57-BFFB-4616-B093-4B9DC16C519C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3508FB57-BFFB-4616-B093-4B9DC16C519C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00104E38-2ED8-46A1-8A8C-E3F05516DA26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00104E38-2ED8-46A1-8A8C-E3F05516DA26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00104E38-2ED8-46A1-8A8C-E3F05516DA26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00104E38-2ED8-46A1-8A8C-E3F05516DA26}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

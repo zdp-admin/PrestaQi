@@ -22,6 +22,7 @@
     <ProjectReference Include="..\PrestaQi.DataAccess\PrestaQi.DataAccess.csproj" />
     <ProjectReference Include="..\PrestaQi.Model\PrestaQi.Model.csproj" />
     <ProjectReference Include="..\PrestaQi.Service\PrestaQi.Service.csproj" />
+    <ProjectReference Include="..\WebSocketManager\WebSocketManager.csproj" />
   </ItemGroup>
 
   <ItemGroup>

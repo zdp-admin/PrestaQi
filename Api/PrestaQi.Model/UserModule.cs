@@ -7,7 +7,7 @@ using System.Text;
 namespace PrestaQi.Model
 {
     [Table("usermodules")]
-    public class UserModule : Entity<int>
+    public partial class UserModule : Entity<int>
     {
         public int user_id { get; set; }
         public int module_id { get; set; }

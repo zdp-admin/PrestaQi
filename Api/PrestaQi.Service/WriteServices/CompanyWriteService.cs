@@ -1,6 +1,7 @@
 ﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using Microsoft.Extensions.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto;
@@ -14,7 +15,7 @@ namespace PrestaQi.Service.WriteServices
     public class CompanyWriteService : WriteService<Company>
     {
         IRetrieveService<Company> _CompanyRetrieveService;
-
+        
         public CompanyWriteService(
             IWriteRepository<Company> repository,
             IRetrieveService<Company> companyRetrieveService

@@ -5,6 +5,7 @@ using System.Linq;
 using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
@@ -17,17 +18,29 @@ namespace PrestaQi.Api.Controllers
     public class CapitalDetailsController : CustomController
     {
         IWriteService<CapitalDetail> _CapitalDetailWriteService;
+        IConfiguration _Configuration;
+        private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
 
         public CapitalDetailsController(
-            IWriteService<CapitalDetail> capitalDetailWriteService)
+            IWriteService<CapitalDetail> capitalDetailWriteService,
+            NotificationsMessageHandler notificationsMessageHandler,
+            IConfiguration configuration
+            )
         {
             this._CapitalDetailWriteService = capitalDetailWriteService;
+            this._NotificationsMessageHandler = notificationsMessageHandler;
+            this._Configuration = configuration;
         }
 
         [HttpPut, Route("SetPaymentPeriod")]
         public IActionResult SetPaymentPeriod(CapitalDetail capitalDetail)
         {
-            return Ok(this._CapitalDetailWriteService.Update(capitalDetail));
+            var result = this._CapitalDetailWriteService.Update(capitalDetail);
+
+            if (result)
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(_Configuration["Notification:SetPaymentPeriod"]);
+
+            return Ok(result);
         }
     }
 }
