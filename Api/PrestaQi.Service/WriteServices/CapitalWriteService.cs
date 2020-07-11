@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace PrestaQi.Service.WriteServices
 {
@@ -68,6 +69,8 @@ namespace PrestaQi.Service.WriteServices
 
                 if (createCapital.Success)
                 {
+                    createCapital.Amount = entity.Amount;
+                    createCapital.Capital_Id = entity.id;
                     createCapital.Investor = $"{investor.First_Name} {investor.Last_Name}";
                     createCapital.Mail = investor.Mail;
 

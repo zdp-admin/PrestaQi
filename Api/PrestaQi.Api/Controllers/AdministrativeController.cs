@@ -57,7 +57,7 @@ namespace PrestaQi.Api.Controllers
         public IActionResult ChangePassword(ChangePassword changePassword)
         {
             changePassword.Type = int.Parse(HttpContext.User.FindFirst("Type").Value);
-            changePassword.User_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+            changePassword.User_Id =  int.Parse(HttpContext.User.FindFirst("UserId").Value);
 
             bool changed = false;
 
@@ -71,19 +71,26 @@ namespace PrestaQi.Api.Controllers
 
             if (changed)
             {
-                var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
                 var notification = _Configuration.GetSection("Notification").GetSection("ChangePassword").Get<SendNotification>();
 
-                if (socket != null)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
-
-                this._NotificationWriteService.Create(new Model.Notification()
+                var notificationObj = new Model.Notification()
                 {
                     User_Id = changePassword.User_Id,
                     User_Type = changePassword.Type,
                     Title = notification.Title,
-                    Message = notification.Message
-                });
+                    Message = notification.Message,
+                    NotificationType = PrestaQiEnum.NotificationType.ChangePassword
+                };
+
+                bool create = this._NotificationWriteService.Create(notificationObj);
+                
+                var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
+
+                if (socket != null && create)
+                {
+                    notification.Id = notificationObj.id;
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+                }
             }
 
             

@@ -49,16 +49,22 @@ namespace PrestaQi.Api.Controllers
                     notification.Message = string.Format(notification.Message, result.Message);
                 }
 
-                if (socket != null)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
-
-                this._NotificationWriteService.Create(new Model.Notification()
+                var notificationObj = new Model.Notification()
                 {
                     Message = notification.Message,
                     Title = notification.Title,
                     User_Id = result.UserId,
-                    User_Type = (int)PrestaQiEnum.UserType.Acreditado
-                });
+                    User_Type = (int)PrestaQiEnum.UserType.Acreditado,
+                    NotificationType = PrestaQiEnum.NotificationType.AdvanceStatus
+                };
+
+                this._NotificationWriteService.Create(notificationObj);
+
+                if (socket != null)
+                {
+                    notification.Id = notificationObj.id;
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+                }
             }
 
             return Ok(result.Success);

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace PrestaQi.Model
 {
     [Table("notifications")]
-    public class Notification : Entity<int>
+    public partial class Notification : Entity<int>
     {
         [Column("user_id")]
         public int User_Id { get; set; }

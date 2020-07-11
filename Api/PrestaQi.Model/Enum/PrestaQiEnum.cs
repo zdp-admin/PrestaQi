@@ -35,5 +35,14 @@
             Inversionista = 2,
             Acreditado = 3
         }
+
+        public enum NotificationType
+        {
+            ChangePassword = 1,
+            SetPaymentPeriod,
+            CapitalCall,
+            AdvanceStatus,
+            ChangeStatusCapital
+        }
     }
 }

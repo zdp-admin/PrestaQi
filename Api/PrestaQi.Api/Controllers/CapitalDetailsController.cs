@@ -1,4 +1,5 @@
-﻿using InsiscoCore.Base.Service;
+﻿using DocumentFormat.OpenXml.EMMA;
+using InsiscoCore.Base.Service;
 using iText.Forms.Xfdf;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
+using System.Dynamic;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -45,18 +47,28 @@ namespace PrestaQi.Api.Controllers
                          _Configuration.GetSection("Notification").GetSection("SetPaymentPeriod").Get<SendNotification>() :
                          _Configuration.GetSection("Notification").GetSection("SetPaymentPeriodTotal").Get<SendNotification>();
 
-                if (socket != null)
-                {
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
-                }
-
-                this._NotificationWriteService.Create(new Model.Notification()
+                var objectNotification = new Model.Notification()
                 {
                     Message = notification.Message,
                     Title = notification.Title,
                     User_Id = result.UserId,
-                    User_Type = (int)PrestaQiEnum.UserType.Inversionista
-                });
+                    User_Type = (int)PrestaQiEnum.UserType.Inversionista,
+                    NotificationType = PrestaQiEnum.NotificationType.SetPaymentPeriod
+                };
+                objectNotification.Data = new ExpandoObject();
+                objectNotification.Data.Period_Id = result.Period_Id;
+                objectNotification.Data.Capital_Id = result.Capital_Id;
+                objectNotification.Data.Payment = result.Payment;
+                objectNotification.Data.Investor_Id = result.UserId;
+
+
+                this._NotificationWriteService.Create(objectNotification);
+
+                if (socket != null)
+                {
+                    notification.Id = objectNotification.id;
+                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+                }
 
             }
 

@@ -1,4 +1,5 @@
-﻿using InsiscoCore.Base.Data;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using PrestaQi.Model;
@@ -41,6 +42,9 @@ namespace PrestaQi.Service.WriteServices
 
             setPaymentPeriod.Mail = investor.Mail;
             setPaymentPeriod.UserId = investor.id;
+            setPaymentPeriod.Payment = entity.Payment;
+            setPaymentPeriod.Period_Id = entity.id;
+            setPaymentPeriod.Capital_Id = entity.Capital_Id;
 
             if (entityFound == null)
                 throw new SystemValidationException("Record not found");

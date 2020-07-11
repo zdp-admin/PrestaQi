@@ -1,4 +1,6 @@
-﻿namespace PrestaQi.Model.Dto.Output
+﻿using System.Security.Principal;
+
+namespace PrestaQi.Model.Dto.Output
 {
     public class SetPaymentPeriod
     {
@@ -6,5 +8,8 @@
         public string Mail { get; set; }
         public bool PaymentTotal { get; set; }
         public int UserId { get; set; }
+        public int Capital_Id { get; set; }
+        public int Period_Id { get; set; }
+        public double Payment { get; set; }
     }
 }

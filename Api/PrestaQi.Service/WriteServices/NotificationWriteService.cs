@@ -1,21 +1,69 @@
-﻿using InsiscoCore.Base.Data;
+﻿using DocumentFormat.OpenXml.Office2010.ExcelAc;
+using InsiscoCore.Base.Data;
+using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using iText.Forms.Xfdf;
 using PrestaQi.Model;
+using PrestaQi.Model.Configurations;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PrestaQi.Service.WriteServices
 {
     public class NotificationWriteService : WriteService<Notification>
     {
-        public NotificationWriteService(IWriteRepository<Notification> repository) : base(repository)
+        IRetrieveService<Model.Notification> _NotificationRetrieveService;
+        IProcessService<Model.Notification> _NotificationProcessService;
+
+        public NotificationWriteService(
+            IWriteRepository<Notification> repository,
+            IRetrieveService<Model.Notification> notificationRetrieveService,
+            IProcessService<Model.Notification> notificationProcessService
+            ) : base(repository)
         {
+            this._NotificationRetrieveService = notificationRetrieveService;
+            this._NotificationProcessService = notificationProcessService;
         }
 
         public override bool Create(Notification entity)
         {
-            entity.created_at = DateTime.Now;
-            entity.updated_at = DateTime.Now; 
-            return base.Create(entity);
+            try
+            {
+                entity.created_at = DateTime.Now;
+                entity.updated_at = DateTime.Now;
+                bool created = base.Create(entity);
+
+                this._NotificationProcessService.ExecuteProcess<Notification, bool>(entity);
+
+                return created;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error al guardar la notificación: {exception.Message}");
+            }
+            
+        }
+
+        public bool Update(List<int> notificationIds)
+        {
+            try
+            {
+                var notifications = this._NotificationRetrieveService.Where(p => notificationIds.Contains(p.id)).ToList();
+
+                if (notificationIds.Count > 0)
+                {
+                    notifications.ForEach(p => { p.updated_at = DateTime.Now; p.Is_Read = true; });
+
+                    base.Update(notifications);
+                }
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error al desabilitar las notificaciones: {exception.Message}");
+            }
         }
     }
 }
