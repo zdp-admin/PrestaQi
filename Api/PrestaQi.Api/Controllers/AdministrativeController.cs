@@ -53,11 +53,11 @@ namespace PrestaQi.Api.Controllers
             this._NotificationsMessageHandler = notificationsMessageHandler;
         }
 
-        [HttpPut, Route("[action]")]
+        [HttpPut, Route("[action]"), Authorize]
         public IActionResult ChangePassword(ChangePassword changePassword)
         {
-            changePassword.Type = 2;//int.Parse(HttpContext.User.FindFirst("Type").Value);
-            changePassword.User_Id = 7;// int.Parse(HttpContext.User.FindFirst("UserId").Value);
+            changePassword.Type = int.Parse(HttpContext.User.FindFirst("Type").Value);
+            changePassword.User_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
 
             bool changed = false;
 
