@@ -16,5 +16,7 @@ namespace PrestaQi.Model
         public string Message { get; set; }
         [Column("is_read")]
         public bool Is_Read { get; set; }
+        [Column("icon")]
+        public string Icon { get; set; }
     }
 }

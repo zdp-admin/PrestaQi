@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.Wordprocessing;
 using InsiscoCore.Base.Service;
 using iText.Forms.Xfdf;
 using Microsoft.AspNetCore.Authorization;
@@ -44,31 +45,23 @@ namespace PrestaQi.Api.Controllers
                 var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
 
                 var notification = !result.PaymentTotal ?
-                         _Configuration.GetSection("Notification").GetSection("SetPaymentPeriod").Get<SendNotification>() :
-                         _Configuration.GetSection("Notification").GetSection("SetPaymentPeriodTotal").Get<SendNotification>();
+                         _Configuration.GetSection("Notification").GetSection("SetPaymentPeriod").Get<Model.Notification>() :
+                         _Configuration.GetSection("Notification").GetSection("SetPaymentPeriodTotal").Get<Model.Notification>();
 
-                var objectNotification = new Model.Notification()
-                {
-                    Message = notification.Message,
-                    Title = notification.Title,
-                    User_Id = result.UserId,
-                    User_Type = (int)PrestaQiEnum.UserType.Inversionista,
-                    NotificationType = PrestaQiEnum.NotificationType.SetPaymentPeriod
-                };
-                objectNotification.Data = new ExpandoObject();
-                objectNotification.Data.Period_Id = result.Period_Id;
-                objectNotification.Data.Capital_Id = result.Capital_Id;
-                objectNotification.Data.Payment = result.Payment;
-                objectNotification.Data.Investor_Id = result.UserId;
+                notification.User_Id = result.UserId;
+                notification.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
+                notification.User_Type = (int)PrestaQiEnum.UserType.Inversionista;
+                notification.NotificationType = PrestaQiEnum.NotificationType.SetPaymentPeriod;
+                notification.Data = new ExpandoObject();
+                notification.Data.Period_Id = result.Period_Id;
+                notification.Data.Capital_Id = result.Capital_Id;
+                notification.Data.Payment = result.Payment;
+                notification.Data.Investor_Id = result.UserId;
 
-
-                this._NotificationWriteService.Create(objectNotification);
+                this._NotificationWriteService.Create(notification);
 
                 if (socket != null)
-                {
-                    notification.Id = objectNotification.id;
                     _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
-                }
 
             }
 

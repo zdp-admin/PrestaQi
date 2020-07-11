@@ -44,5 +44,13 @@
             AdvanceStatus,
             ChangeStatusCapital
         }
+
+        public enum NotificationIconType
+        {
+           done = 1,
+           warning = 2,
+           info = 3,
+           error = 4
+        }
     }
 }

@@ -48,6 +48,8 @@ namespace PrestaQi.Service.ProcessServices
                     };
                     sendFirebase.data = new ExpandoObject();
                     sendFirebase.data.click_action = "FLUTTER_NOTIFICATION_CLICK";
+                    sendFirebase.data.icon = notification.Icon;
+                    sendFirebase.data.created_at = notification.created_at;
 
                     if (notification.NotificationType == Model.Enum.PrestaQiEnum.NotificationType.SetPaymentPeriod)
                     {

@@ -1,4 +1,5 @@
 ﻿using InsiscoCore.Base.Service;
+using iText.Forms.Xfdf;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
@@ -39,32 +40,28 @@ namespace PrestaQi.Api.Controllers
 
             if (result.Success)
             {
-                var notification = new SendNotification();
+                var notification = new Model.Notification();
 
                 if (stateChange.CausaDevolucion < 0)
-                    notification = _Configuration.GetSection("Notification").GetSection("AdvanceSuccess").Get<SendNotification>();
+                {
+                    notification = _Configuration.GetSection("Notification").GetSection("AdvanceSuccess").Get<Model.Notification>();
+                    notification.Icon = PrestaQiEnum.NotificationIconType.done.ToString();
+                }
                 if (stateChange.CausaDevolucion > 0)
                 {
-                    notification = _Configuration.GetSection("Notification").GetSection("AdvanceFail").Get<SendNotification>();
+                    notification = _Configuration.GetSection("Notification").GetSection("AdvanceFail").Get<Model.Notification>();
                     notification.Message = string.Format(notification.Message, result.Message);
+                    notification.Icon = PrestaQiEnum.NotificationIconType.error.ToString();
                 }
 
-                var notificationObj = new Model.Notification()
-                {
-                    Message = notification.Message,
-                    Title = notification.Title,
-                    User_Id = result.UserId,
-                    User_Type = (int)PrestaQiEnum.UserType.Acreditado,
-                    NotificationType = PrestaQiEnum.NotificationType.AdvanceStatus
-                };
-
-                this._NotificationWriteService.Create(notificationObj);
+                notification.User_Id = result.UserId;
+                notification.User_Type = (int)PrestaQiEnum.UserType.Acreditado;
+                notification.NotificationType = PrestaQiEnum.NotificationType.AdvanceStatus;
+            
+                this._NotificationWriteService.Create(notification);
 
                 if (socket != null)
-                {
-                    notification.Id = notificationObj.id;
                     _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
-                }
             }
 
             return Ok(result.Success);

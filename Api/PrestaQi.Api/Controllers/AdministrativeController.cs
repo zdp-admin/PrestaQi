@@ -53,11 +53,11 @@ namespace PrestaQi.Api.Controllers
             this._NotificationsMessageHandler = notificationsMessageHandler;
         }
 
-        [HttpPut, Route("[action]"), Authorize]
+        [HttpPut, Route("[action]")]
         public IActionResult ChangePassword(ChangePassword changePassword)
         {
-            changePassword.Type = int.Parse(HttpContext.User.FindFirst("Type").Value);
-            changePassword.User_Id =  int.Parse(HttpContext.User.FindFirst("UserId").Value);
+            changePassword.Type = 2;//int.Parse(HttpContext.User.FindFirst("Type").Value);
+            changePassword.User_Id = 7;// int.Parse(HttpContext.User.FindFirst("UserId").Value);
 
             bool changed = false;
 
@@ -71,29 +71,21 @@ namespace PrestaQi.Api.Controllers
 
             if (changed)
             {
-                var notification = _Configuration.GetSection("Notification").GetSection("ChangePassword").Get<SendNotification>();
+                var notification = _Configuration.GetSection("Notification").GetSection("ChangePassword").Get<Model.Notification>();
 
-                var notificationObj = new Model.Notification()
-                {
-                    User_Id = changePassword.User_Id,
-                    User_Type = changePassword.Type,
-                    Title = notification.Title,
-                    Message = notification.Message,
-                    NotificationType = PrestaQiEnum.NotificationType.ChangePassword
-                };
-
-                bool create = this._NotificationWriteService.Create(notificationObj);
+                notification.User_Id = changePassword.User_Id;
+                notification.User_Type = changePassword.Type;
+                notification.NotificationType = PrestaQiEnum.NotificationType.ChangePassword;
+                notification.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
+                bool create = this._NotificationWriteService.Create(notification);
                 
                 var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
 
                 if (socket != null && create)
-                {
-                    notification.Id = notificationObj.id;
                     _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
-                }
+                
             }
 
-            
             return Ok(changed, "Password Changed!");
         }
 

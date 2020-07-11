@@ -32,7 +32,7 @@ namespace PrestaQi.Api.Controllers
 
 
         public CapitalsController(
-            IWriteService<Capital> capitalWriteService, 
+            IWriteService<Capital> capitalWriteService,
             IRetrieveService<Capital> capitalRetrieveService,
             IProcessService<Capital> capitalProcessService,
             IProcessService<ExportAnchorControl> exportAnchorProcessService,
@@ -54,7 +54,7 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("[action]/{id}")]
-        public IActionResult GetByInvestor(int id, 
+        public IActionResult GetByInvestor(int id,
             [FromQuery(Name = "startDate")] DateTime startDate,
             [FromQuery(Name = "endDate")] DateTime endDate)
         {
@@ -76,48 +76,36 @@ namespace PrestaQi.Api.Controllers
                 var socketAdmin = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
                 var socketClient = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
 
-                var notificationAdmin = _Configuration.GetSection("Notification").GetSection("SendCapitalCall").Get<SendNotification>();
+                var notificationAdmin = _Configuration.GetSection("Notification").GetSection("SendCapitalCall").Get<Model.Notification>();
                 notificationAdmin.Message = string.Format(notificationAdmin.Message, result.Investor);
-                var notificationClient = _Configuration.GetSection("Notification").GetSection("NewCapitalCall").Get<SendNotification>();
+                var notificationClient = _Configuration.GetSection("Notification").GetSection("NewCapitalCall").Get<Model.Notification>();
 
                 dynamic dynamicNoti = new ExpandoObject();
                 dynamicNoti.Capital_Id = result.Capital_Id;
                 dynamicNoti.Amount = result.Amount;
 
-                var notificationAdminOjb = new Model.Notification()
-                {
-                    User_Id = userCapital.Created_By,
-                    User_Type = (int)PrestaQiEnum.UserType.Administrador,
-                    Title = notificationAdmin.Title,
-                    Message = notificationAdmin.Message,
-                    NotificationType = PrestaQiEnum.NotificationType.CapitalCall,
-                    Data = dynamicNoti
-                };
+                notificationAdmin.User_Id = userCapital.Created_By;
+                notificationAdmin.User_Type = (int)PrestaQiEnum.UserType.Administrador;
+                notificationAdmin.Icon = PrestaQiEnum.NotificationIconType.done.ToString();
+                notificationAdmin.NotificationType = PrestaQiEnum.NotificationType.CapitalCall;
+                notificationAdmin.Data = dynamicNoti;
 
-                this._NotificationWriteService.Create(notificationAdminOjb);
 
-                var notificationClientObj = new Model.Notification()
-                {
-                    User_Id = userCapital.investor_id,
-                    User_Type = (int)PrestaQiEnum.UserType.Inversionista,
-                    Title = notificationClient.Title,
-                    Message = notificationClient.Message,
-                    NotificationType = PrestaQiEnum.NotificationType.CapitalCall,
-                    Data = dynamicNoti
-                };
-                this._NotificationWriteService.Create(notificationClientObj);
+                this._NotificationWriteService.Create(notificationAdmin);
+
+                notificationClient.User_Id = userCapital.investor_id;
+                notificationClient.User_Type = (int)PrestaQiEnum.UserType.Inversionista;
+                notificationClient.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
+                notificationClient.NotificationType = PrestaQiEnum.NotificationType.CapitalCall;
+                notificationClient.Data = dynamicNoti;
+
+                this._NotificationWriteService.Create(notificationClient);
 
                 if (socketAdmin != null)
-                {
-                    notificationAdmin.Id = notificationAdminOjb.id;
                     _ = this._NotificationsMessageHandler.SendMessageAsync(socketAdmin, notificationAdmin);
-                }
 
                 if (socketClient != null)
-                {
-                    notificationClient.Id = notificationClientObj.id;
                     _ = this._NotificationsMessageHandler.SendMessageAsync(socketClient, notificationClient);
-                }
             }
 
             return Ok(result.Success);
@@ -211,31 +199,24 @@ namespace PrestaQi.Api.Controllers
 
             if (result.Success)
             {
-                var notificationAdmin = _Configuration.GetSection("Notification").GetSection("ChangeStatusCapital").Get<SendNotification>();
+                var notificationAdmin = _Configuration.GetSection("Notification").GetSection("ChangeStatusCapital").Get<Model.Notification>();
                 notificationAdmin.Message = string.Format(notificationAdmin.Message, result.CapitalId.ToString(_Configuration["Format:FolioCapital"]),
                     ((PrestaQiEnum.CapitalEnum)capitalChangeStatus.Status).ToString());
 
                 dynamic dynamicNoti = new ExpandoObject();
                 dynamicNoti.Capital_Id = result.CapitalId;
 
-                var notificationObj = new Model.Notification()
-                {
-                    User_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value),
-                    User_Type = (int)PrestaQiEnum.UserType.Administrador,
-                    Title = notificationAdmin.Title,
-                    Message = notificationAdmin.Message,
-                    NotificationType = PrestaQiEnum.NotificationType.ChangeStatusCapital,
-                    Data = dynamicNoti
-                };
+                notificationAdmin.User_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+                notificationAdmin.User_Type = (int)PrestaQiEnum.UserType.Administrador;
+                notificationAdmin.NotificationType = PrestaQiEnum.NotificationType.ChangeStatusCapital;
+                notificationAdmin.Data = dynamicNoti;
 
-                this._NotificationWriteService.Create(notificationObj);
+                this._NotificationWriteService.Create(notificationAdmin);
 
                 var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
                 if (socket != null)
-                {
-                    notificationAdmin.Id = notificationObj.id;
                     _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notificationAdmin);
-                }
+
             }
 
             return Ok(result);
