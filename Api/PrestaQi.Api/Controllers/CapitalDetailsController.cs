@@ -42,8 +42,6 @@ namespace PrestaQi.Api.Controllers
 
             if (result.Success)
             {
-                var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
-
                 var notification = !result.PaymentTotal ?
                          _Configuration.GetSection("Notification").GetSection("SetPaymentPeriod").Get<Model.Notification>() :
                          _Configuration.GetSection("Notification").GetSection("SetPaymentPeriodTotal").Get<Model.Notification>();
@@ -59,9 +57,7 @@ namespace PrestaQi.Api.Controllers
                 notification.Data.Investor_Id = result.UserId;
 
                 this._NotificationWriteService.Create(notification);
-
-                if (socket != null)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync( notification);
 
             }
 

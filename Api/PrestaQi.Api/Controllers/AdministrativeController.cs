@@ -79,10 +79,7 @@ namespace PrestaQi.Api.Controllers
                 notification.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
                 bool create = this._NotificationWriteService.Create(notification);
                 
-                var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
-
-                if (socket != null && create)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(notification);
                 
             }
 

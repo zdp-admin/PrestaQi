@@ -12,6 +12,7 @@ namespace PrestaQi.Model.Dto.Output
         public string Period { get; set; }
         public string Capital_Status { get; set; }
         public string File { get; set; }
+        public byte[] File_Byte { get; set; }
         public string Investment_Status { get; set; }
     }
 }

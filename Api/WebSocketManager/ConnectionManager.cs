@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.WebSockets;
@@ -50,8 +51,8 @@ namespace WebSocketManager
 
         private string CreateConnectionId()
         {
-            return _httpContextAccessor.HttpContext.Request.Query["mail"].ToString();
-            //return Guid.NewGuid().ToString();
+            //return _httpContextAccessor.HttpContext.Request.Query["mail"].ToString();
+            return Guid.NewGuid().ToString();
         }
     }
 }

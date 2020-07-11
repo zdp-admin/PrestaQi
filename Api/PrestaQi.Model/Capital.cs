@@ -33,8 +33,10 @@ namespace PrestaQi.Model
         public int Capital_Status { get; set; }
         [Column("investment_status")]
         public int Investment_Status { get; set; }
-        [Column("files")]
-        public string Files { get; set; }
+        [Column("file_name")]
+        public string File_Name { get; set; }
+        [Column("file_byte")]
+        public byte[] File_Byte { get; set; }
         [Column("extension_day")]
         public int Extension_day { get; set; }
 

@@ -73,9 +73,6 @@ namespace PrestaQi.Api.Controllers
 
             if (result.Success)
             {
-                var socketAdmin = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
-                var socketClient = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
-
                 var notificationAdmin = _Configuration.GetSection("Notification").GetSection("SendCapitalCall").Get<Model.Notification>();
                 notificationAdmin.Message = string.Format(notificationAdmin.Message, result.Investor);
                 var notificationClient = _Configuration.GetSection("Notification").GetSection("NewCapitalCall").Get<Model.Notification>();
@@ -100,12 +97,8 @@ namespace PrestaQi.Api.Controllers
                 notificationClient.Data = dynamicNoti;
 
                 this._NotificationWriteService.Create(notificationClient);
-
-                if (socketAdmin != null)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socketAdmin, notificationAdmin);
-
-                if (socketClient != null)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socketClient, notificationClient);
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(notificationAdmin);
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(notificationClient);
             }
 
             return Ok(result.Success);
@@ -212,10 +205,7 @@ namespace PrestaQi.Api.Controllers
                 notificationAdmin.Data = dynamicNoti;
 
                 this._NotificationWriteService.Create(notificationAdmin);
-
-                var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Email).Value);
-                if (socket != null)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notificationAdmin);
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(notificationAdmin);
 
             }
 

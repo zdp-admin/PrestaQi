@@ -36,8 +36,7 @@ namespace PrestaQi.Api.Controllers
         public IActionResult GetStatusAccredited(StateChange stateChange)
         {
             var result = this._SpeiResponseWriteService.Update<StateChange, SpeiTransactionResult>(stateChange);
-            var socket = this._NotificationsMessageHandler._ConnectionManager.GetSocketById(result.Mail);
-
+            
             if (result.Success)
             {
                 var notification = new Model.Notification();
@@ -60,8 +59,7 @@ namespace PrestaQi.Api.Controllers
             
                 this._NotificationWriteService.Create(notification);
 
-                if (socket != null)
-                    _ = this._NotificationsMessageHandler.SendMessageAsync(socket, notification);
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(notification);
             }
 
             return Ok(result.Success);

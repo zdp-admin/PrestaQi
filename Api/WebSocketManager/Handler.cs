@@ -46,8 +46,10 @@ namespace WebSocketManager
             await SendMessageAsync(WebSocketConnectionManager.GetSocketById(socketId), message);
         }
 
-        public async Task SendMessageToAllAsync(string message)
+        public async Task SendMessageToAllAsync(object data)
         {
+            string message = JsonConvert.SerializeObject(data);
+
             foreach (var pair in WebSocketConnectionManager.GetAll())
             {
                 if (pair.Value.State == WebSocketState.Open)

@@ -137,6 +137,11 @@ namespace PrestaQi.Service.WriteServices
                     startDateTemp = startDateTemp.AddMonths(monthNum);
                 }
             }
+            else
+            {
+                capital.File_Byte = capitalChangeStatus.File_Byte;
+                capital.File_Name = capitalChangeStatus.File_Name;
+            }
 
             capitalChangeStatusResponse.Success = base.Update(capital);
 
