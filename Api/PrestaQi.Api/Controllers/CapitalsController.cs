@@ -3,6 +3,7 @@ using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.ServiceModel;
 using InsiscoCore.Base.Service;
 using iText.Forms.Xfdf;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +28,7 @@ namespace PrestaQi.Api.Controllers
         IProcessService<ExportCapitalDetail> _ExportCapitalDetailProcessService;
         IProcessService<ExportMyInvestment> _ExportMyInvestmentProcessService;
         IWriteService<Model.Notification> _NotificationWriteService;
+        IRetrieveService<User> _UserRetrieveService;
         IConfiguration _Configuration;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
 
@@ -40,7 +42,8 @@ namespace PrestaQi.Api.Controllers
             IProcessService<ExportMyInvestment> exportMyInvestmentProcessService,
             NotificationsMessageHandler notificationsMessageHandler,
             IWriteService<Model.Notification> notificationWriteService,
-            IConfiguration configuration)
+            IRetrieveService<User> userRetrieveService,
+        IConfiguration configuration)
         {
             this._CapitalWriteService = capitalWriteService;
             this._CapitalRetrieveService = capitalRetrieveService;
@@ -51,6 +54,7 @@ namespace PrestaQi.Api.Controllers
             this._NotificationWriteService = notificationWriteService;
             this._NotificationsMessageHandler = notificationsMessageHandler;
             this._Configuration = configuration;
+            this._UserRetrieveService = userRetrieveService;
         }
 
         [HttpGet, Route("[action]/{id}")]
@@ -192,20 +196,31 @@ namespace PrestaQi.Api.Controllers
 
             if (result.Success)
             {
-                var notificationAdmin = _Configuration.GetSection("Notification").GetSection("ChangeStatusCapital").Get<Model.Notification>();
-                notificationAdmin.Message = string.Format(notificationAdmin.Message, result.CapitalId.ToString(_Configuration["Format:FolioCapital"]),
-                    ((PrestaQiEnum.CapitalEnum)capitalChangeStatus.Status).ToString());
+                if (capitalChangeStatus.Status == (int)PrestaQiEnum.CapitalEnum.Enviado)
+                {
+                    var notificationAdmin = _Configuration.GetSection("Notification").GetSection("ChangeStatusCapital").Get<Model.Notification>();
+                    notificationAdmin.Message = string.Format(notificationAdmin.Message, result.CapitalId.ToString(_Configuration["Format:FolioCapital"]),
+                        ((PrestaQiEnum.CapitalEnum)capitalChangeStatus.Status).ToString());
 
-                dynamic dynamicNoti = new ExpandoObject();
-                dynamicNoti.Capital_Id = result.CapitalId;
+                    dynamic dynamicNoti = new ExpandoObject();
+                    dynamicNoti.Capital_Id = result.CapitalId;
+                    notificationAdmin.NotificationType = PrestaQiEnum.NotificationType.ChangeStatusCapital;
+                    notificationAdmin.Data = dynamicNoti;
+                    notificationAdmin.User_Type = (int)PrestaQiEnum.UserType.Administrador;
+                    notificationAdmin.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
 
-                notificationAdmin.User_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
-                notificationAdmin.User_Type = (int)PrestaQiEnum.UserType.Administrador;
-                notificationAdmin.NotificationType = PrestaQiEnum.NotificationType.ChangeStatusCapital;
-                notificationAdmin.Data = dynamicNoti;
+                    var admintratorList = this._UserRetrieveService.Where(p => p.Enabled == true && p.Deleted_At == null).Select(p => p.id).ToList();
 
-                this._NotificationWriteService.Create(notificationAdmin);
-                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(notificationAdmin);
+                    foreach (var item in admintratorList)
+                    {
+                        notificationAdmin.User_Id = item;
+                        this._NotificationWriteService.Create(notificationAdmin);
+                        _ = this._NotificationsMessageHandler.SendMessageToAllAsync(notificationAdmin);
+                        notificationAdmin.id = 0;
+                    }
+
+
+                }
 
             }
 
