@@ -99,6 +99,34 @@ namespace PrestaQi.Service.ProcessServices
             }
         }
 
-        
+        public string ExecuteProcess(Accredited accredited)
+        {
+            try
+            {
+                var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
+                    configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT_LOGIN").FirstOrDefault().Configuration_Value))).ReadToEnd();
+
+                textHtml = textHtml.Replace("{CONTRACT_NUMBER}", accredited.Contract_number);
+                textHtml = textHtml.Replace("{ACCREDITED_NAME}", $"{accredited.First_Name} {accredited.Last_Name}");
+                textHtml = textHtml.Replace("{COMPANY_NAME}", accredited.Company_Name);
+                textHtml = textHtml.Replace("{RFC}", accredited.Rfc);
+                textHtml = textHtml.Replace("{INSTITUTION_NAME}", accredited.Institution_Name);
+                textHtml = textHtml.Replace("{CLABE}", accredited.Clabe);
+                textHtml = textHtml.Replace("{ACCOUNT_NUMBER}", accredited.Account_Number);
+                textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
+
+                textHtml = HttpUtility.HtmlDecode(textHtml);
+
+                return textHtml;
+
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error generate contract: {exception.Message}");
+            }
+        }
+
+
     }
 }

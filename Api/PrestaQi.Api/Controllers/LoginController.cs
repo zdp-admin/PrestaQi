@@ -24,19 +24,17 @@ namespace PrestaQi.Api.Controllers
         IRetrieveService<User> _UserRetrieveService;
         IConfiguration _Configuration;
         IWriteService<Investor> _InvestorWriteService;
-        IProcessService<DocumentUser> _DocumentUserWriteService;
+        
 
         public LoginController(
             IConfiguration configuration,
             IRetrieveService<User> userRetrieveService,
-            IWriteService<Investor> investorWriteService,
-            IProcessService<DocumentUser> documentUserWriteService
+            IWriteService<Investor> investorWriteService
             )
         {
             this._UserRetrieveService = userRetrieveService;
             this._Configuration = configuration;
             this._InvestorWriteService = investorWriteService;
-            this._DocumentUserWriteService = documentUserWriteService;
         }
 
         [HttpPost, AllowAnonymous]
@@ -51,36 +49,6 @@ namespace PrestaQi.Api.Controllers
             {
                 var tokenString = GenerateJSONWebToken(user);
 
-                /*if (user.Type == (int)PrestaQiEnum.UserType.Inversionista)
-                {
-                    var investor = user.User as Investor;
-
-                    if (investor.First_Login && !login.Contract_Accepted)
-                    {
-                        return Ok(new
-                        {
-                            contract = this._DocumentUserWriteService.ExecuteProcess<Investor, string>(investor)
-                        });
-                    }
-
-                    if (investor.First_Login && login.Contract_Accepted)
-                    {
-                        investor.First_Login = false;
-                        investor.updated_at = DateTime.Now;
-                        this._InvestorWriteService.Update(investor);
-                    }
-
-                    return Ok(new
-                    {
-                        User = user.User,
-                        Type = user.Type,
-                        TypeName = ((PrestaQiEnum.UserType)user.Type).ToString(),
-                        Token = tokenString,
-                    });
-
-                }
-                else
-                {*/
                     return Ok(new
                     {
                         Token = tokenString,
@@ -88,7 +56,7 @@ namespace PrestaQi.Api.Controllers
                         Type = user.Type,
                         TypeName = ((PrestaQiEnum.UserType)user.Type).ToString()
                     });
-                //}
+                
             }
 
             return Success("User not found");

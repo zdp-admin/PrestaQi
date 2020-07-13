@@ -18,14 +18,17 @@ namespace PrestaQi.Api.Controllers
     {
         IWriteService<User> _UserWriteService;
         IRetrieveService<User> _UserRetrieveService;
+        IProcessService<DocumentUser> _DocumentUserWriteService;
 
         public UsersController(
             IWriteService<User> userWriteService, 
-            IRetrieveService<User> userRetrieveService
+            IRetrieveService<User> userRetrieveService,
+            IProcessService<DocumentUser> documentUserWriteService
             )
         {
             this._UserWriteService = userWriteService;
             this._UserRetrieveService = userRetrieveService;
+            this._DocumentUserWriteService = documentUserWriteService;
         }
 
         [HttpGet, Route("[action]")]
@@ -67,6 +70,26 @@ namespace PrestaQi.Api.Controllers
             return Ok(new { User = data.User, Type = type, TypeName = ((PrestaQiEnum.UserType)type).ToString() });
         }
 
-        
+        [HttpGet, Route("GetContract")]
+        public IActionResult GetContract()
+        {
+            int type = int.Parse(HttpContext.User.FindFirst("Type").Value);
+            int userId = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+
+            var data = this._UserRetrieveService.RetrieveResult<UserByType, UserLogin>(new UserByType()
+            {
+                UserType = ((PrestaQiEnum.UserType)type),
+                User_Id = userId
+            });
+
+
+            if (type == (int)PrestaQiEnum.UserType.Inversionista)
+                return Ok(new { Contract = this._DocumentUserWriteService.ExecuteProcess<Investor, string>(data.User as Investor) });
+            
+            if (type == (int)PrestaQiEnum.UserType.Acreditado)
+                return Ok(new { Contract = this._DocumentUserWriteService.ExecuteProcess<Accredited, string>(data.User as Accredited) });
+
+            return NotFound("Usuario no encontrado");
+        }
     }
 }

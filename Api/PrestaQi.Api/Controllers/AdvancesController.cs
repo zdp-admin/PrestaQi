@@ -59,4 +59,4 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._PaidAdvanceProcessService.ExecuteProcess<SetPayAdvance, bool>(setPayAdvance));
         }
     }
-}
+}   

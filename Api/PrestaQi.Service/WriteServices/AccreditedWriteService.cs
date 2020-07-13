@@ -56,6 +56,7 @@ namespace PrestaQi.Service.WriteServices
                     this._CompanyWriteService.Create(company);
                 }
 
+                entity.Enabled = true;
                 entity.Company_Id = company.id;
                 entity.First_Login = true;
                 string password = Utilities.GetPasswordRandom();

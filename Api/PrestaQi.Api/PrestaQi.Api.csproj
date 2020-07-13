@@ -44,13 +44,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Documents\AccreditedContract.docx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Documents\AccreditedContract.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Documents\AccreditedContract.pdf">
+    <None Update="Documents\CartaMandato.docx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Documents\InvestorContract.html">
