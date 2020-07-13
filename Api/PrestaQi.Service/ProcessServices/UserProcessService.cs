@@ -63,9 +63,9 @@ namespace PrestaQi.Service.ProcessServices
         {
             RecoveryPasswordData recoveryPasswordData = new RecoveryPasswordData();
 
-            var userMail = this._UserRetrieveService.Where(p => p.Mail == recoveryPassword.Mail).FirstOrDefault();
-            var accreditedMail = this._AccreditedRetrieveService.Where(p => p.Mail == recoveryPassword.Mail).FirstOrDefault();
-            var investorMail = this._InvestorRetrieveService.Where(p => p.Mail == recoveryPassword.Mail).FirstOrDefault();
+            var userMail = this._UserRetrieveService.Where(p => p.Mail == recoveryPassword.Mail && p.Deleted_At == null).FirstOrDefault();
+            var accreditedMail = this._AccreditedRetrieveService.Where(p => p.Mail == recoveryPassword.Mail && p.Deleted_At == null).FirstOrDefault();
+            var investorMail = this._InvestorRetrieveService.Where(p => p.Mail == recoveryPassword.Mail && p.Deleted_At == null).FirstOrDefault();
 
             if (userMail == null && accreditedMail == null && investorMail == null)
                 throw new SystemValidationException("The mail is not registered");
