@@ -49,8 +49,8 @@ namespace PrestaQi.Service.RetrieveServices
         public UserLogin RetrieveResult(Login login)
         {
             User user = this._Repository.Where(p => p.Mail == login.Mail && p.Deleted_At == null).FirstOrDefault();
-            Investor investor = this._InvestorRetrieveService.Where(p => p.Mail == login.Mail).FirstOrDefault();
-            Accredited accredited = this._AccreditedRetrieveService.Where(p => p.Mail == login.Mail).FirstOrDefault();
+            Investor investor = this._InvestorRetrieveService.Where(p => p.Mail == login.Mail && p.Deleted_At == null).FirstOrDefault();
+            Accredited accredited = this._AccreditedRetrieveService.Where(p => p.Mail == login.Mail && p.Deleted_At == null).FirstOrDefault();
 
             if (user != null)
             {
