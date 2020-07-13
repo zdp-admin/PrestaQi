@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
+using PrestaQi.Model.Dto.Input;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -35,9 +36,9 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpPut, Route("DisableNotification")]
-        public IActionResult DisableNotification(List<int> notificationsId)
+        public IActionResult DisableNotification(DisableNotification notification)
         {
-            return Ok(this._NotificationWriteService.Update<List<int>, bool>(notificationsId));
+            return Ok(this._NotificationWriteService.Update<DisableNotification, bool>(notification));
         }
 
     }

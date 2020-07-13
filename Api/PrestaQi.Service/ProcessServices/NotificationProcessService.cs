@@ -1,5 +1,6 @@
 ﻿using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using OpenXmlPowerTools;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.FireBase;
@@ -50,6 +51,7 @@ namespace PrestaQi.Service.ProcessServices
                     sendFirebase.data.click_action = "FLUTTER_NOTIFICATION_CLICK";
                     sendFirebase.data.icon = notification.Icon;
                     sendFirebase.data.created_at = notification.created_at;
+                    sendFirebase.data.notification_id = notification.id;
 
                     if (notification.NotificationType == Model.Enum.PrestaQiEnum.NotificationType.SetPaymentPeriod)
                     {

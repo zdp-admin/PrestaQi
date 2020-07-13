@@ -5,6 +5,7 @@ using InsiscoCore.Service;
 using iText.Forms.Xfdf;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
+using PrestaQi.Model.Dto.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,13 +46,13 @@ namespace PrestaQi.Service.WriteServices
             
         }
 
-        public bool Update(List<int> notificationIds)
+        public bool Update(DisableNotification notification)
         {
             try
             {
-                var notifications = this._NotificationRetrieveService.Where(p => notificationIds.Contains(p.id)).ToList();
+                var notifications = this._NotificationRetrieveService.Where(p => notification.NotificationIds.Contains(p.id)).ToList();
 
-                if (notificationIds.Count > 0)
+                if (notifications.Count > 0)
                 {
                     notifications.ForEach(p => { p.updated_at = DateTime.Now; p.Is_Read = true; });
 
