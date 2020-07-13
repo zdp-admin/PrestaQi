@@ -54,5 +54,7 @@ namespace PrestaQi.Model
         public string Password { get; set; }
         [Column("deleted_at")]
         public DateTime? Deleted_At { get; set; }
+        [Column("first_login")]
+        public bool First_Login { get; set; }
     }
 }

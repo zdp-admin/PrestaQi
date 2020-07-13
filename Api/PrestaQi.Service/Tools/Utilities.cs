@@ -1,5 +1,6 @@
 ﻿using iText.Layout.Element;
 using iText.Layout.Properties;
+using Microsoft.VisualBasic.FileIO;
 using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
@@ -30,7 +31,7 @@ namespace PrestaQi.Service.Tools
             return passwordRandom;
         }
 
-        public static void SendEmail(List<string> emails, MessageMail messageMail, Configuration configuration)
+        public static bool SendEmail(List<string> emails, MessageMail messageMail, Configuration configuration, FileMail file = null)
         {
             ConfigurationEmail configurationEmail = JsonConvert.DeserializeObject<ConfigurationEmail>(configuration.Configuration_Value);
             
@@ -43,11 +44,17 @@ namespace PrestaQi.Service.Tools
             };
 
             var mail = new MailMessage(configurationEmail.User, string.Join(",", emails), messageMail.Subject, messageMail.Message);
+
+            if (file != null)
+                mail.Attachments.Add(new Attachment(file.File, file.FileName));
+
             mail.IsBodyHtml = true;
             smtpClient.Send(mail);
 
             mail.Dispose();
             smtpClient.Dispose();
+
+            return true;
         }
 
         public static byte[] GetFile(List<Configuration> configurations, string endPointName)
@@ -144,6 +151,16 @@ namespace PrestaQi.Service.Tools
             }
 
             return (startDate, endDate, today);
+        }
+
+        public static Stream GenerateStreamFromString(string text)
+        {
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream);
+            writer.Write(text);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
         }
     }
 }

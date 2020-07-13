@@ -51,7 +51,7 @@ namespace PrestaQi.Api.Controllers
             {
                 var tokenString = GenerateJSONWebToken(user);
 
-                if (user.Type == (int)PrestaQiEnum.UserType.Inversionista)
+                /*if (user.Type == (int)PrestaQiEnum.UserType.Inversionista)
                 {
                     var investor = user.User as Investor;
 
@@ -80,7 +80,7 @@ namespace PrestaQi.Api.Controllers
 
                 }
                 else
-                {
+                {*/
                     return Ok(new
                     {
                         Token = tokenString,
@@ -88,7 +88,7 @@ namespace PrestaQi.Api.Controllers
                         Type = user.Type,
                         TypeName = ((PrestaQiEnum.UserType)user.Type).ToString()
                     });
-                }
+                //}
             }
 
             return Success("User not found");

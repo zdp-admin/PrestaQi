@@ -16,23 +16,26 @@ namespace PrestaQi.Service.WriteServices
         IProcessService<Advance> _AdvacenProcessService;
         IProcessService<ordenPagoWS> _OrdenPagoProcessService;
         IWriteService<SpeiResponse> _SpeiWriteService;
+        IRetrieveService<Accredited> _AccreditedRetrieveService;
 
         public AdvanceWriteService(
             IWriteRepository<Advance> repository,
             IProcessService<Advance> advanceProcessService,
             IProcessService<ordenPagoWS> ordenPagoProcessService,
-            IWriteService<SpeiResponse> speiWriteService
+            IWriteService<SpeiResponse> speiWriteService,
+            IRetrieveService<Accredited> accreditedRetrieveService
             ) : base(repository)
         {
             this._AdvacenProcessService = advanceProcessService;
             this._OrdenPagoProcessService = ordenPagoProcessService;
             this._SpeiWriteService = speiWriteService;
+            this._AccreditedRetrieveService = accreditedRetrieveService;
         }
 
         public bool Create(CalculateAmount calculateAmount)
         {
-
             Advance advance = this._AdvacenProcessService.ExecuteProcess<CalculateAmount, Advance>(calculateAmount);
+            Accredited accredited = this._AccreditedRetrieveService.Find(advance.Accredited_Id);
             advance.Date_Advance = DateTime.Now;
             advance.created_at = DateTime.Now;
             advance.updated_at = DateTime.Now;
@@ -65,7 +68,9 @@ namespace PrestaQi.Service.WriteServices
                         this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
                         {
                             Amount = advance.Amount,
-                            Accredited_Id = calculateAmount.Accredited_Id
+                            Accredited_Id = calculateAmount.Accredited_Id,
+                            Accredited = accredited,
+                            Advance = advance
                         });
                     }
 

@@ -101,7 +101,7 @@ namespace PrestaQi.Api.Controllers
         [HttpGet, Route("GetFileAdvances")]
         public IActionResult GetFileAdvances([FromQuery] int type)
         {
-            var list = this._AccreditedProcessService.ExecuteProcess<bool, List<AdvanceReceivable>>(true).ToList();
+            var list = this._AccreditedProcessService.ExecuteProcess<AdvancesReceivableByFilter, List<AdvanceReceivable>>(new AdvancesReceivableByFilter() { }).ToList();
 
             var msFile = this._ExportAdvanceReceivableProcessService.ExecuteProcess<ExportAdvanceReceivable, MemoryStream>(new ExportAdvanceReceivable()
             {

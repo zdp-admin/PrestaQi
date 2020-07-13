@@ -142,6 +142,7 @@ namespace PrestaQi.Service.WriteServices
             try
             {
                 user.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(changePassword.Password);
+                user.First_Login = false;
 
                 bool update = base.Update(user);
 

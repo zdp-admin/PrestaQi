@@ -10,7 +10,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using PdfSharp;
+using PdfSharp.Pdf;
+using TheArtOfDev.HtmlRenderer.PdfSharp;
 using System.Net;
+using System.Net.Mail;
+using System.Web;
+using PdfSharp.Drawing;
+using iText.Kernel.Pdf;
+using DocumentFormat.OpenXml.Packaging;
+using OpenXmlPowerTools;
 
 namespace PrestaQi.Service.ProcessServices
 {
@@ -21,6 +30,7 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<Institution> _InstitutionRetrieveService;
         IRetrieveService<Contact> _ContactRetrieveService;
+        IProcessService<DocumentUser> _DocumentUserProcessService;
 
 
         public OrdenPagoProcessService(
@@ -28,7 +38,8 @@ namespace PrestaQi.Service.ProcessServices
            IRetrieveService<Configuration> configurationRetrieveService,
            IRetrieveService<Advance> advanceRetrieveService,
            IRetrieveService<Institution> institutionRetrieveService,
-           IRetrieveService<Contact> contactRetrieveService
+           IRetrieveService<Contact> contactRetrieveService,
+           IProcessService<DocumentUser> documentUserProcessService
             )
         {
             
@@ -37,16 +48,15 @@ namespace PrestaQi.Service.ProcessServices
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._InstitutionRetrieveService = institutionRetrieveService;
             this._ContactRetrieveService = contactRetrieveService;
+            this._DocumentUserProcessService = documentUserProcessService;
         }
 
         public ResponseSpei ExecuteProcess(OrderPayment orderPayment)
         {
-            
-
             try
             {
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                byte[] file = Utilities.GetFile(configurations, configurations.Find(p => p.Configuration_Name == "CERTIFIED_FTP").Configuration_Value);
+                byte[] file = Tools.Utilities.GetFile(configurations, configurations.Find(p => p.Configuration_Name == "CERTIFIED_FTP").Configuration_Value);
 
                 var accredited = this._AccreditedRetrieveService.Find(orderPayment.Accredited_Id);
                 
@@ -136,13 +146,18 @@ namespace PrestaQi.Service.ProcessServices
                 var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
                 var accredited = this._AccreditedRetrieveService.Find(sendSpeiMail.Accredited_Id);
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                var docHtml = this._DocumentUserProcessService.ExecuteProcess<DocumentAccredited, MemoryStream>(new DocumentAccredited()
+                {
+                    Accredited = sendSpeiMail.Accredited,
+                    Advance = sendSpeiMail.Advance
+                });
 
                 var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
                 var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "MAI_ADVANCE");
 
-                var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
+                var messageMail = JsonConvert.DeserializeObject<PrestaQi.Model.Dto.Input.MessageMail>(messageConfig.Configuration_Value);
 
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+                string textHtml = new StreamReader(new MemoryStream(Tools.Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
                 textHtml = textHtml.Replace("{NAME}", accredited.First_Name);
                 textHtml = textHtml.Replace("{AMOUNT}", sendSpeiMail.Amount.ToString("C"));
                 textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
@@ -150,7 +165,19 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
                 messageMail.Message = textHtml;
 
-                Utilities.SendEmail(new List<string> { accredited.Mail }, messageMail, mailConf);
+                FileMail fileMil = new FileMail()
+                {
+                    FileName = configurations.FirstOrDefault(p => p.Configuration_Name == "CONTRACT_ACCREDITED_NAME").Configuration_Value,
+                    File = docHtml
+                };
+
+
+                if (Utilities.SendEmail(new List<string> { accredited.Mail_Mandate_Latter }, messageMail, mailConf, fileMil))
+                {
+                    if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")))
+                        File.Delete(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx"));
+                }
+
 
                 return true;
             }

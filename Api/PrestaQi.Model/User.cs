@@ -24,6 +24,8 @@ namespace PrestaQi.Model
         public bool Enabled { get; set; }
         [Column("deleted_at")]
         public DateTime? Deleted_At { get; set; }
+        [Column("first_login")]
+        public bool First_Login { get; set; }
         [NotMapped]
         public List<UserModule> Modules { get; set; }
     }
