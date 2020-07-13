@@ -9,6 +9,7 @@ using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System;
 using System.Linq;
+using System.Net;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -70,26 +71,29 @@ namespace PrestaQi.Api.Controllers
             return Ok(new { User = data.User, Type = type, TypeName = ((PrestaQiEnum.UserType)type).ToString() });
         }
 
-        [HttpGet, Route("GetContract")]
-        public IActionResult GetContract()
+        [HttpGet, Route("GetContract"), AllowAnonymous]
+        public IActionResult GetContract([FromQuery] int userId, [FromQuery] int type)
         {
-            int type = int.Parse(HttpContext.User.FindFirst("Type").Value);
-            int userId = int.Parse(HttpContext.User.FindFirst("UserId").Value);
-
             var data = this._UserRetrieveService.RetrieveResult<UserByType, UserLogin>(new UserByType()
             {
                 UserType = ((PrestaQiEnum.UserType)type),
                 User_Id = userId
             });
 
+            string html = string.Empty;
 
             if (type == (int)PrestaQiEnum.UserType.Inversionista)
-                return Ok(new { Contract = this._DocumentUserWriteService.ExecuteProcess<Investor, string>(data.User as Investor) });
-            
-            if (type == (int)PrestaQiEnum.UserType.Acreditado)
-                return Ok(new { Contract = this._DocumentUserWriteService.ExecuteProcess<Accredited, string>(data.User as Accredited) });
+                html = this._DocumentUserWriteService.ExecuteProcess<Investor, string>(data.User as Investor);
 
-            return NotFound("Usuario no encontrado");
+            if (type == (int)PrestaQiEnum.UserType.Acreditado)
+                html = this._DocumentUserWriteService.ExecuteProcess<Accredited, string>(data.User as Accredited);
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = html
+            };
         }
     }
 }

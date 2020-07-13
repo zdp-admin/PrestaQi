@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Principal;
 
 namespace PrestaQi.Model.Dto.Output
 {
@@ -15,6 +16,8 @@ namespace PrestaQi.Model.Dto.Output
         public int Period_Id { get; set; }
         public int Interest_Arrears { get; set; }
         public bool Enabled { get; set; }
+        public int Capital_Status { get; set; }
+        public string Capital_Status_Name { get; set; }
         public double Interest_Payable { get; set; }
         public double Quantity_Interest_Arrears { get; set; }
         public double Total_Interest { get; set; }

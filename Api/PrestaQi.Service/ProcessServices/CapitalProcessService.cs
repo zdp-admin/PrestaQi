@@ -3,6 +3,7 @@ using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
@@ -158,6 +159,8 @@ namespace PrestaQi.Service.ProcessServices
                     Period_Id = p.period_id,
                     MyInvestmentDetails = this._CapitalDetailRetrieveService.Where(detail => detail.Capital_Id == p.id).OrderBy(p => p.Period).ToList(),
                     Enabled = p.Enabled,
+                    Capital_Status = p.Capital_Status,
+                    Capital_Status_Name = ((PrestaQiEnum.CapitalEnum)p.Capital_Status).ToString()
                 }).ToList();
 
                 myInvestments.ForEach(p =>
