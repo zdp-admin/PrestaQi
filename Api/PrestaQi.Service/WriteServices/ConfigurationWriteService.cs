@@ -5,6 +5,7 @@ using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using System;
+using System.Linq;
 
 namespace PrestaQi.Service.WriteServices
 {
@@ -24,6 +25,13 @@ namespace PrestaQi.Service.WriteServices
         {
             try
             {
+                var configurationFound = this._ConfigurationRetrieveService.Where(
+                    p => p.Configuration_Name == entity.Configuration_Name
+                    ).FirstOrDefault();
+                if (configurationFound != null)
+                    throw new SystemValidationException("Ya se encuentra una configuración " +
+                        "registada con esa clave");
+
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
 
