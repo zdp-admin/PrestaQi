@@ -1,6 +1,7 @@
 ﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using Org.BouncyCastle.Asn1.Cms;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using System;
@@ -24,12 +25,28 @@ namespace PrestaQi.Service.WriteServices
         {
             var deviceFound = this._DeviceRetrieveService.Where(p => p.Device_Id == entity.Device_Id).FirstOrDefault();
             if (deviceFound != null)
-                throw new SystemValidationException("El Token de Dispositivo ya se encuentra agregado");
+            {
+                deviceFound.User_Id = entity.User_Id;
+                deviceFound.User_Type = entity.User_Type;
+                return base.Update(deviceFound);
+            }
+            else
+            {
+                entity.Enabled = true;
+                entity.created_at = DateTime.Now;
+                entity.updated_at = DateTime.Now;
+                return base.Create(entity);
+            }
+        }
 
-            entity.Enabled = true;
-            entity.created_at = DateTime.Now;
-            entity.updated_at = DateTime.Now;
-            return base.Create(entity);
+        public bool Delete(string token)
+        {
+            var device = this._DeviceRetrieveService.Where(p => p.Device_Id == token).FirstOrDefault();
+
+            if (device == null)
+                throw new SystemValidationException("Dispositivo no encontrado");
+
+            return base.Delete(device);
         }
     }
 }

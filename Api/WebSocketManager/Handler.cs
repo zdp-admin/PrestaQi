@@ -1,9 +1,11 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Buffers.Text;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace WebSocketManager
 {
@@ -48,12 +50,18 @@ namespace WebSocketManager
 
         public async Task SendMessageToAllAsync(object data)
         {
-            string message = JsonConvert.SerializeObject(data);
+            JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings()
+            {
+                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
+            };
+
+            string message =  JsonConvert.SerializeObject(data, jsonSerializerSettings);
+            byte[] string_to_send = UTF8Encoding.UTF8.GetBytes(message);
 
             foreach (var pair in WebSocketConnectionManager.GetAll())
             {
                 if (pair.Value.State == WebSocketState.Open)
-                    await SendMessageAsync(pair.Value, message);
+                    await SendMessageAsync(pair.Value, UTF8Encoding.UTF8.GetString(string_to_send));
             }
         }
 

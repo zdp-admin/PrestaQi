@@ -5,6 +5,7 @@ using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Spei;
 using System;
 using System.Linq;
 
@@ -16,19 +17,22 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<Accredited> _AccreditedRetrieveService;
         IRetrieveService<Repayment> _RepaymentRetrieveService;
-        
+        IProcessService<ordenPagoWS> _OrdenPagoProcessService;
+
         public SpeiResponseWriteService(
             IWriteRepository<SpeiResponse> repository,
             IRetrieveService<SpeiResponse> speiResponseRetrieveService,
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<Accredited> accreditedRetrieveService,
-            IRetrieveService<Repayment> repaymentRetrieveService
+            IRetrieveService<Repayment> repaymentRetrieveService,
+            IProcessService<ordenPagoWS> ordenPagoProcessService
             ) : base(repository)
         {
             this._SpeiResponseRetrieveService = speiResponseRetrieveService;
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._AccreditedRetrieveService = accreditedRetrieveService;
             this._RepaymentRetrieveService = repaymentRetrieveService;
+            this._OrdenPagoProcessService = ordenPagoProcessService;
         }
 
         public override bool Create(SpeiResponse entity)
@@ -76,6 +80,16 @@ namespace PrestaQi.Service.WriteServices
                 speiTransactionResult.Accredited = $"{accredited.First_Name} {accredited.Last_Name}";
                 speiTransactionResult.Success = base.Update(speiResponse);
 
+                if (speiTransactionResult.Success && stateChange.CausaDevolucion == 0)
+                {
+                    this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
+                    {
+                        Amount = advance.Amount,
+                        Accredited_Id = accredited.id,
+                        Accredited = accredited,
+                        Advance = advance
+                    });
+                }
                 return speiTransactionResult;
             }
             catch (Exception exception)

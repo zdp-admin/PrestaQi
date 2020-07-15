@@ -65,13 +65,13 @@ namespace PrestaQi.Service.WriteServices
                             tracking_key = spei.resultado.claveRastreo
                         });
 
-                        this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
+                        /*this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
                         {
                             Amount = advance.Amount,
                             Accredited_Id = calculateAmount.Accredited_Id,
                             Accredited = accredited,
                             Advance = advance
-                        });
+                        });*/
                     }
 
                     return created;

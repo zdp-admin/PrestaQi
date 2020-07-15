@@ -24,5 +24,12 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._DeviceWriteService.Create(device));
         }
 
+
+        [HttpDelete("{token}")]
+        public IActionResult Delete(string token)
+        {
+            return Ok(this._DeviceWriteService.Delete<string, bool>(token), "Disposito eliminado");
+        }
+
     }
 }

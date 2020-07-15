@@ -8,6 +8,7 @@ using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
 
@@ -58,7 +59,7 @@ namespace PrestaQi.Api.Controllers
 
         [HttpGet, Route("GetUser")]
         public IActionResult GetUser()
-        {
+        { 
             int userId = Convert.ToInt32(HttpContext.User.FindFirst("UserId").Value);
             int type = Convert.ToInt32(HttpContext.User.FindFirst("Type").Value);
 
@@ -72,8 +73,15 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("GetContract"), AllowAnonymous]
-        public IActionResult GetContract([FromQuery] int userId, [FromQuery] int type)
+        public IActionResult GetContract([FromQuery] string token)
         {
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token);
+            var tokenS = handler.ReadToken(token) as JwtSecurityToken;
+
+            var userId = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "UserId").Value);
+            var type = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "Type").Value);
+
             var data = this._UserRetrieveService.RetrieveResult<UserByType, UserLogin>(new UserByType()
             {
                 UserType = ((PrestaQiEnum.UserType)type),
