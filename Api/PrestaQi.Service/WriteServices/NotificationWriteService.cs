@@ -3,6 +3,7 @@ using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using iText.Forms.Xfdf;
+using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
@@ -31,6 +32,7 @@ namespace PrestaQi.Service.WriteServices
         {
             try
             {
+                entity.Data_Text = JsonConvert.SerializeObject(entity.Data);
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
                 bool created = base.Create(entity);

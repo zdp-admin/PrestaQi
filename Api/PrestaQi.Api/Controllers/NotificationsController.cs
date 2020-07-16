@@ -32,6 +32,7 @@ namespace PrestaQi.Api.Controllers
         {
             var result = this._NotificationRetrieveService.Where(p => p.User_Type == int.Parse(HttpContext.User.FindFirst("Type").Value) &&
             p.User_Id == int.Parse(HttpContext.User.FindFirst("UserId").Value) && !p.Is_Read).ToList();
+
             return Ok(result);
         }
 

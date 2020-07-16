@@ -25,6 +25,7 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<Contact> _ContactRetrieveService;
         IRetrieveService<Investor> _InvestorRetrieveSercice;
+        IProcessService<DocumentUser> _DocumentUserProcessService;
 
         public CapitalWriteService(
             IWriteRepository<Capital> repository,
@@ -34,7 +35,8 @@ namespace PrestaQi.Service.WriteServices
             IRetrieveService<User> userRetrieveService,
             IRetrieveService<Contact> contactRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<Investor> investorRetrieveSercice
+            IRetrieveService<Investor> investorRetrieveSercice,
+            IProcessService<DocumentUser> documentUserProcessService
             ) : base(repository)
         {
             this._UserCapitalRetrieveService = userCapitalRetrieveService;
@@ -44,6 +46,7 @@ namespace PrestaQi.Service.WriteServices
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._InvestorRetrieveSercice = investorRetrieveSercice;
             this._ContactRetrieveService = contactRetrieveService;
+            this._DocumentUserProcessService = documentUserProcessService;
         }
 
         public CreateCapital Create(Capital entity)
@@ -52,9 +55,14 @@ namespace PrestaQi.Service.WriteServices
 
             var user = this._UserRetrieveService.Find(entity.Created_By);
             var investor = this._InvestorRetrieveSercice.Find(entity.investor_id);
+            investor.Total_Amount_Agreed = entity.Amount;
+
 
             if (user.Password != InsiscoCore.Utilities.Crypto.MD5.Encrypt(entity.Password))
                 throw new SystemValidationException("Incorrect Password!");
+
+            if (entity.Amount > investor.Total_Amount_Agreed)
+                throw new SystemValidationException($"La cantidad en la llamada a Capital no puede sobrepasar la cantidad pactada de {investor.Total_Amount_Agreed:C}");
 
             entity.Start_Date = DateTime.Now;
             entity.End_Date = DateTime.Now;
@@ -76,7 +84,7 @@ namespace PrestaQi.Service.WriteServices
 
                     try
                     {
-                        SendMail(entity.investor_id);
+                        SendMail(investor);
                     }
                     catch (Exception)
                     {
@@ -151,10 +159,10 @@ namespace PrestaQi.Service.WriteServices
             return capitalChangeStatusResponse;
         }
 
-        void SendMail(int investorId)
+        void SendMail(Investor investor)
         {
-            var investor = this._InvestorRetrieveSercice.Find(investorId);
             var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
+            var docHtml = this._DocumentUserProcessService.ExecuteProcess<Investor, MemoryStream>(investor);
 
             var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
 
@@ -169,7 +177,17 @@ namespace PrestaQi.Service.WriteServices
             textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
             messageMail.Message = textHtml;
 
-            Utilities.SendEmail(new List<string> { investor.Mail }, messageMail, mailConf);
+            FileMail fileMil = new FileMail()
+            {
+                FileName = configurations.FirstOrDefault(p => p.Configuration_Name == "CONTRACT_ACCREDITED_NAME").Configuration_Value,
+                File = docHtml
+            };
+
+            if (Utilities.SendEmail(new List<string> { investor.Mail }, messageMail, mailConf, fileMil))
+            {
+                if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\Investor" + investor.Contract_number + ".docx")))
+                    File.Delete(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\Investor" + investor.Contract_number + ".docx"));
+            }
         }
     }
 }

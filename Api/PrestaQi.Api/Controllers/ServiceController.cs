@@ -41,7 +41,7 @@ namespace PrestaQi.Api.Controllers
             {
                 var notification = new Model.Notification();
 
-                if (stateChange.CausaDevolucion < 0)
+                if (stateChange.CausaDevolucion == 0)
                 {
                     notification = _Configuration.GetSection("Notification").GetSection("AdvanceSuccess").Get<Model.Notification>();
                     notification.Icon = PrestaQiEnum.NotificationIconType.done.ToString();

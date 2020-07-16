@@ -90,8 +90,8 @@ namespace PrestaQi.Api.Controllers
 
             string html = string.Empty;
 
-            if (type == (int)PrestaQiEnum.UserType.Inversionista)
-                html = this._DocumentUserWriteService.ExecuteProcess<Investor, string>(data.User as Investor);
+            /*if (type == (int)PrestaQiEnum.UserType.Inversionista)
+                html = this._DocumentUserWriteService.ExecuteProcess<Investor, string>(data.User as Investor);*/
 
             if (type == (int)PrestaQiEnum.UserType.Acreditado)
                 html = this._DocumentUserWriteService.ExecuteProcess<Accredited, string>(data.User as Accredited);
