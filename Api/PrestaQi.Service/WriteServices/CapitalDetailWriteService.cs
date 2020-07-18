@@ -58,7 +58,7 @@ namespace PrestaQi.Service.WriteServices
             if (setPaymentPeriod.Success && this._CapitalDetailRetrieveService.Where(p => p.IsPayment == false).Count() == 0)
             {
                 capital.Enabled = false;
-                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActive;
+                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Terminada;
                 capital.updated_at = DateTime.Now;
 
                 this._CapitalWriteService.Update(capital);

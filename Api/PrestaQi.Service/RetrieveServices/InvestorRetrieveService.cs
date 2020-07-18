@@ -95,7 +95,7 @@ namespace PrestaQi.Service.RetrieveServices
                         Interest_Rate = c.Interest_Rate,
                         Period = periods.Find(item => item.id == c.period_id).Description,
                         Capital_Status = ((PrestaQiEnum.CapitalEnum)c.Capital_Status).ToString(),
-                        Investment_Status = "Prueba"
+                        Investment_Status = ((PrestaQiEnum.InvestmentEnum)c.Investment_Status).ToString()
 
                     }).ToList();
                 });

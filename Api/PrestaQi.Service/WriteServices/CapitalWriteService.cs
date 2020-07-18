@@ -26,6 +26,7 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Contact> _ContactRetrieveService;
         IRetrieveService<Investor> _InvestorRetrieveSercice;
         IProcessService<DocumentUser> _DocumentUserProcessService;
+        IRetrieveRepository<Capital> _CapitalRetrieveService;
 
         public CapitalWriteService(
             IWriteRepository<Capital> repository,
@@ -36,7 +37,8 @@ namespace PrestaQi.Service.WriteServices
             IRetrieveService<Contact> contactRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
             IRetrieveService<Investor> investorRetrieveSercice,
-            IProcessService<DocumentUser> documentUserProcessService
+            IProcessService<DocumentUser> documentUserProcessService,
+            IRetrieveRepository<Capital> capitalRetrieveService
             ) : base(repository)
         {
             this._UserCapitalRetrieveService = userCapitalRetrieveService;
@@ -47,6 +49,7 @@ namespace PrestaQi.Service.WriteServices
             this._InvestorRetrieveSercice = investorRetrieveSercice;
             this._ContactRetrieveService = contactRetrieveService;
             this._DocumentUserProcessService = documentUserProcessService;
+            this._CapitalRetrieveService = capitalRetrieveService;
         }
 
         public CreateCapital Create(Capital entity)
@@ -55,19 +58,24 @@ namespace PrestaQi.Service.WriteServices
 
             var user = this._UserRetrieveService.Find(entity.Created_By);
             var investor = this._InvestorRetrieveSercice.Find(entity.investor_id);
-            investor.Total_Amount_Agreed = entity.Amount;
+            var capitals = this._CapitalRetrieveService.Where(p => p.investor_id == entity.investor_id);
+            double sumCapitals = 0, total = 0;
 
+            if (capitals.Count() > 0)
+                sumCapitals = capitals.Sum(p => p.Amount);
+
+            total = investor.Total_Amount_Agreed - sumCapitals;
 
             if (user.Password != InsiscoCore.Utilities.Crypto.MD5.Encrypt(entity.Password))
                 throw new SystemValidationException("Incorrect Password!");
 
-            if (entity.Amount > investor.Total_Amount_Agreed)
-                throw new SystemValidationException($"La cantidad en la llamada a Capital no puede sobrepasar la cantidad pactada de {investor.Total_Amount_Agreed:C}");
+            if (entity.Amount > total)
+                throw new SystemValidationException($"La cantidad sobrepasar la cantidad pactada de {total:C}");
 
             entity.Start_Date = DateTime.Now;
             entity.End_Date = DateTime.Now;
             entity.Capital_Status = (int)PrestaQiEnum.CapitalEnum.Solicitado;
-            entity.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActive;
+            entity.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActiva;
             entity.created_at = DateTime.Now;
             entity.updated_at = DateTime.Now;
 
@@ -122,7 +130,7 @@ namespace PrestaQi.Service.WriteServices
 
                 capital.Start_Date = DateTime.Now.AddMonths(1);
                 capital.End_Date = capital.Start_Date.AddYears(capital.Investment_Horizon);
-                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Active;
+                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Activa;
                 capital.Enabled = true;
 
                 DateTime startDateTemp = capital.Start_Date;
@@ -162,7 +170,6 @@ namespace PrestaQi.Service.WriteServices
         void SendMail(Investor investor)
         {
             var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
-            var docHtml = this._DocumentUserProcessService.ExecuteProcess<Investor, MemoryStream>(investor);
 
             var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
 
@@ -177,17 +184,7 @@ namespace PrestaQi.Service.WriteServices
             textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
             messageMail.Message = textHtml;
 
-            FileMail fileMil = new FileMail()
-            {
-                FileName = configurations.FirstOrDefault(p => p.Configuration_Name == "CONTRACT_ACCREDITED_NAME").Configuration_Value,
-                File = docHtml
-            };
-
-            if (Utilities.SendEmail(new List<string> { investor.Mail }, messageMail, mailConf, fileMil))
-            {
-                if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\Investor" + investor.Contract_number + ".docx")))
-                    File.Delete(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\Investor" + investor.Contract_number + ".docx"));
-            }
+            Utilities.SendEmail(new List<string> { investor.Mail }, messageMail, mailConf);
         }
     }
 }

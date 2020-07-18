@@ -158,7 +158,7 @@ namespace PrestaQi.Service.ProcessServices
                     Total = Math.Round(p.Amount + (p.Amount * ((double)p.Interest_Rate / 100)), 2),
                     Period_Id = p.period_id,
                     MyInvestmentDetails = this._CapitalDetailRetrieveService.Where(detail => detail.Capital_Id == p.id).OrderBy(p => p.Period).ToList(),
-                    Enabled = p.Enabled,
+                    Enabled = ((PrestaQiEnum.CapitalEnum)p.Capital_Status) == PrestaQiEnum.CapitalEnum.Terminado ? true : false,
                     Capital_Status = p.Capital_Status,
                     Capital_Status_Name = ((PrestaQiEnum.CapitalEnum)p.Capital_Status).ToString()
                 }).ToList();

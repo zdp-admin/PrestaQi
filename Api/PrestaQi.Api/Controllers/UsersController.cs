@@ -1,4 +1,5 @@
-﻿using InsiscoCore.Base.Service;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoreLinq;
@@ -73,7 +74,7 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("GetContract"), AllowAnonymous]
-        public IActionResult GetContract([FromQuery] string token)
+        public IActionResult GetContract([FromQuery] string token, [FromQuery] int capitalId)
         {
             var handler = new JwtSecurityTokenHandler();
             var jsonToken = handler.ReadToken(token);
@@ -90,8 +91,12 @@ namespace PrestaQi.Api.Controllers
 
             string html = string.Empty;
 
-            /*if (type == (int)PrestaQiEnum.UserType.Inversionista)
-                html = this._DocumentUserWriteService.ExecuteProcess<Investor, string>(data.User as Investor);*/
+            if (type == (int)PrestaQiEnum.UserType.Inversionista)
+                html = this._DocumentUserWriteService.ExecuteProcess<DocumentInvestor, string>(new DocumentInvestor()
+                {
+                    Investor = data.User as Investor,
+                    CapitalId = capitalId
+                });
 
             if (type == (int)PrestaQiEnum.UserType.Acreditado)
                 html = this._DocumentUserWriteService.ExecuteProcess<Accredited, string>(data.User as Accredited);

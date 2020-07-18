@@ -19,51 +19,35 @@ namespace PrestaQi.Service.ProcessServices
     {
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<Institution> _InstitutionRetrieveService;
+        IRetrieveService<Capital> _CapitalRetrieveService;
 
         public DocumentUserProcessService(
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<Institution> institutionRetrieveService
+            IRetrieveService<Institution> institutionRetrieveService,
+            IRetrieveService<Capital> capitalRetrieveService
             )
         {
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._InstitutionRetrieveService = institutionRetrieveService;
+            this._CapitalRetrieveService = capitalRetrieveService;
         }
 
-        public Stream ExecuteProcess(Investor investor)
+        public string ExecuteProcess(DocumentInvestor documentInvestor)
         {
             try
             {
+                var investor = documentInvestor.Investor;
                 var institution = this._InstitutionRetrieveService.Find(investor.Institution_Id);
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-
-                MemoryStream file = new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == "INVESTOR_CONTRACT").FirstOrDefault().Configuration_Value));
-
-                using (WordprocessingDocument doc = WordprocessingDocument.Open(file, true))
-                {
-                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{CONTRACT_NUMBER}", replace: investor.Contract_number, matchCase: false);
-                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{INVESTOR_NAME}", replace: $"{investor.First_Name} {investor.Last_Name}", matchCase: false);
-                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{DATE}", replace: DateTime.Now.ToString("dd/MM/yyyy"), matchCase: false);
-                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{AMOUNT}", replace: investor.Total_Amount_Agreed.ToString(), matchCase: false);
-                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{INSTITUTION_NAME}", institution.Description, matchCase: false);
-                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{CLABE}", replace: investor.Clabe, matchCase: false);
-                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{ACCOUNT_NUMBER}", replace: investor.Account_Number, matchCase: false);
-                   
-                    doc.SaveAs(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\Investor" + investor.Contract_number + ".docx")).Close();
-                }
-
-                MemoryStream fileModified = new MemoryStream(Utilities.GetFile(configurations,
-                   configurations.Where(p => p.Configuration_Name == "INVESTOR_CONTRACT_MODIFIED").FirstOrDefault().Configuration_Value + investor.Contract_number + ".docx"));
-
-                return fileModified;
-
-                /*string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, 
+                var capital = this._CapitalRetrieveService.Find(documentInvestor.CapitalId);
+               
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, 
                     configurations.Where(p => p.Configuration_Name == "INVESTOR_CONTRACT").FirstOrDefault().Configuration_Value))).ReadToEnd();
 
                 textHtml = textHtml.Replace("{CONTRACT_NUMBER}", investor.Contract_number);
                 textHtml = textHtml.Replace("{INVESTOR_NAME}", $"{investor.First_Name} {investor.Last_Name}");
                 textHtml = textHtml.Replace("{DATE}", DateTime.Now.ToString("dd/MM/yyyy"));
-                textHtml = textHtml.Replace("{AMOUNT}", investor.Total_Amount_Agreed.ToString());
+                textHtml = textHtml.Replace("{AMOUNT}", capital.Amount.ToString());
                 textHtml = textHtml.Replace("{INSTITUTION_NAME}", institution.Description);
                 textHtml = textHtml.Replace("{CLABE}", investor.Clabe);
                 textHtml = textHtml.Replace("{ACCOUNT_NUMBER}", investor.Account_Number);
@@ -71,7 +55,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 textHtml = HttpUtility.HtmlDecode(textHtml);
 
-                return textHtml;*/
+                return textHtml;
 
             }
             catch (Exception exception)
