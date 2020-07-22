@@ -128,7 +128,7 @@ namespace PrestaQi.Service.WriteServices
             {
                 int monthNum = (12 * capital.Investment_Horizon) / period.Period_Value;
 
-                capital.Start_Date = DateTime.Now.AddMonths(1);
+                capital.Start_Date = DateTime.Now;
                 capital.End_Date = capital.Start_Date.AddYears(capital.Investment_Horizon);
                 capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Activa;
                 capital.Enabled = true;

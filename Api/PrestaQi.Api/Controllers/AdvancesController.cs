@@ -21,7 +21,6 @@ namespace PrestaQi.Api.Controllers
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IProcessService<Advance> _AdvanceProcessService;
         IProcessService<PaidAdvance> _PaidAdvanceProcessService;
-        IRetrieveService<Accredited> _AccreditedRetrieveService;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
         IWriteService<Model.Notification> _NotificationWriteService;
 
@@ -32,7 +31,6 @@ namespace PrestaQi.Api.Controllers
             IRetrieveService<Advance> advanceRetrieveService,
             IProcessService<Advance> advanceProcessService,
             IProcessService<PaidAdvance> paidAdvanceProcessService,
-            IRetrieveService<Accredited> accreditedRetrieveService,
             IWriteService<Model.Notification> notificationWriteService,
             NotificationsMessageHandler notificationsMessageHandler,
         IConfiguration configuration
@@ -43,7 +41,6 @@ namespace PrestaQi.Api.Controllers
             this._AdvanceProcessService = advanceProcessService;
             this._NotificationsMessageHandler = notificationsMessageHandler;
             this._PaidAdvanceProcessService = paidAdvanceProcessService;
-            this._AccreditedRetrieveService = accreditedRetrieveService;
             this._NotificationWriteService = notificationWriteService;
             Configuration = configuration;
         }

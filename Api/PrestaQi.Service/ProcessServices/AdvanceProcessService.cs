@@ -1,4 +1,5 @@
-﻿using InsiscoCore.Base.Service;
+﻿using InsiscoCore.Base.Data;
+using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
@@ -14,13 +15,13 @@ namespace PrestaQi.Service.ProcessServices
 {
     public class AdvanceProcessService : ProcessService<Advance>
     {
-        IRetrieveService<Accredited> _AcreditedRetrieveService;
+        IRetrieveRepository<Accredited> _AcreditedRetrieveService;
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<Configuration> _ConfigutarionRetrieveService;
         IRetrieveService<Period> _PeriodRetrieveService;
 
         public AdvanceProcessService(
-            IRetrieveService<Accredited> acreditedRetrieveService,
+            IRetrieveRepository<Accredited> acreditedRetrieveService,
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
             IRetrieveService<Period> periodRetrieveService

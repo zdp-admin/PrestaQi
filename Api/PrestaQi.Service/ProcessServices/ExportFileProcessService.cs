@@ -267,6 +267,7 @@ namespace PrestaQi.Service.ProcessServices
                     workSheet.Cell(row, 13).Value = item.Position;
                     workSheet.Cell(row, 14).Value = genders.Find(p => p.id == item.Gender_Id).Description;
                     workSheet.Cell(row, 15).Value = item.Seniority_Company;
+                    workSheet.Cell(row, 16).Value = item.Credit_Limit.ToString("C");
 
                     row += 1;
                 }
@@ -381,6 +382,11 @@ namespace PrestaQi.Service.ProcessServices
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
                       .Add(new Paragraph(item.Seniority_Company.ToString())));
+
+                    cells.Add(new Cell(1, 1)
+                      .SetTextAlignment(TextAlignment.CENTER)
+                      .SetFontSize(8)
+                      .Add(new Paragraph(item.Credit_Limit.ToString("C"))));
                 }
 
                 cells.ForEach(p =>

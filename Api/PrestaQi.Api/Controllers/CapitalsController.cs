@@ -17,7 +17,7 @@ using PrestaQi.Model.Enum;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]"), Authorize]
     [ApiController]
     public class CapitalsController : CustomController
     {

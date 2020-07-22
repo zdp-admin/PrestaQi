@@ -95,8 +95,9 @@ namespace PrestaQi.Service.RetrieveServices
                         Interest_Rate = c.Interest_Rate,
                         Period = periods.Find(item => item.id == c.period_id).Description,
                         Capital_Status = ((PrestaQiEnum.CapitalEnum)c.Capital_Status).ToString(),
-                        Investment_Status = ((PrestaQiEnum.InvestmentEnum)c.Investment_Status).ToString()
-
+                        Investment_Status = ((PrestaQiEnum.InvestmentEnum)c.Investment_Status).ToString(),
+                        Day_Capital_Call = c.Capital_Status == (int)PrestaQiEnum.CapitalEnum.Solicitado ? 
+                            CalculateDayCapitalCall(c.created_at, (c.Bussiness_Day + c.Extension_day)) : 0
                     }).ToList();
                 });
 
@@ -127,6 +128,13 @@ namespace PrestaQi.Service.RetrieveServices
             investor.Institution_Name = institutions.Find(p => p.id == investor.Institution_Id).Description;
 
             return investor;
+        }
+
+        int CalculateDayCapitalCall(DateTime dateCreate, int day)
+        {
+            DateTime dateLimit = dateCreate.AddDays(day);
+
+            return (dateLimit - DateTime.Now).Days;
         }
     }
 }

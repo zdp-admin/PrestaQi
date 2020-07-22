@@ -2,6 +2,7 @@
 using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using Org.BouncyCastle.Asn1.Mozilla;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Output;
@@ -68,6 +69,8 @@ namespace PrestaQi.Service.WriteServices
 
             return setPaymentPeriod;
         }
+
+        
 
     }
 }

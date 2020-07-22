@@ -160,7 +160,9 @@ namespace PrestaQi.Service.ProcessServices
                     MyInvestmentDetails = this._CapitalDetailRetrieveService.Where(detail => detail.Capital_Id == p.id).OrderBy(p => p.Period).ToList(),
                     Enabled = ((PrestaQiEnum.CapitalEnum)p.Capital_Status) == PrestaQiEnum.CapitalEnum.Terminado ? true : false,
                     Capital_Status = p.Capital_Status,
-                    Capital_Status_Name = ((PrestaQiEnum.CapitalEnum)p.Capital_Status).ToString()
+                    Capital_Status_Name = ((PrestaQiEnum.CapitalEnum)p.Capital_Status).ToString(),
+                    Investment_Status = p.Investment_Status,
+                    Investment_Status_Name = ((PrestaQiEnum.InvestmentEnum)p.Investment_Status).ToString()
                 }).ToList();
 
                 myInvestments.ForEach(p =>
@@ -190,15 +192,15 @@ namespace PrestaQi.Service.ProcessServices
                                 }
                             }
 
-                            detail.Vat = Math.Round((detail.Interest_Payment + detail.Default_Interest) * ((double)vat / 100), 2);
+                            detail.Vat = Math.Round((detail.Interest_Payment + detail.Default_Interest + detail.Promotional_Setting) * ((double)vat / 100), 2);
 
                             if (!investor.Is_Moral_Person)
                             {
                                 detail.Vat_Retention = Math.Round((detail.Vat * 2) / 3, 2);
-                                detail.Isr_Retention = Math.Round((detail.Interest_Payment + detail.Default_Interest) * ((double)isr / 100));
+                                detail.Isr_Retention = Math.Round((detail.Interest_Payment + detail.Default_Interest + detail.Promotional_Setting) * ((double)isr / 100));
                             }
 
-                            detail.Payment = (detail.Principal_Payment + detail.Interest_Payment + detail.Default_Interest + detail.Vat) - (detail.Vat_Retention + detail.Isr_Retention);
+                            detail.Payment = (detail.Principal_Payment + detail.Interest_Payment + detail.Default_Interest + detail.Vat + detail.Promotional_Setting) - (detail.Vat_Retention + detail.Isr_Retention);
                         }
                     });
 
@@ -215,6 +217,8 @@ namespace PrestaQi.Service.ProcessServices
                         p.Net_Interest = detailShow.Payment;
                         p.Pay_Day_Limit = detailShow.Pay_Day_Limit;
                         p.Principal_Payment = detailShow.Principal_Payment > 0 ? detailShow.ToString() : "No Aplica";
+                        p.Promotional_Setting = detailShow.Promotional_Setting;
+                        p.Reason = detailShow.Reason;
                     }
                 });
             }

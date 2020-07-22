@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PrestaQi.Model;
+using System.Linq;
 
 namespace PrestaQi.DataAccess
 {
@@ -32,9 +33,22 @@ namespace PrestaQi.DataAccess
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-           // builder.Entity<Capital>().HasOne(x => x.Investor).WithMany(x => x.Capitals).HasForeignKey(x => x.investor_id);
             base.OnModelCreating(builder);
-        }
+
+
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    var attributes = property.PropertyInfo.GetCustomAttributes(typeof(EncryptedAttribute), false);
+                    if (attributes.Any())
+                    {
+                        property.SetField((attributes.First() as EncryptedAttribute).FieldName);
+                        property.SetPropertyAccessMode(PropertyAccessMode.Field);
+                    }
+                }
+            }
+        }   
     }
 
 }

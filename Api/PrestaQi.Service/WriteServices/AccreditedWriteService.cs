@@ -1,6 +1,7 @@
 ﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using InsiscoCore.Utilities.Crypto;
 using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;

@@ -14,5 +14,6 @@ namespace PrestaQi.Model.Dto.Output
         public string File { get; set; }
         public byte[] File_Byte { get; set; }
         public string Investment_Status { get; set; }
+        public int Day_Capital_Call { get; set; }
     }
 }

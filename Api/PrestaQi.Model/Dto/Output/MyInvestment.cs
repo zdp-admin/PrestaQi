@@ -29,5 +29,9 @@ namespace PrestaQi.Model.Dto.Output
         public int Day_Overdue { get; set; }
         public List<CapitalDetail> MyInvestmentDetails { get; set; }
         public string Principal_Payment { get; set; }
+        public int Investment_Status { get; set; }
+        public string Investment_Status_Name { get; set; }
+        public double Promotional_Setting { get; set; }
+        public string Reason { get; set; }
     }
 }

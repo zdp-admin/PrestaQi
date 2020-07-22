@@ -19,6 +19,7 @@ namespace PrestaQi.Api.Controllers
     {
         IWriteService<CapitalDetail> _CapitalDetailWriteService;
         IWriteService<Model.Notification> _NotificationWriteService;
+        IProcessService<CapitalDetail> _CapitalDetailProcessService;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
         IConfiguration _Configuration;
 
@@ -26,13 +27,21 @@ namespace PrestaQi.Api.Controllers
             IWriteService<CapitalDetail> capitalDetailWriteService,
             IConfiguration configuration,
             NotificationsMessageHandler notificationsMessageHandler,
-            IWriteService<Model.Notification> notificationWriteService
+            IWriteService<Model.Notification> notificationWriteService,
+            IProcessService<CapitalDetail> capitalDetailProcessService
             )
         {
             this._CapitalDetailWriteService = capitalDetailWriteService;
             this._NotificationWriteService = notificationWriteService;
             this._Configuration = configuration;
             this._NotificationsMessageHandler = notificationsMessageHandler;
+            this._CapitalDetailProcessService = capitalDetailProcessService;
+        }
+
+        [HttpPut, Route("SetPromotionalSetting")]
+        public IActionResult SetPromotionalSetting(CapitalDetail detail)
+        {
+            return Ok(this._CapitalDetailProcessService.ExecuteProcess<CapitalDetail, CapitalDetail>(detail));
         }
 
         [HttpPut, Route("SetPaymentPeriod")]

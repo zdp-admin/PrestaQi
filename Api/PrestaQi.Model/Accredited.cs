@@ -1,14 +1,22 @@
-﻿using PrestaQi.Model.General;
+﻿using InsiscoCore.Utilities.Crypto;
+using PrestaQi.Model.General;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection.Metadata.Ecma335;
 
 namespace PrestaQi.Model
 {
     [Table("accrediteds")]
     public partial class Accredited : Entity<int>
     {
+        #region "Fields"
+        string _first_name;
+        #endregion
+
+        #region "Properties"
         [Column("first_name")]
-        public string First_Name { get; set; }
+        [Encrypted(nameof(_first_name))]
+        public string First_Name { get => _first_name.Decrypt(); set => _first_name = value.Encrypt(); }
         [Column("last_name")]
         public string Last_Name { get; set; }
         [Column("company_id")]
@@ -56,5 +64,6 @@ namespace PrestaQi.Model
         public DateTime? Deleted_At { get; set; }
         [Column("first_login")]
         public bool First_Login { get; set; }
+        #endregion
     }
 }

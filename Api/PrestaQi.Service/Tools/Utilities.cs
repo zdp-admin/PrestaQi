@@ -7,6 +7,7 @@ using PrestaQi.Model.Dto.Input;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 
@@ -162,5 +163,6 @@ namespace PrestaQi.Service.Tools
             stream.Position = 0;
             return stream;
         }
+
     }
 }
