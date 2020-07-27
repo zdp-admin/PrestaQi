@@ -3,6 +3,7 @@ using PrestaQi.Model.General;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Principal;
 
 namespace PrestaQi.Model
 {
@@ -64,6 +65,8 @@ namespace PrestaQi.Model
         public DateTime? Deleted_At { get; set; }
         [Column("first_login")]
         public bool First_Login { get; set; }
+        [Column("is_blocked")]
+        public bool Is_Blocked { get; set; }
         #endregion
     }
 }

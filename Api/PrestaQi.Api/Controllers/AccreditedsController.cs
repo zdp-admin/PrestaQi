@@ -131,5 +131,11 @@ namespace PrestaQi.Api.Controllers
                         "Advances" + DateTime.Now.ToString("yyyyMMdd") + ".pdf"
                 );
         }
+
+        [HttpPut, Route("BlockedService")]
+        public IActionResult BlockedService(BlockedAccredited blockedAccredited)
+        {
+            return Ok(this._AccreditedWriteService.Update<BlockedAccredited, bool>(blockedAccredited));
+        }
     }
 }

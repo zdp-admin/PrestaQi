@@ -1,4 +1,5 @@
-﻿using InsiscoCore.Base.Data;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
 using InsiscoCore.Utilities.Crypto;
@@ -228,6 +229,25 @@ namespace PrestaQi.Service.WriteServices
             catch (Exception exception)
             {
                 throw new SystemValidationException($"Error change status! {exception.Message}");
+            }
+        }
+
+        public bool Update(BlockedAccredited blockedAccredited)
+        {
+            try
+            {
+                var accrediteds = this._AccreditedRetrieveService.Where(p => p.Company_Id == blockedAccredited.Company_Id).ToList();
+
+                if (accrediteds.Count == 0)
+                    throw new SystemValidationException($"No se encontraron acreditados para la empresa seleccionada");
+
+                accrediteds.ForEach(p => { p.Is_Blocked = blockedAccredited.Is_Blocked; });
+
+                return this._Repository.Update(accrediteds);
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException("Error al bloquear/desbloquear los servicios: " + exception.Message);
             }
         }
     }
