@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 
 namespace PrestaQi.Service.WriteServices
 {
@@ -63,7 +64,7 @@ namespace PrestaQi.Service.WriteServices
 
                     try
                     {
-                        SendMail(entity.Mail, password);
+                        SendMail(entity.Mail, password, entity.First_Name);
                        
                     }
                     catch (Exception)
@@ -183,7 +184,7 @@ namespace PrestaQi.Service.WriteServices
 
                     try
                     {
-                        SendMail(p.Mail, mails[p.Mail]);
+                        SendMail(p.Mail, mails[p.Mail], p.First_Name);
                     }
                     catch (Exception)
                     {
@@ -219,7 +220,7 @@ namespace PrestaQi.Service.WriteServices
             }
         }
 
-        void SendMail(string mail, string password)
+        void SendMail(string mail, string password, string name)
         {
             var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
             var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
@@ -229,6 +230,7 @@ namespace PrestaQi.Service.WriteServices
 
             var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
             string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+            textHtml = textHtml.Replace("{NAME}", name);
             textHtml = textHtml.Replace("{MAIL}", mail);
             textHtml = textHtml.Replace("{PASSWORD}", password);
             textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);

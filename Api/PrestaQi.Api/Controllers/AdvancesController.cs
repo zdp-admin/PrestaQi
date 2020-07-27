@@ -76,6 +76,14 @@ namespace PrestaQi.Api.Controllers
             return Ok(result);
         }
         
+        [HttpPut, Route("CalculatePromotional")]
+        public IActionResult CalucaltePromotional(CalculatePromotional calculatePromotional)
+        {
+            var advance = this._AdvanceProcessService.ExecuteProcess<CalculatePromotional, Advance>(calculatePromotional);
+            this._AdvanceWriteService.Update(advance);
+            return Ok(advance);
+        }
+
         void SendNotifiationSetPaidAdvance(List<int> advanceIds)
         {
             var accreditedIds = this._AdvanceRetrieveService.Where(p => advanceIds.Contains(p.id)).Select(p => p.Accredited_Id).ToList();

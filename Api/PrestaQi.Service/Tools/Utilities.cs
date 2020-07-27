@@ -98,6 +98,14 @@ namespace PrestaQi.Service.Tools
             }
         }
 
+        public static void GenerateCell(string text, List<Cell> cells, int fontSize, TextAlignment alignment)
+        {
+            cells.Add(new Cell(1, 1)
+                    .SetTextAlignment(alignment)
+                    .SetFontSize(fontSize)
+                    .Add(new Paragraph(text)));
+        }
+
         public static (DateTime, DateTime, bool) CalcuateDates(string filter)
         {
             DateTime startDate = DateTime.Now;

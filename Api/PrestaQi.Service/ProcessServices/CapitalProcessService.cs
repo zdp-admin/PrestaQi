@@ -1,5 +1,6 @@
 ﻿using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using OpenXmlPowerTools;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
@@ -43,6 +44,11 @@ namespace PrestaQi.Service.ProcessServices
         public AnchorControlPagination ExecuteProcess(AnchorByFilter anchorByFilter)
         {
             List<Investor> investors = new List<Investor>();
+            AnchorControlTotal anchorControlTotal = new AnchorControlTotal();
+            double sumMoratorium = 0, moratoriumVat = 0, moratoriumVatRetention = 0, moratoriumIsrRetention = 0, moratoriumNetInterest = 0;
+            double sumInterest = 0, vat = 0, vatRetention = 0, isrRetention = 0, netInterest = 0, principalPayment = 0;
+
+            var listInvestorIds = this._CapitalRetrieveService.Where(p => p.Investment_Status == (int)PrestaQiEnum.InvestmentEnum.Activa).Select(p => p.investor_id).Distinct().ToList();
 
             if (anchorByFilter.Page == 0 || anchorByFilter.NumRecord == 0)
             {
@@ -55,13 +61,15 @@ namespace PrestaQi.Service.ProcessServices
             {
                 totalRecord = this._InvestorRetrieveService.Where(
                     p => p.Start_Date_Prestaqi.Date >= ((DateTime)anchorByFilter.Start_Date).Date &&
-                    p.Start_Date_Prestaqi.Date <= ((DateTime)anchorByFilter.End_Date).Date && p.Deleted_At == null
+                    p.Start_Date_Prestaqi.Date <= ((DateTime)anchorByFilter.End_Date).Date && p.Deleted_At == null &&
+                    listInvestorIds.Contains(p.id)
                     ).ToList().Count;
 
                 investors = this._InvestorRetrieveService.Where(
                     p => p.Start_Date_Prestaqi.Date >= ((DateTime)anchorByFilter.Start_Date).Date &&
                     p.Start_Date_Prestaqi.Date <= ((DateTime)anchorByFilter.End_Date).Date
-                    && p.Deleted_At == null).Skip((anchorByFilter.Page - 1) * anchorByFilter.NumRecord).Take(anchorByFilter.NumRecord).ToList();
+                    && p.Deleted_At == null && listInvestorIds.Contains(p.id))
+                    .Skip((anchorByFilter.Page - 1) * anchorByFilter.NumRecord).Take(anchorByFilter.NumRecord).ToList();
             }
             else
             {
@@ -69,17 +77,17 @@ namespace PrestaQi.Service.ProcessServices
                 {
                     if (string.IsNullOrEmpty(anchorByFilter.Filter))
                     {
-                        totalRecord = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).ToList().Count;
+                        totalRecord = this._InvestorRetrieveService.Where(p => p.Deleted_At == null && listInvestorIds.Contains(p.id)).ToList().Count;
 
-                        investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).OrderBy(p => p.created_at)
+                        investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null && listInvestorIds.Contains(p.id)).OrderBy(p => p.created_at)
                             .Skip((anchorByFilter.Page - 1) * anchorByFilter.NumRecord).Take(anchorByFilter.NumRecord)
                             .ToList();
                     }
                     else
-                        investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).OrderBy(p => p.created_at).ToList();
+                        investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null && listInvestorIds.Contains(p.id)).OrderBy(p => p.created_at).ToList();
                 }
                 else
-                    investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null).OrderBy(p => p.created_at).ToList();
+                    investors = this._InvestorRetrieveService.Where(p => p.Deleted_At == null && listInvestorIds.Contains(p.id)).OrderBy(p => p.created_at).ToList();
             }
 
             List<AnchorControl> result = new List<AnchorControl>();
@@ -110,13 +118,57 @@ namespace PrestaQi.Service.ProcessServices
                         .Take(anchorByFilter.NumRecord).ToList();
             }
 
-            return new AnchorControlPagination() { AnchorControls = result, TotalRecord = totalRecord };
+            result.ForEach(header =>
+            {
+                header.MyInvestments.ForEach(p =>
+                {
+                    if (p.Quantity_Interest_Arrears > 0)
+                    {
+                        sumMoratorium += p.Interest_Payable;
+                        moratoriumVat = p.Vat;
+                        moratoriumVatRetention = p.Vat_Retention;
+                        moratoriumIsrRetention = p.Isr_Retention;
+                        moratoriumNetInterest = p.Net_Interest;
+                    }
+
+                    if (p.Enabled == "Activo")
+                    {
+                        sumInterest += p.Interest_Payable;
+                        vat += p.Vat;
+                        vatRetention += p.Vat_Retention;
+                        isrRetention += p.Isr_Retention;
+                        netInterest += p.Net_Interest;
+                        double principal = 0;
+                        double.TryParse(p.Principal_Payment, out principal);
+
+                        principalPayment += principal;
+                    }
+                });
+            });
+
+            anchorControlTotal.Moratorium_Interest_Total = sumMoratorium;
+            anchorControlTotal.Moratorium_Vat = moratoriumVat;
+            anchorControlTotal.Moratorium_Vat_Retention = moratoriumVatRetention;
+            anchorControlTotal.Moratorium_Isr_Retention = moratoriumIsrRetention;
+            anchorControlTotal.Moratorium_Net_Interest = moratoriumNetInterest;
+
+            anchorControlTotal.Interest = sumInterest;
+            anchorControlTotal.Vat = vat;
+            anchorControlTotal.Vat_Retention = vatRetention;
+            anchorControlTotal.Isr_Retention = isrRetention;
+            anchorControlTotal.Net_Interest = netInterest;
+            anchorControlTotal.Principal_Payment = principalPayment;
+            anchorControlTotal.Total_Period = netInterest + principalPayment;
+
+            anchorControlTotal.Total_Anchor_Period = (netInterest + principalPayment + moratoriumNetInterest);
+
+            return new AnchorControlPagination() { AnchorControls = result, TotalRecord = totalRecord, Totals = anchorControlTotal };
         }
 
         (List<MyInvestment>, int) GenerateInvestments(GetMyInvestment getMyInvestment)
         {
             int totalRecord = 0;
-
+            
             if (getMyInvestment.Source == 1 && (getMyInvestment.Page == 0 || getMyInvestment.NumRecord == 0))
             {
                 getMyInvestment.Page = 1;
@@ -131,7 +183,10 @@ namespace PrestaQi.Service.ProcessServices
 
             List<Capital> listCapitalByInvestor = new List<Capital>();
 
-            totalRecord = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id).ToList().Count;
+            if (getMyInvestment.Source == 1)
+                totalRecord = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id).ToList().Count;
+            else
+                totalRecord = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id && p.Investment_Status == (int)PrestaQiEnum.InvestmentEnum.Activa).ToList().Count;
 
             if (getMyInvestment.Source == 1)
             {
@@ -140,7 +195,7 @@ namespace PrestaQi.Service.ProcessServices
                     .OrderBy(p => p.id).Skip((getMyInvestment.Page - 1) * getMyInvestment.NumRecord).Take(getMyInvestment.NumRecord).ToList();
             }
             else
-                listCapitalByInvestor = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id).OrderBy(p => p.id).ToList();
+                listCapitalByInvestor = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id && p.Investment_Status == (int)PrestaQiEnum.InvestmentEnum.Activa).OrderBy(p => p.id).ToList();
             
             List<MyInvestment> myInvestments = new List<MyInvestment>();
 
@@ -157,8 +212,8 @@ namespace PrestaQi.Service.ProcessServices
                     Annual_Interest_Payment = Math.Round((p.Amount * ((double)p.Interest_Rate / 100)), 2),
                     Total = Math.Round(p.Amount + (p.Amount * ((double)p.Interest_Rate / 100)), 2),
                     Period_Id = p.period_id,
+                    Period_Name = periods.FirstOrDefault(period => period.id == p.period_id).Description,
                     MyInvestmentDetails = this._CapitalDetailRetrieveService.Where(detail => detail.Capital_Id == p.id).OrderBy(p => p.Period).ToList(),
-                    Enabled = ((PrestaQiEnum.CapitalEnum)p.Capital_Status) == PrestaQiEnum.CapitalEnum.Terminado ? true : false,
                     Capital_Status = p.Capital_Status,
                     Capital_Status_Name = ((PrestaQiEnum.CapitalEnum)p.Capital_Status).ToString(),
                     Investment_Status = p.Investment_Status,
@@ -219,6 +274,10 @@ namespace PrestaQi.Service.ProcessServices
                         p.Principal_Payment = detailShow.Principal_Payment > 0 ? detailShow.ToString() : "No Aplica";
                         p.Promotional_Setting = detailShow.Promotional_Setting;
                         p.Reason = detailShow.Reason;
+
+                        DateTime dateTimeTemp = new DateTime(DateTime.Now.Year, DateTime.Now.AddMonths(2).Month, 1);
+                        p.Enabled = p.Quantity_Interest_Arrears > 0 ? "Default" :
+                            p.Pay_Day_Limit.Date < dateTimeTemp ? "Activo" : "No Activo";
                     }
                 });
             }
@@ -228,6 +287,10 @@ namespace PrestaQi.Service.ProcessServices
 
         public InvestmentDashboard ExecuteProcess(GetInvestment getInvestment)
         {
+            int vat = Convert.ToInt32(this._ConfigurationRetrieveService.Where(p => p.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value);
+            int isr = Convert.ToInt32(this._ConfigurationRetrieveService.Where(p => p.Configuration_Name == "ISR").FirstOrDefault().Configuration_Value);
+            var periods = this._PeriodRetrieveService.Where(p => p.Enabled == true && p.User_Type == 1);
+
             List<CapitalDetail> capitalDetails = new List<CapitalDetail>();
 
             if (getInvestment.Filter != "range-dates" && getInvestment.Filter != "specific-day")
@@ -242,31 +305,69 @@ namespace PrestaQi.Service.ProcessServices
 
             if (getInvestment.Is_Specifid_Day)
             {
-                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).ToList();
+                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.Start_Date.Date == getInvestment.Start_Date.Date).ToList();
                 getInvestment.End_Date = getInvestment.Start_Date;
             }
             else
             {
-                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.updated_at.Date >= getInvestment.Start_Date.Date &&
-                p.updated_at.Date <= getInvestment.End_Date.Date).ToList();
+                capitalDetails = this._CapitalDetailRetrieveService.Where(p => p.Start_Date.Date >= getInvestment.Start_Date.Date &&
+                p.Start_Date.Date <= getInvestment.End_Date.Date).ToList();
             }
+
+            capitalDetails.ForEach(p =>
+            {
+                if (p.Interest_Payment == 0 && p.Principal_Payment == 0)
+                {
+                    var capital = this._CapitalRetrieveService.Find(p.Capital_Id);
+                    var investor = this._InvestorRetrieveService.Find(capital.investor_id);
+                    int periodValue = periods.FirstOrDefault(perdiod => perdiod.id == capital.period_id).Period_Value;
+                    p.Interest_Payment = Math.Round((p.Outstanding_Balance * ((double)capital.Interest_Rate / 100)) / periodValue);
+                    p.Vat = Math.Round((p.Interest_Payment + p.Default_Interest + p.Promotional_Setting) * ((double)vat / 100), 2);
+
+                    if (!investor.Is_Moral_Person)
+                    {
+                        p.Vat_Retention = Math.Round((p.Vat * 2) / 3, 2);
+                        p.Isr_Retention = Math.Round((p.Interest_Payment + p.Default_Interest + p.Promotional_Setting) * ((double)isr / 100));
+                    }
+
+                    p.Payment = (p.Principal_Payment + p.Interest_Payment + p.Default_Interest + p.Vat + p.Promotional_Setting) - (p.Vat_Retention + p.Isr_Retention);
+                }
+            });
 
             List<InvestmentDashboardDetail> details = new List<InvestmentDashboardDetail>();
 
             if (capitalDetails.Count > 0)
             {
-                while (getInvestment.Start_Date.Date <= getInvestment.End_Date.Date)
+                if (getInvestment.Filter != "range-dates")
                 {
-                    InvestmentDashboardDetail investmentDashboardDetail = new InvestmentDashboardDetail()
+                    while (getInvestment.Start_Date.Date <= getInvestment.End_Date.Date)
                     {
-                        Date = getInvestment.Start_Date,
-                        Interest_Paid = capitalDetails.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).Sum(p => p.Interest_Payment),
-                        Main_Return = capitalDetails.Where(p => p.updated_at.Date == getInvestment.Start_Date.Date).Sum(p => p.Principal_Payment)
+                        InvestmentDashboardDetail investmentDashboardDetail = new InvestmentDashboardDetail()
+                        {
+                            Date = getInvestment.Start_Date,
+                            Interest_Paid = capitalDetails.Where(p => p.Start_Date.Date == getInvestment.Start_Date.Date && p.Principal_Payment == 0).Sum(p => p.Payment),
+                            Main_Return = capitalDetails.Where(p => p.Start_Date.Date == getInvestment.Start_Date.Date && p.Principal_Payment > 0).Sum(p => p.Payment)
+                        };
 
-                    };
+                        details.Add(investmentDashboardDetail);
+                        getInvestment.Start_Date = getInvestment.Start_Date.AddDays(1);
+                    }
+                }
+                else
+                {
+                    var grupo = capitalDetails.GroupBy(p => p.Start_Date.Date).OrderBy(p => p.Key);
 
-                    details.Add(investmentDashboardDetail);
-                    getInvestment.Start_Date = getInvestment.Start_Date.AddDays(1);
+                    foreach (var group in grupo)
+                    {
+                        InvestmentDashboardDetail investmentDashboardDetail = new InvestmentDashboardDetail()
+                        {
+                            Date = group.Key,
+                            Interest_Paid = group.Where(p => p.Principal_Payment == 0).Sum(p => p.Payment),
+                            Main_Return = capitalDetails.Where(p => p.Principal_Payment > 0).Sum(p => p.Payment)
+                        };
+
+                        details.Add(investmentDashboardDetail);
+                    }
                 }
             }
 
@@ -278,10 +379,11 @@ namespace PrestaQi.Service.ProcessServices
                 Average_Interest_Paid = capitalDetails.Count > 0 ? getInvestment.Is_Specifid_Day == true ?
                         Math.Round(details.Sum(p => p.Interest_Paid) / capitalDetails.Where(p => p.Interest_Payment > 0).Count(), 2) :
                         Math.Round(details.Sum(p => p.Interest_Paid) / details.Count) : 0,
-                Average_Main_Return = capitalDetails.Count > 0 ?  getInvestment.Is_Specifid_Day == true ?
+                Average_Main_Return = capitalDetails.Count > 0 ? getInvestment.Is_Specifid_Day == true ?
                         Math.Round(details.Sum(p => p.Main_Return) / capitalDetails.Where(p => p.Principal_Payment > 0).Count(), 2) :
                         Math.Round(details.Sum(p => p.Main_Return) / details.Count) : 0
             };
+
 
             return investmentDashboard;
         }

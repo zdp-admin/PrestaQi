@@ -9,6 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using PrestaQi.Api.Configuration;
 using PrestaQi.DataAccess;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using WebSocketManager;
 
@@ -67,6 +69,12 @@ namespace PrestaQi.Api
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             );
 
+            services.Configure<RequestLocalizationOptions>(options =>
+            {
+                options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("es-MX");
+                options.SupportedCultures = new List<CultureInfo> { new CultureInfo("es-MX") };
+            });
+
             services.Configure<FormOptions>(opt =>
             {
                 opt.MultipartBodyLengthLimit = Convert.ToInt64(Configuration["Configuration:FileSize"]);
@@ -85,6 +93,7 @@ namespace PrestaQi.Api
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseRequestLocalization();
             app.UseCors("PrestaQiPolicy");
             app.UseRouting();
             app.UseAuthentication();

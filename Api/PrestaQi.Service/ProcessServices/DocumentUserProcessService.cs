@@ -76,23 +76,24 @@ namespace PrestaQi.Service.ProcessServices
                 MemoryStream file = new MemoryStream(Utilities.GetFile(configurations,
                      configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT").FirstOrDefault().Configuration_Value));
 
-                 using (WordprocessingDocument doc = WordprocessingDocument.Open(file, true))
-                 {
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{CONTRACT_NUMBER}", replace: accredited.Contract_number, matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{ACCREDITED_NAME}", replace: $"{accredited.First_Name} {accredited.Last_Name}", matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{COMPANY_NAME}", replace: accredited.Company_Name, matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{RFC}", replace: accredited.Rfc, matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{INSTITUTION_NAME}", replace: accredited.Institution_Name, matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{CLABE}", replace: accredited.Clabe, matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{ACCOUNT_NUMBER}", replace: accredited.Account_Number, matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{DAY}", replace: DateTime.Now.ToString("dd"), matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{MONTH}", replace: DateTime.Now.ToString("MM"), matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{YEAR}", replace: DateTime.Now.ToString("yyyy"), matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{AMOUNT}", replace: advance.Amount.ToString(), matchCase: false);
-                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{AMOUNT_LETTER}", replace: new Moneda().Convertir(advance.Amount.ToString(), true, "PESOS"), matchCase: false);
+                using (WordprocessingDocument doc = WordprocessingDocument.Open(file, true))
+                {
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{CONTRACT_NUMBER}", replace: accredited.Contract_number, matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{ACCREDITED_NAME}", replace: $"{accredited.First_Name} {accredited.Last_Name}", matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{COMPANY_NAME}", replace: accredited.Company_Name, matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{RFC}", replace: accredited.Rfc, matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{INSTITUTION_NAME}", replace: accredited.Institution_Name, matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{CLABE}", replace: accredited.Clabe, matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{ACCOUNT_NUMBER}", replace: accredited.Account_Number, matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{DAY}", replace: DateTime.Now.ToString("dd"), matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{MONTH}", replace: DateTime.Now.ToString("MM"), matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{YEAR}", replace: DateTime.Now.ToString("yyyy"), matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{AMOUNT}", replace: advance.Amount.ToString(), matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{AMOUNT_LETTER}", replace: new Moneda().Convertir(advance.Amount.ToString(), true, "PESOS"), matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{RETENTION}", replace: advance.Total_Withhold.ToString(), matchCase: false);
 
-                     doc.SaveAs(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")).Close();
-                 }
+                    doc.SaveAs(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")).Close();
+                }
 
                 MemoryStream fileModified = new MemoryStream(Utilities.GetFile(configurations,
                    configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT_MODIFIED").FirstOrDefault().Configuration_Value  + accredited.Contract_number + ".docx"));

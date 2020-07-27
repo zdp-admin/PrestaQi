@@ -23,5 +23,19 @@ namespace PrestaQi.Model
         public bool Enabled { get; set; }
         [Column("paid_status")]
         public int Paid_Status { get; set; }
+        [Column("interest")]
+        public double Interest { get; set; }
+        [Column("vat")]
+        public double Vat { get; set; }
+        [Column("subtotal")]
+        public double Subtotal { get; set; }
+        [Column("interest_moratorium")]
+        public double Interest_Moratorium { get; set; }
+        [Column("day_moratorium")]
+        public double Day_Moratorium { get; set; }
+        [Column("limit_date")]
+        public DateTime Limit_Date { get; set; }
+        [Column("promotional_setting")]
+        public double Promotional_Setting { get; set; }
     }
 }

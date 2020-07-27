@@ -115,6 +115,19 @@ namespace PrestaQi.Service.WriteServices
 
                 entities.ToList().ForEach(p =>
                 {
+                    if (p.Company_Id == 0)
+                    {
+                        var company = this._CompanyRetrieveService.Where(company => company.Description.ToLower().Trim() ==
+                            p.Company_Name.ToLower().Trim()).FirstOrDefault();
+
+                        if (company == null)
+                        {
+                            company = new Company() { Description = p.Company_Name };
+                            this._CompanyWriteService.Create(company);
+                            p.Company_Id = company.id;
+                        }
+                    }
+
                     string password = Utilities.GetPasswordRandom();
                     p.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
                     p.created_at = DateTime.Now;

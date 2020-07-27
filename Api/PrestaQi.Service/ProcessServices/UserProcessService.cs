@@ -63,9 +63,9 @@ namespace PrestaQi.Service.ProcessServices
         {
             RecoveryPasswordData recoveryPasswordData = new RecoveryPasswordData();
 
-            var userMail = this._UserRetrieveService.Where(p => p.Mail == recoveryPassword.Mail && p.Deleted_At == null).FirstOrDefault();
-            var accreditedMail = this._AccreditedRetrieveService.Where(p => p.Mail == recoveryPassword.Mail && p.Deleted_At == null).FirstOrDefault();
-            var investorMail = this._InvestorRetrieveService.Where(p => p.Mail == recoveryPassword.Mail && p.Deleted_At == null).FirstOrDefault();
+            var userMail = this._UserRetrieveService.Where(p => p.Mail.ToLower() == recoveryPassword.Mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
+            var accreditedMail = this._AccreditedRetrieveService.Where(p => p.Mail.ToLower() == recoveryPassword.Mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
+            var investorMail = this._InvestorRetrieveService.Where(p => p.Mail.ToLower() == recoveryPassword.Mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
 
             if (userMail == null && accreditedMail == null && investorMail == null)
                 throw new SystemValidationException("The mail is not registered");
@@ -349,8 +349,7 @@ namespace PrestaQi.Service.ProcessServices
                             var company = this._CompanyRetrieveService.Where(p => p.Description == fields[2]).FirstOrDefault();
                             if (company == null)
                             {
-                                save = false;
-                                messages.Append($"{Environment.NewLine} - Company [{fields[2]}] not found. Line: {row}");
+                                accredited.Company_Name = fields[2];
                             }
                             else
                                 accredited.Company_Id = company.id;
@@ -390,9 +389,9 @@ namespace PrestaQi.Service.ProcessServices
 
         bool VerifiyMail(string mail)
         {
-            var userCount = this._UserRetrieveService.Where(p => p.Mail == mail && p.Deleted_At == null).FirstOrDefault();
-            var accreditedCount = this._AccreditedRetrieveService.Where(p => p.Mail == mail && p.Deleted_At == null).FirstOrDefault();
-            var investorCount = this._InvestorRetrieveService.Where(p => p.Mail == mail && p.Deleted_At == null).FirstOrDefault();
+            var userCount = this._UserRetrieveService.Where(p => p.Mail.ToLower() == mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
+            var accreditedCount = this._AccreditedRetrieveService.Where(p => p.Mail.ToLower() == mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
+            var investorCount = this._InvestorRetrieveService.Where(p => p.Mail.ToLower() == mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
             if (userCount != null || accreditedCount != null || investorCount != null)
                 return false;
 
