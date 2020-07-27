@@ -13,6 +13,7 @@ namespace PrestaQi.Model.Dto.Output
         public int Interest_Rate { get; set; }
         public int Moratoruim_Interest_Rate { get; set; }
         public double Payment { get; set; }
+        public bool Is_Blocked { get; set; }
         public List<Advance> Advances { get; set; }
     }
 }

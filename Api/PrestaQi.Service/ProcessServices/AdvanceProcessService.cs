@@ -280,19 +280,21 @@ namespace PrestaQi.Service.ProcessServices
         {
             try
             {
+                int finantialDay = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "FINANCIAL_DAYS").FirstOrDefault().Configuration_Value);
                 double vat = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value) / 100;
                 var advance = this._AdvanceRetrieveService.Find(calculatePromotional.Advance_Id);
+                var accredited = this._AcreditedRetrieveService.Find(advance.Accredited_Id);
 
                 if (advance == null)
                     throw new SystemValidationException("No se encontró el adelando");
 
-                
-                if (calculatePromotional.Amount == 0)
-                    advance.Promotional_Setting = advance.Promotional_Setting * -1;
-                else
-                    advance.Promotional_Setting = calculatePromotional.Amount;
-
-                advance.Subtotal = advance.Subtotal + advance.Promotional_Setting;
+                advance.Promotional_Setting = calculatePromotional.Amount;
+                advance.Day_Moratorium = DateTime.Now.Date > advance.Limit_Date.Date ?
+                    (DateTime.Now.Date - advance.Limit_Date).Days : 0;
+                advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
+                Math.Round((advance.Amount * ((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
+                0;
+                advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
                 advance.Vat = Math.Round(advance.Subtotal * vat, 2);
                 advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
 

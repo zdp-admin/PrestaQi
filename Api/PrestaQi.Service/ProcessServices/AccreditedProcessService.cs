@@ -64,7 +64,8 @@ namespace PrestaQi.Service.ProcessServices
                 Id = accredited.Identify,
                 Interest_Rate = accredited.Interest_Rate,
                 Moratoruim_Interest_Rate = accredited.Moratoruim_Interest_Rate,
-                NameComplete = $"{accredited.First_Name} {accredited.Last_Name}" 
+                NameComplete = $"{accredited.First_Name} {accredited.Last_Name}",
+                Is_Blocked = accredited.Is_Blocked
             }).ToList();
 
             detail.ForEach(accredited =>
@@ -76,7 +77,7 @@ namespace PrestaQi.Service.ProcessServices
                     advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
                     Math.Round((advance.Amount * ((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
                     0;
-                    advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission;
+                    advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
                     advance.Vat = Math.Round(advance.Subtotal * vat, 2);
                     advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
                 });
@@ -94,7 +95,8 @@ namespace PrestaQi.Service.ProcessServices
                     this._PaidAdvanceRetrieveService.Where(p => p.Company_Id == company.id &&
                     p.Is_Partial).Sum(z => z.Amount),
                 Partial_Amount = this._PaidAdvanceRetrieveService.Where(p => p.Company_Id == company.id && 
-                    p.Is_Partial).Sum(z => z.Amount)
+                    p.Is_Partial).Sum(z => z.Amount),
+                 
             }).ToList();
 
             return result;
