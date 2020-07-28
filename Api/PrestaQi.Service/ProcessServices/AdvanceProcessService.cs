@@ -63,17 +63,20 @@ namespace PrestaQi.Service.ProcessServices
             DateTime endDate = DateTime.Now;
             DateTime limitDate = DateTime.Now;
             int day = DateTime.Now.Day;
+            PeriodCommissionDetail commissionPerioDetail = new PeriodCommissionDetail();
 
             int endDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
 
-            var commissionPeriodId = this._PeriodCommissionRetrieve.Where(p => p.Period_Id == accredited.Period_Id && p.Type_Month == endDay).FirstOrDefault().id;
-            var commissionPerioDetail = this._PeriodCommissionDetailRetrieve.Where(p => p.Period_Commission_Id == commissionPeriodId && p.Day_Month == DateTime.Now.Day).FirstOrDefault();
-            commission = Convert.ToInt32(commissionPerioDetail.Commission);
+            if (accredited.Period_Id != (int)PrestaQiEnum.PerdioAccredited.Semanal)
+            {
+                var commissionPeriodId = this._PeriodCommissionRetrieve.Where(p => p.Period_Id == accredited.Period_Id && p.Type_Month == endDay).FirstOrDefault().id;
+                commissionPerioDetail = this._PeriodCommissionDetailRetrieve.Where(p => p.Period_Commission_Id == commissionPeriodId && p.Day_Month == DateTime.Now.Day).FirstOrDefault();
+                commission = Convert.ToInt32(commissionPerioDetail.Commission);
+            }
 
             switch (accredited.Period_Id)
             {
                 case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-                    
                     if (commissionPerioDetail.Date_Payment == 15 && DateTime.Now.Day > 15)
                         limitDate = limitDate.AddMonths(1);
 
@@ -87,7 +90,6 @@ namespace PrestaQi.Service.ProcessServices
 
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Mensual:
-
                     if (DateTime.Now.Day >= (endDay - 2))
                     {
                         limitDate = limitDate.AddMonths(1);
