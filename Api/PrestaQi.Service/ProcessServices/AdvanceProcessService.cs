@@ -1,7 +1,9 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using DocumentFormat.OpenXml.Math;
+using DocumentFormat.OpenXml.Spreadsheet;
 using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using OpenXmlPowerTools;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
@@ -21,19 +23,26 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<Configuration> _ConfigutarionRetrieveService;
         IRetrieveService<Period> _PeriodRetrieveService;
+        IRetrieveService<PeriodCommission> _PeriodCommissionRetrieve;
+        IRetrieveService<PeriodCommissionDetail> _PeriodCommissionDetailRetrieve;
+
 
         public AdvanceProcessService(
             IRetrieveRepository<Accredited> acreditedRetrieveService,
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<Period> periodRetrieveService
+            IRetrieveService<Period> periodRetrieveService,
+            IRetrieveService<PeriodCommission> periodCommissionRetrieve,
+            IRetrieveService<PeriodCommissionDetail> periodCommissionDetailRetrieve
             )
         {
             this._AcreditedRetrieveService = acreditedRetrieveService;
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._ConfigutarionRetrieveService = configurationRetrieveService;
             this._PeriodRetrieveService = periodRetrieveService;
-        }
+            this._PeriodCommissionRetrieve = periodCommissionRetrieve;
+            this._PeriodCommissionDetailRetrieve = periodCommissionDetailRetrieve;
+    }
 
         public Advance ExecuteProcess(CalculateAmount calculateAmount)
         {
@@ -53,45 +62,22 @@ namespace PrestaQi.Service.ProcessServices
             DateTime startDate = DateTime.Now;
             DateTime endDate = DateTime.Now;
             DateTime limitDate = DateTime.Now;
-            int day = 0;
+            int day = DateTime.Now.Day;
+
+            int endDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+
+            var commissionPeriodId = this._PeriodCommissionRetrieve.Where(p => p.Period_Id == accredited.Period_Id && p.Type_Month == endDay).FirstOrDefault().id;
+            var commissionPerioDetail = this._PeriodCommissionDetailRetrieve.Where(p => p.Period_Commission_Id == commissionPeriodId && p.Day_Month == DateTime.Now.Day).FirstOrDefault();
+            commission = Convert.ToInt32(commissionPerioDetail.Commission);
 
             switch (accredited.Period_Id)
             {
                 case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-                    DateTime endDateMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
+                    
+                    if (commissionPerioDetail.Date_Payment == 15 && DateTime.Now.Day > 15)
+                        limitDate = limitDate.AddMonths(1);
 
-                    if (DateTime.Now.Day <= period.Period_Value)
-                    {
-                        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-                        endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 15);
-                        limitDate = endDate;
-                        day = DateTime.Now.Day;
-
-                        if (DateTime.Now.Day >= endDate.AddDays(-2).Day)
-                            limitDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
-                    }
-                    else
-                    {
-                        commission = endDateMonth.Day == 30 ? 27 : 26;
-                        startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 16);
-                        endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
-                        limitDate = endDate;
-                        day = (DateTime.Now.Day - startDate.Day) + 1;
-
-                        if (DateTime.Now.Day >= endDate.AddDays(-2).Day)
-                        {
-                            limitDate = startDate.AddMonths(1);
-                            limitDate = new DateTime(limitDate.Year, limitDate.Month, DateTime.DaysInMonth(limitDate.Year, limitDate.Month));
-                        }
-                    }
-
-                    if (DateTime.Now.Day < endDate.AddDays(-2).Day)
-                    {
-                        commission = (commission + day) - 1;
-                    }
-
-                    if (DateTime.Now.Day == 15 && endDateMonth.Day == 30)
-                        commission = 25;
+                    limitDate = new DateTime(limitDate.Year, limitDate.Month, commissionPerioDetail.Date_Payment);
 
                     if (calculateAmount.Amount == 0)
                     {
@@ -101,26 +87,14 @@ namespace PrestaQi.Service.ProcessServices
 
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Mensual:
-                    startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-                    endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
-                    limitDate = endDate;
 
-                    if (endDate.Day == 30)
+                    if (DateTime.Now.Day >= (endDay - 2))
                     {
-                        if (endDate.Day >= 15 && DateTime.Now.Day < endDate.AddDays(-2).Day)
-                            commission = commission +  ((DateTime.Now.Day - 14) + 1);
-                    }
-                    else
-                    {
-                        if (endDate.Day >= 16 && DateTime.Now.Day < endDate.AddDays(-2).Day)
-                            commission = commission + ((DateTime.Now.Day - 15) + 1);
-                    }
-
-                    if (DateTime.Now.Day >= endDate.AddDays(-2).Day)
-                    {
-                        limitDate = startDate.AddMonths(1);
+                        limitDate = limitDate.AddMonths(1);
                         limitDate = new DateTime(limitDate.Year, limitDate.Month, DateTime.DaysInMonth(limitDate.Year, limitDate.Month));
                     }
+                    else
+                        limitDate = new DateTime(limitDate.Year, limitDate.Month, endDay);
 
                     if (calculateAmount.Amount == 0)
                     {
@@ -134,8 +108,8 @@ namespace PrestaQi.Service.ProcessServices
                     limitDate = endDate;
 
                     if ((int)DateTime.Now.DayOfWeek <= 4)
-                        commission = commission + ((int)DateTime.Now.DayOfWeek - 1); 
-                    
+                        commission = commission + ((int)DateTime.Now.DayOfWeek - 1);
+
                     if (DateTime.Now.Day >= endDate.AddDays(-2).Day)
                     {
                         DateTime today = DateTime.Today;
@@ -157,15 +131,15 @@ namespace PrestaQi.Service.ProcessServices
 
             var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
             p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date && p.Paid_Status == 0).ToList();
-                    
+
             if (isMaxAmount)
             {
                 advanceCalculated.Maximum_Amount = Math.Round(advances.Count > 0 ? calculateAmount.Amount - advances.Sum(p => p.Total_Withhold) : calculateAmount.Amount);
                 return advanceCalculated;
             }
 
-            double intereset = (accredited.Period_Id != (int)PrestaQiEnum.PerdioAccredited.Mensual) ?
-                Math.Round(((calculateAmount.Amount * annualInterest) / finantialDay) * (period.Period_Value - day), 2) :
+            double intereset = (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Mensual) || (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal) ?
+                Math.Round(calculateAmount.Amount * commissionPerioDetail.Interest, 2) :
                 Math.Round(((calculateAmount.Amount * annualInterest / finantialDay) * (period.Period_Value - DateTime.Now.Day)), 2);
 
             double subtotal = intereset + commission;
@@ -182,6 +156,7 @@ namespace PrestaQi.Service.ProcessServices
             advanceCalculated.Vat = vatTotal;
             advanceCalculated.Subtotal = subtotal;
             advanceCalculated.Limit_Date = limitDate;
+            advanceCalculated.Date_Advance = DateTime.Now;
 
             return advanceCalculated;
         }

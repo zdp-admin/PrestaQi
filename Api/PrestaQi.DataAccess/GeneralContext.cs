@@ -30,6 +30,8 @@ namespace PrestaQi.DataAccess
         public DbSet<Device> Devices { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<LogError> LogErrors { get; set; }
+        public DbSet<PeriodCommission> PeriodCommission { get; set; }
+        public DbSet<PeriodCommissionDetail> PeriodCommissionDetail { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
