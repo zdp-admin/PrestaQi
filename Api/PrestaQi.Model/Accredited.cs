@@ -41,7 +41,6 @@ namespace PrestaQi.Model
         public string Account_Number { get; set; }
         [Column("enabled")]
         public bool Enabled { get; set; }
-
         [Column("moratoruim_interest_rate")]
         public int Moratoruim_Interest_Rate { get; set; }
         [Column("period_id")]
@@ -56,5 +55,17 @@ namespace PrestaQi.Model
         public DateTime? Deleted_At { get; set; }
         [Column("first_login")]
         public bool First_Login { get; set; }
+        [Column("type_contract_id")]
+        public int? Type_Contract_Id { get; set; }
+        [Column("address")]
+        public string Address { get; set; }
+        [Column("colony")]
+        public string Colony { get; set; }
+        [Column("municipality")]
+        public string Municipality { get; set; }
+        [Column("zip_code")]
+        public string Zip_Code { get; set; }
+        [Column("state")]
+        public string State { get; set; }
     }
 }

@@ -27,6 +27,7 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Gender> _GenderRetrieveService;
         IRetrieveService<Company> _CompanyRetrieveService;
         IRetrieveService<Period> _PeriodRetrieveService;
+        IRetrieveService<TypeContract> _TypeContract;
 
         public UserProcessService(
             IRetrieveService<User> userRetrieveService,
@@ -36,7 +37,8 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<Institution> institutionRetrieveService,
             IRetrieveService<Gender> genderRetrieveService,
             IRetrieveService<Company> companyRetrieveService,
-            IRetrieveService<Period> periodRetrieveService
+            IRetrieveService<Period> periodRetrieveService,
+            IRetrieveService<TypeContract> typeContract
             )
         {
             this._UserRetrieveService = userRetrieveService;
@@ -47,6 +49,7 @@ namespace PrestaQi.Service.ProcessServices
             this._GenderRetrieveService = genderRetrieveService;
             this._CompanyRetrieveService = companyRetrieveService;
             this._PeriodRetrieveService = periodRetrieveService;
+            this._TypeContract = typeContract;
         }
 
         public bool ExecuteProcess(string mail)
@@ -312,57 +315,71 @@ namespace PrestaQi.Service.ProcessServices
                             {
                                 First_Name = fields[0],
                                 Last_Name = fields[1],
-                                Identify = fields[3],
-                                Contract_number = fields[4],
-                                Position = fields[5],
-                                Net_Monthly_Salary = Convert.ToDouble(fields[6]),
-                                Rfc = fields[7],
-                                Interest_Rate = Convert.ToInt32(fields[8]),
-                                Seniority_Company = fields[9],
-                                Birth_Date = Convert.ToDateTime(fields[10]),
-                                Age = Convert.ToInt32(fields[11]),
-                                Account_Number = fields[15],
-                                Clabe = fields[16],
-                                Moratoruim_Interest_Rate = Convert.ToInt32(fields[17]),
-                                Mail = fields[18],
-                                Mail_Mandate_Latter = fields[19]
+                                Address = fields[2],
+                                Colony = fields[3],
+                                Municipality = fields[4],
+                                Zip_Code = fields[5],
+                                State = fields[6],
+                                Identify = fields[9],
+                                Contract_number = fields[10],
+                                Position = fields[11],
+                                Net_Monthly_Salary = Convert.ToDouble(fields[12]),
+                                Rfc = fields[13],
+                                Interest_Rate = Convert.ToInt32(fields[14]),
+                                Seniority_Company = fields[15],
+                                Birth_Date = Convert.ToDateTime(fields[16]),
+                                Age = 0,
+                                Account_Number = fields[20],
+                                Clabe = fields[21],
+                                Moratoruim_Interest_Rate = Convert.ToInt32(fields[22]),
+                                Mail = fields[23],
+                                Mail_Mandate_Latter = fields[24]
                             };
 
-                            var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[14])).FirstOrDefault();
+                            var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[19])).FirstOrDefault();
                             if (institution == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Bank code [{fields[14]}] was not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Bank code [{fields[19]}] was not found. Line: {row}");
                             }
                             else
                                 accredited.Institution_Id = institution.id;
 
-                            var gender = this._GenderRetrieveService.Where(p => p.Description == fields[12]).FirstOrDefault();
+                            var gender = this._GenderRetrieveService.Where(p => p.Description == fields[17]).FirstOrDefault();
                             if (gender == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Gender [{fields[12]}] not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Gender [{fields[17]}] not found. Line: {row}");
                             }
                             else
                                 accredited.Gender_Id = gender.id;
 
-                            var company = this._CompanyRetrieveService.Where(p => p.Description == fields[2]).FirstOrDefault();
+                            var company = this._CompanyRetrieveService.Where(p => p.Description == fields[7]).FirstOrDefault();
                             if (company == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Company [{fields[2]}] not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Company [{fields[7]}] not found. Line: {row}");
                             }
                             else
                                 accredited.Company_Id = company.id;
 
-                            var period = this._PeriodRetrieveService.Where(p => p.Description == fields[13]).FirstOrDefault();
+                            var period = this._PeriodRetrieveService.Where(p => p.Description == fields[18]).FirstOrDefault();
                             if (period == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Period [{fields[13]}] not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Period [{fields[18]}] not found. Line: {row}");
                             }
                             else
                                 accredited.Period_Id = period.id;
+
+                            var typeContract = this._TypeContract.Where(t => t.Description.ToLower() == fields[8].ToLower()).FirstOrDefault();
+                            if (typeContract == null)
+                            {
+                                var typeContractDefault = this._TypeContract.Where(t => true).FirstOrDefault();
+                                accredited.Type_Contract_Id = typeContractDefault?.id;
+                            }
+                            else
+                                accredited.Type_Contract_Id = typeContract.id;
 
 
                             if (!VerifiyMail(accredited.Mail))

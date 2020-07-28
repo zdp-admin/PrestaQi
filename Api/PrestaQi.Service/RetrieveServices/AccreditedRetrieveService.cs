@@ -17,19 +17,22 @@ namespace PrestaQi.Service.RetrieveServices
         IRetrieveService<Company> _CompanyRetrieveService;
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<Institution> _InsitutionRetrieveService;
+        IRetrieveService<TypeContract> _TypeContractService;
 
         public AccreditedRetrieveService(
             IRetrieveRepository<Accredited> repository,
             IRetrieveService<Period> periodRetrieveService,
             IRetrieveService<Company> companyRetrieveService,
             IRetrieveService<Advance> advanceRetrieveService,
-            IRetrieveService<Institution> insitutionRetrieveService
+            IRetrieveService<Institution> insitutionRetrieveService,
+            IRetrieveService<TypeContract> typeContractService
             ) : base(repository)
         {
             this._PeriodRetrieveService = periodRetrieveService;
             this._CompanyRetrieveService = companyRetrieveService;
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._InsitutionRetrieveService = insitutionRetrieveService;
+            this._TypeContractService = typeContractService;
         }
 
         public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
@@ -91,6 +94,7 @@ namespace PrestaQi.Service.RetrieveServices
             var periods = this._PeriodRetrieveService.Where(p => p.User_Type == 2).ToList();
             var companies = this._CompanyRetrieveService.Where(p => true).ToList();
             var institutions = this._InsitutionRetrieveService.Where(p => true).ToList();
+            var typeContracts = this._TypeContractService.Where(p => true).ToList();
 
             list.ForEach(p =>
             {
@@ -100,6 +104,7 @@ namespace PrestaQi.Service.RetrieveServices
                 p.Advances = this._AdvanceRetrieveService.Where(advace => advace.Accredited_Id == p.id && (advace.Paid_Status == 0 || advace.Paid_Status == 2)).ToList();
                 p.Type = (int)PrestaQiEnum.UserType.Acreditado;
                 p.TypeName = PrestaQiEnum.UserType.Acreditado.ToString();
+                p.TypeContract = typeContracts.FirstOrDefault(tc => tc.id == p.Type_Contract_Id);
             });
 
             return list;

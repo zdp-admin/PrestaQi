@@ -17,5 +17,7 @@ namespace PrestaQi.Model
         public int Type { get; set; }
         [NotMapped]
         public string TypeName { get; set; }
+        [NotMapped]
+        public TypeContract TypeContract { get; set; }
     }
 }
