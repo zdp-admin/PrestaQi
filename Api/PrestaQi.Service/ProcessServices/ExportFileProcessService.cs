@@ -81,9 +81,10 @@ namespace PrestaQi.Service.ProcessServices
                         workSheet.Cell(row, 7).Value = $"{p.Amount:C}";
                         workSheet.Cell(row, 8).Value = p.Start_Date.ToString("dd/MM/yyyy");
                         workSheet.Cell(row, 9).Value = p.End_Date.ToString("dd/MM/yyyy");
-                        workSheet.Cell(row, 10).Value = p.Capital_Status;
-                        workSheet.Cell(row, 11).Value = p.File ?? string.Empty;
-                        workSheet.Cell(row, 12).Value = p.Investment_Status;
+                        workSheet.Cell(row, 10).Value = p.Period;
+                        workSheet.Cell(row, 11).Value = p.Capital_Status;
+                        workSheet.Cell(row, 12).Value = p.File ?? string.Empty;
+                        workSheet.Cell(row, 13).Value = p.Investment_Status;
 
                         row += 1;
                     });
@@ -111,7 +112,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 List<Cell> cells = new List<Cell>();
 
-                Table table = new Table(columns.Count, true);
+                Table table = new Table(columns.Count, false);
 
                 columns.ForEach(p =>
                 {
@@ -181,6 +182,11 @@ namespace PrestaQi.Service.ProcessServices
                                 .SetTextAlignment(TextAlignment.CENTER)
                                 .SetFontSize(8)
                                 .Add(new Paragraph(data.End_Date.ToString("dd/MM/yyyy"))));
+
+                            cells.Add(new Cell(1, 1)
+                                .SetTextAlignment(TextAlignment.CENTER)
+                                .SetFontSize(8)
+                                .Add(new Paragraph(data.Period)));
 
                             cells.Add(new Cell(1, 1)
                                 .SetTextAlignment(TextAlignment.CENTER)
@@ -267,6 +273,7 @@ namespace PrestaQi.Service.ProcessServices
                     workSheet.Cell(row, 13).Value = item.Position;
                     workSheet.Cell(row, 14).Value = genders.Find(p => p.id == item.Gender_Id).Description;
                     workSheet.Cell(row, 15).Value = item.Seniority_Company;
+                    workSheet.Cell(row, 16).Value = item.Credit_Limit.ToString("C");
 
                     row += 1;
                 }
@@ -381,6 +388,11 @@ namespace PrestaQi.Service.ProcessServices
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
                       .Add(new Paragraph(item.Seniority_Company.ToString())));
+
+                    cells.Add(new Cell(1, 1)
+                      .SetTextAlignment(TextAlignment.CENTER)
+                      .SetFontSize(8)
+                      .Add(new Paragraph(item.Credit_Limit.ToString("C"))));
                 }
 
                 cells.ForEach(p =>

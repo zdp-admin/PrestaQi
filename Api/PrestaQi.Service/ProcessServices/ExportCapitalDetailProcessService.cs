@@ -127,7 +127,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 List<Cell> cells = new List<Cell>();
 
-                Table table = new Table(columns.Count, true);
+                Table table = new Table(columns.Count, false);
 
                 columns.ForEach(p =>
                 {

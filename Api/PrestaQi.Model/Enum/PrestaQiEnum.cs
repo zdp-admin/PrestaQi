@@ -11,8 +11,9 @@
 
         public enum InvestmentEnum
         {
-            Active = 1,
-            NoActive = 2
+            Activa = 1,
+            NoActiva = 2,
+            Terminada = 3
         }
 
         public enum PerdioAccredited
@@ -42,7 +43,8 @@
             SetPaymentPeriod,
             CapitalCall,
             AdvanceStatus,
-            ChangeStatusCapital
+            ChangeStatusCapital,
+            SetPaymentAdvance
         }
 
         public enum NotificationIconType

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Principal;
 
 namespace PrestaQi.Model.Dto.Output
 {
@@ -9,12 +10,10 @@ namespace PrestaQi.Model.Dto.Output
         public int Company_Id { get; set; }
         public string Id { get; set; }
         public string NameComplete { get; set; }
-        public double Amount { get; set; }
-        public DateTime Date_Advance { get; set; }
-        public int Requested_Day { get; set; }
-        public int Comission { get; set; }
         public int Interest_Rate { get; set; }
+        public int Moratoruim_Interest_Rate { get; set; }
         public double Payment { get; set; }
+        public bool Is_Blocked { get; set; }
         public List<Advance> Advances { get; set; }
     }
 }

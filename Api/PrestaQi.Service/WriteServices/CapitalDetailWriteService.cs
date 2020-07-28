@@ -2,6 +2,7 @@
 using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using Org.BouncyCastle.Asn1.Mozilla;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Output;
@@ -55,10 +56,10 @@ namespace PrestaQi.Service.WriteServices
 
             setPaymentPeriod.Success = base.Update(entity);
 
-            if (setPaymentPeriod.Success && this._CapitalDetailRetrieveService.Where(p => p.IsPayment == false).Count() == 0)
+            if (setPaymentPeriod.Success && this._CapitalDetailRetrieveService.Where(p => p.IsPayment == false && p.Capital_Id == entity.Capital_Id).Count() == 0)
             {
                 capital.Enabled = false;
-                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActive;
+                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Terminada;
                 capital.updated_at = DateTime.Now;
 
                 this._CapitalWriteService.Update(capital);
@@ -68,6 +69,8 @@ namespace PrestaQi.Service.WriteServices
 
             return setPaymentPeriod;
         }
+
+        
 
     }
 }

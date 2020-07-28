@@ -74,12 +74,23 @@ namespace PrestaQi.Service.ProcessServices
 
                         workSheet.Cell(row, 3).Value = p.Id;
                         workSheet.Cell(row, 4).Value = p.NameComplete;
-                        workSheet.Cell(row, 5).Value = p.Amount.ToString("C");
-                        workSheet.Cell(row, 6).Value = p.Date_Advance.ToString("dd/MM/yyyy");
-                        workSheet.Cell(row, 7).Value = p.Requested_Day;
-                        workSheet.Cell(row, 8).Value = $"{p.Interest_Rate}%";
-                        workSheet.Cell(row, 9).Value = p.Comission;
-                        workSheet.Cell(row, 10).Value = p.Payment.ToString("C");
+                        workSheet.Cell(row, 5).Value = $"{p.Interest_Rate}%";
+                        workSheet.Cell(row, 6).Value = $"{p.Moratoruim_Interest_Rate}%";
+
+                        p.Advances.ForEach(advance =>
+                        {
+                            workSheet.Cell(row, 7).Value = advance.Amount.ToString("C");
+                            workSheet.Cell(row, 8).Value = advance.Date_Advance.ToString("dd/MM/yyyy");
+                            workSheet.Cell(row, 9).Value = advance.Requested_Day;
+                            workSheet.Cell(row, 10).Value = advance.Interest.ToString("C");
+                            workSheet.Cell(row, 11).Value = advance.Interest_Moratorium.ToString("C");
+                            workSheet.Cell(row, 12).Value = advance.Comission.ToString("C");
+                            workSheet.Cell(row, 13).Value = advance.Subtotal.ToString("C");
+                            workSheet.Cell(row, 14).Value = advance.Vat.ToString("C");
+                            workSheet.Cell(row, 15).Value = advance.Day_Moratorium;
+                            workSheet.Cell(row, 16).Value = advance.Total_Withhold.ToString("C");
+                            row += 1;
+                        });
                     });
 
                     row += 1;
@@ -89,13 +100,11 @@ namespace PrestaQi.Service.ProcessServices
                     rangeTotal.Value = $"Total a Cobrar {item.Contract_Number}:";
                     rangeTotal.Style.Font.Bold = true;
 
-                    workSheet.Cell(row, 10).Value = item.Amount.ToString("C");
-                    workSheet.Cell(row, 10).Style.Font.Bold = true;
+                    workSheet.Cell(row, columns.Count).Value = item.Amount.ToString("C");
+                    workSheet.Cell(row, columns.Count).Style.Font.Bold = true;
 
                     row += 1;
                 }
-
-              
 
                 workBook.SaveAs(memoryStream);
                 memoryStream.Seek(0, SeekOrigin.Begin);
@@ -118,7 +127,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 List<Cell> cells = new List<Cell>();
 
-                Table table = new Table(columns.Count, true);
+                Table table = new Table(columns.Count, false);
 
                 columns.ForEach(p =>
                 {
@@ -131,7 +140,6 @@ namespace PrestaQi.Service.ProcessServices
                     cells.Add(cell);
                 });
 
-                double total = 0;
                 foreach (var item in data)
                 {
                     cells.Add(new Cell(1, 1)
@@ -146,58 +154,41 @@ namespace PrestaQi.Service.ProcessServices
                       .SetBold()
                       .Add(new Paragraph(item.Contract_Number)));
 
-                    Utilities.GenerateEmptyCell(8, cells);
+                    Utilities.GenerateEmptyCell(14, cells);
 
-                    item.Accrediteds.ForEach(p =>
+                    item.Accrediteds.ForEach((p, index) =>
                     {
                         Utilities.GenerateEmptyCell(2, cells);
+                        Utilities.GenerateCell(p.Id, cells, 8, TextAlignment.CENTER);
+                        Utilities.GenerateCell(p.NameComplete, cells, 8, TextAlignment.LEFT);
+                        Utilities.GenerateCell($"{p.Interest_Rate}%", cells, 8, TextAlignment.CENTER);
+                        Utilities.GenerateCell($"{p.Moratoruim_Interest_Rate}%", cells, 8, TextAlignment.CENTER);
 
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(p.Id)));
+                        p.Advances.ForEach((advance, indexAdvance) =>
+                        {
+                            if (indexAdvance > 0)
+                                Utilities.GenerateEmptyCell(6, cells);
 
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(p.NameComplete)));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(p.Amount.ToString("C"))));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(p.Date_Advance.ToString("dd/MM/yyyy"))));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(p.Requested_Day.ToString())));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph($"{p.Interest_Rate}%")));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(p.Comission.ToString())));
-
-                        cells.Add(new Cell(1, 1)
-                            .SetTextAlignment(TextAlignment.CENTER)
-                            .SetFontSize(8)
-                            .Add(new Paragraph(p.Payment.ToString("C"))));
+                            Utilities.GenerateCell(advance.Amount.ToString("C"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Date_Advance.ToString("dd/MM/yyyy"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Requested_Day.ToString(), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Interest.ToString("C"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Interest_Moratorium.ToString("C"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Comission.ToString("C"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Subtotal.ToString("C"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Vat.ToString("C"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Day_Moratorium.ToString(), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Total_Withhold.ToString("C"), cells, 8, TextAlignment.CENTER);
+                        });
+                      
                     });
 
-                    cells.Add(new Cell(1, 9)
+                    cells.Add(new Cell(1, 15)
                         .SetTextAlignment(TextAlignment.LEFT)
                         .SetFontSize(8)
                         .SetBold()
                         .Add(new Paragraph($"Total a Cobrar {item.Company}:")));
+
 
                     cells.Add(new Cell(1, 1)
                         .SetTextAlignment(TextAlignment.CENTER)

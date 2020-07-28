@@ -89,9 +89,7 @@ namespace PrestaQi.Api.Controllers
                 notificationAdmin.User_Type = (int)PrestaQiEnum.UserType.Administrador;
                 notificationAdmin.Icon = PrestaQiEnum.NotificationIconType.done.ToString();
                 notificationAdmin.NotificationType = PrestaQiEnum.NotificationType.CapitalCall;
-                notificationAdmin.Data = dynamicNoti;
-
-
+                
                 this._NotificationWriteService.Create(notificationAdmin);
 
                 notificationClient.User_Id = userCapital.investor_id;

@@ -1,6 +1,8 @@
-﻿using InsiscoCore.Base.Data;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using InsiscoCore.Utilities.Crypto;
 using Newtonsoft.Json;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
@@ -114,6 +116,19 @@ namespace PrestaQi.Service.WriteServices
 
                 entities.ToList().ForEach(p =>
                 {
+                    if (p.Company_Id == 0)
+                    {
+                        var company = this._CompanyRetrieveService.Where(company => company.Description.ToLower().Trim() ==
+                            p.Company_Name.ToLower().Trim()).FirstOrDefault();
+
+                        if (company == null)
+                        {
+                            company = new Company() { Description = p.Company_Name };
+                            this._CompanyWriteService.Create(company);
+                            p.Company_Id = company.id;
+                        }
+                    }
+
                     string password = Utilities.GetPasswordRandom();
                     p.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
                     p.created_at = DateTime.Now;
@@ -214,6 +229,25 @@ namespace PrestaQi.Service.WriteServices
             catch (Exception exception)
             {
                 throw new SystemValidationException($"Error change status! {exception.Message}");
+            }
+        }
+
+        public bool Update(BlockedAccredited blockedAccredited)
+        {
+            try
+            {
+                var accrediteds = this._AccreditedRetrieveService.Where(p => p.Company_Id == blockedAccredited.Company_Id).ToList();
+
+                if (accrediteds.Count == 0)
+                    throw new SystemValidationException($"No se encontraron acreditados para la empresa seleccionada");
+
+                accrediteds.ForEach(p => { p.Is_Blocked = blockedAccredited.Is_Blocked; });
+
+                return this._Repository.Update(accrediteds);
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException("Error al bloquear/desbloquear los servicios: " + exception.Message);
             }
         }
     }

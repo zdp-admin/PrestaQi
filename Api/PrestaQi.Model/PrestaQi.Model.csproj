@@ -23,4 +23,10 @@
     <Folder Include="Connected Services\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="InsiscoCore.Utilities">
+      <HintPath>..\..\Libraries\InsiscoCore.Utilities.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

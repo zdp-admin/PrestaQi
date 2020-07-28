@@ -1,10 +1,15 @@
-﻿using InsiscoCore.Base.Service;
+﻿using DocumentFormat.OpenXml.Office2010.ExcelAc;
+using InsiscoCore.Base.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
+using PrestaQi.Api.Notification;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
+using PrestaQi.Model.Enum;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -16,6 +21,9 @@ namespace PrestaQi.Api.Controllers
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IProcessService<Advance> _AdvanceProcessService;
         IProcessService<PaidAdvance> _PaidAdvanceProcessService;
+        private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
+        IWriteService<Model.Notification> _NotificationWriteService;
+
         public IConfiguration Configuration { get; }
 
         public AdvancesController(
@@ -23,13 +31,17 @@ namespace PrestaQi.Api.Controllers
             IRetrieveService<Advance> advanceRetrieveService,
             IProcessService<Advance> advanceProcessService,
             IProcessService<PaidAdvance> paidAdvanceProcessService,
-            IConfiguration configuration
+            IWriteService<Model.Notification> notificationWriteService,
+            NotificationsMessageHandler notificationsMessageHandler,
+        IConfiguration configuration
             )
         {
             this._AdvanceWriteService = advanceWriteService;
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._AdvanceProcessService = advanceProcessService;
+            this._NotificationsMessageHandler = notificationsMessageHandler;
             this._PaidAdvanceProcessService = paidAdvanceProcessService;
+            this._NotificationWriteService = notificationWriteService;
             Configuration = configuration;
         }
 
@@ -56,7 +68,39 @@ namespace PrestaQi.Api.Controllers
         [HttpPost, Route("SetPaidAdvance")]
         public IActionResult SetPaidAdvance(SetPayAdvance setPayAdvance)
         {
-            return Ok(this._PaidAdvanceProcessService.ExecuteProcess<SetPayAdvance, bool>(setPayAdvance));
+            var result = this._PaidAdvanceProcessService.ExecuteProcess<SetPayAdvance, bool>(setPayAdvance);
+
+            if (result)
+               SendNotifiationSetPaidAdvance(setPayAdvance.AdvanceIds);
+
+            return Ok(result);
+        }
+        
+        [HttpPut, Route("CalculatePromotional")]
+        public IActionResult CalucaltePromotional(CalculatePromotional calculatePromotional)
+        {
+            var advance = this._AdvanceProcessService.ExecuteProcess<CalculatePromotional, Advance>(calculatePromotional);
+            this._AdvanceWriteService.Update(advance);
+            return Ok(advance);
+        }
+
+        void SendNotifiationSetPaidAdvance(List<int> advanceIds)
+        {
+            var accreditedIds = this._AdvanceRetrieveService.Where(p => advanceIds.Contains(p.id)).Select(p => p.Accredited_Id).ToList();
+            
+            var notification = Configuration.GetSection("Notification").GetSection("SetPaymentAdvance").Get<Model.Notification>();
+
+            notification.NotificationType = PrestaQiEnum.NotificationType.SetPaymentAdvance;
+            notification.User_Type = (int)PrestaQiEnum.UserType.Acreditado;
+            notification.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
+
+            foreach (var item in accreditedIds)
+            {
+                notification.User_Id = item;
+                this._NotificationWriteService.Create(notification);
+                _ = this._NotificationsMessageHandler.SendMessageToAllAsync(notification);
+                notification.id = 0;
+            }
         }
     }
 }   

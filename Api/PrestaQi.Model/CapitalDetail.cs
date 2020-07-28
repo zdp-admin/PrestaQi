@@ -37,5 +37,9 @@ namespace PrestaQi.Model
         public bool IsPayment { get; set; }
         [Column("pay_day_limit")]
         public DateTime Pay_Day_Limit { get; set; }
+        [Column("promotional_setting")]
+        public double Promotional_Setting { get; set; }
+        [Column("reason")]
+        public string Reason { get; set; }
     }
 }

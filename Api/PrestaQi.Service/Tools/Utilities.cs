@@ -7,6 +7,7 @@ using PrestaQi.Model.Dto.Input;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 
@@ -97,6 +98,14 @@ namespace PrestaQi.Service.Tools
             }
         }
 
+        public static void GenerateCell(string text, List<Cell> cells, int fontSize, TextAlignment alignment)
+        {
+            cells.Add(new Cell(1, 1)
+                    .SetTextAlignment(alignment)
+                    .SetFontSize(fontSize)
+                    .Add(new Paragraph(text)));
+        }
+
         public static (DateTime, DateTime, bool) CalcuateDates(string filter)
         {
             DateTime startDate = DateTime.Now;
@@ -162,5 +171,6 @@ namespace PrestaQi.Service.Tools
             stream.Position = 0;
             return stream;
         }
+
     }
 }

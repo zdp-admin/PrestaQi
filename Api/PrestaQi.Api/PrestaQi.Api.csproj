@@ -50,6 +50,9 @@
     <None Update="Documents\CartaMandato.docx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Documents\InvestorContract.docx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Documents\InvestorContract.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

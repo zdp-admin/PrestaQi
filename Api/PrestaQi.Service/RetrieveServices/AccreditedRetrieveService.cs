@@ -1,6 +1,7 @@
 ﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using OpenXmlPowerTools;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
@@ -18,6 +19,7 @@ namespace PrestaQi.Service.RetrieveServices
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<Institution> _InsitutionRetrieveService;
         IRetrieveService<TypeContract> _TypeContractService;
+        IProcessService<Advance> _AdvanceProcessService;
 
         public AccreditedRetrieveService(
             IRetrieveRepository<Accredited> repository,
@@ -25,7 +27,8 @@ namespace PrestaQi.Service.RetrieveServices
             IRetrieveService<Company> companyRetrieveService,
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<Institution> insitutionRetrieveService,
-            IRetrieveService<TypeContract> typeContractService
+            IRetrieveService<TypeContract> typeContractService,
+            IProcessService<Advance> advanceProcessService
             ) : base(repository)
         {
             this._PeriodRetrieveService = periodRetrieveService;
@@ -33,6 +36,7 @@ namespace PrestaQi.Service.RetrieveServices
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._InsitutionRetrieveService = insitutionRetrieveService;
             this._TypeContractService = typeContractService;
+            this._AdvanceProcessService = advanceProcessService;
         }
 
         public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
@@ -105,6 +109,10 @@ namespace PrestaQi.Service.RetrieveServices
                 p.Type = (int)PrestaQiEnum.UserType.Acreditado;
                 p.TypeName = PrestaQiEnum.UserType.Acreditado.ToString();
                 p.TypeContract = typeContracts.FirstOrDefault(tc => tc.id == p.Type_Contract_Id);
+                p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(new CalculateAmount()
+                {
+                    Accredited_Id = p.id
+                }).Maximum_Amount;
             });
 
             return list;

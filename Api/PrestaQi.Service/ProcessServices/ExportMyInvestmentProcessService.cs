@@ -70,7 +70,7 @@ namespace PrestaQi.Service.ProcessServices
                     workSheet.Cell(row, 5).Value = item.Total.ToString("C");
                     workSheet.Cell(row, 6).Value = item.Start_Date.ToString("dd/MM/yyyy");
                     workSheet.Cell(row, 7).Value = item.End_Date.ToString("dd/MM/yyyy");
-                    workSheet.Cell(row, 8).Value = item.Enabled ? "Activa" : "No Activa";
+                    workSheet.Cell(row, 8).Value = item.Enabled;
 
                     cont += 1;
                     row += 1;
@@ -99,7 +99,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 List<Cell> cells = new List<Cell>();
 
-                Table table = new Table(columns.Count, true);
+                Table table = new Table(columns.Count, false);
 
                 columns.ForEach(p =>
                 {
@@ -161,7 +161,7 @@ namespace PrestaQi.Service.ProcessServices
                       .SetTextAlignment(TextAlignment.CENTER)
                       .SetFontSize(8)
                       .SetBold()
-                      .Add(new Paragraph(item.Enabled ? "Activa" : "No Activa")));
+                      .Add(new Paragraph(item.Enabled)));
 
                     cont += 1;
                 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using InsiscoCore.Utilities.Crypto;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrestaQi.Model
@@ -19,5 +20,7 @@ namespace PrestaQi.Model
         public string TypeName { get; set; }
         [NotMapped]
         public TypeContract TypeContract { get; set; }
+        public double Credit_Limit { get; set; }
+
     }
 }

@@ -25,6 +25,8 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<Contact> _ContactRetrieveService;
         IRetrieveService<Investor> _InvestorRetrieveSercice;
+        IProcessService<DocumentUser> _DocumentUserProcessService;
+        IRetrieveRepository<Capital> _CapitalRetrieveService;
 
         public CapitalWriteService(
             IWriteRepository<Capital> repository,
@@ -34,7 +36,9 @@ namespace PrestaQi.Service.WriteServices
             IRetrieveService<User> userRetrieveService,
             IRetrieveService<Contact> contactRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<Investor> investorRetrieveSercice
+            IRetrieveService<Investor> investorRetrieveSercice,
+            IProcessService<DocumentUser> documentUserProcessService,
+            IRetrieveRepository<Capital> capitalRetrieveService
             ) : base(repository)
         {
             this._UserCapitalRetrieveService = userCapitalRetrieveService;
@@ -44,6 +48,8 @@ namespace PrestaQi.Service.WriteServices
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._InvestorRetrieveSercice = investorRetrieveSercice;
             this._ContactRetrieveService = contactRetrieveService;
+            this._DocumentUserProcessService = documentUserProcessService;
+            this._CapitalRetrieveService = capitalRetrieveService;
         }
 
         public CreateCapital Create(Capital entity)
@@ -52,14 +58,24 @@ namespace PrestaQi.Service.WriteServices
 
             var user = this._UserRetrieveService.Find(entity.Created_By);
             var investor = this._InvestorRetrieveSercice.Find(entity.investor_id);
+            var capitals = this._CapitalRetrieveService.Where(p => p.investor_id == entity.investor_id);
+            double sumCapitals = 0, total = 0;
+
+            if (capitals.Count() > 0)
+                sumCapitals = capitals.Sum(p => p.Amount);
+
+            total = investor.Total_Amount_Agreed - sumCapitals;
 
             if (user.Password != InsiscoCore.Utilities.Crypto.MD5.Encrypt(entity.Password))
                 throw new SystemValidationException("Incorrect Password!");
 
+            if (entity.Amount > total)
+                throw new SystemValidationException($"La cantidad sobrepasar la cantidad pactada de {total:C}");
+
             entity.Start_Date = DateTime.Now;
             entity.End_Date = DateTime.Now;
             entity.Capital_Status = (int)PrestaQiEnum.CapitalEnum.Solicitado;
-            entity.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActive;
+            entity.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.NoActiva;
             entity.created_at = DateTime.Now;
             entity.updated_at = DateTime.Now;
 
@@ -76,7 +92,7 @@ namespace PrestaQi.Service.WriteServices
 
                     try
                     {
-                        SendMail(entity.investor_id);
+                        SendMail(investor);
                     }
                     catch (Exception)
                     {
@@ -112,9 +128,9 @@ namespace PrestaQi.Service.WriteServices
             {
                 int monthNum = (12 * capital.Investment_Horizon) / period.Period_Value;
 
-                capital.Start_Date = DateTime.Now.AddMonths(1);
+                capital.Start_Date = DateTime.Now;
                 capital.End_Date = capital.Start_Date.AddYears(capital.Investment_Horizon);
-                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Active;
+                capital.Investment_Status = (int)PrestaQiEnum.InvestmentEnum.Activa;
                 capital.Enabled = true;
 
                 DateTime startDateTemp = capital.Start_Date;
@@ -130,7 +146,7 @@ namespace PrestaQi.Service.WriteServices
                         Outstanding_Balance = capital.Amount,
                         created_at = DateTime.Now,
                         updated_at = DateTime.Now,
-                        Pay_Day_Limit = startDateTemp.AddMonths(monthNum),//startDateTemp.AddMonths(monthNum).AddDays(capital.Bussiness_Day),
+                        Pay_Day_Limit = startDateTemp.AddDays(5),
                         Principal_Payment = i == period.Period_Value ? capital.Amount : 0
                     });
 
@@ -151,9 +167,8 @@ namespace PrestaQi.Service.WriteServices
             return capitalChangeStatusResponse;
         }
 
-        void SendMail(int investorId)
+        void SendMail(Investor investor)
         {
-            var investor = this._InvestorRetrieveSercice.Find(investorId);
             var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
 
             var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();

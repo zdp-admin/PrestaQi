@@ -172,7 +172,7 @@ namespace PrestaQi.Service.ProcessServices
                 };
 
 
-                if (Utilities.SendEmail(new List<string> { accredited.Mail_Mandate_Latter }, messageMail, mailConf, fileMil))
+                if (Utilities.SendEmail(new List<string> { accredited.Mail_Mandate_Latter, accredited.Mail }, messageMail, mailConf, fileMil))
                 {
                     if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")))
                         File.Delete(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx"));

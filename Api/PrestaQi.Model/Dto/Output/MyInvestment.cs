@@ -14,8 +14,9 @@ namespace PrestaQi.Model.Dto.Output
         public DateTime Start_Date { get; set; }
         public DateTime End_Date { get; set; }
         public int Period_Id { get; set; }
+        public string Period_Name { get; set; }
         public int Interest_Arrears { get; set; }
-        public bool Enabled { get; set; }
+        public string Enabled { get; set; }
         public int Capital_Status { get; set; }
         public string Capital_Status_Name { get; set; }
         public double Interest_Payable { get; set; }
@@ -29,5 +30,9 @@ namespace PrestaQi.Model.Dto.Output
         public int Day_Overdue { get; set; }
         public List<CapitalDetail> MyInvestmentDetails { get; set; }
         public string Principal_Payment { get; set; }
+        public int Investment_Status { get; set; }
+        public string Investment_Status_Name { get; set; }
+        public double Promotional_Setting { get; set; }
+        public string Reason { get; set; }
     }
 }
