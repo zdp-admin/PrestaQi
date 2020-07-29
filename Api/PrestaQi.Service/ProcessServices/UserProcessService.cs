@@ -333,7 +333,8 @@ namespace PrestaQi.Service.ProcessServices
                                 Clabe = fields[21],
                                 Moratoruim_Interest_Rate = Convert.ToInt32(fields[22]),
                                 Mail = fields[23],
-                                Mail_Mandate_Latter = fields[24]
+                                Mail_Mandate_Latter = fields[24],
+                                End_Day_Payment = Convert.ToDateTime(fields[25])
                             };
 
                             var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[19])).FirstOrDefault();

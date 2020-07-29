@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Montserrat';
+        }
+
+        .container {
+            padding: 25px;
+            min-width: 650px;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .m-t-40 {
+            margin-top: 40px;
+        }
+
+        .m-b-10 {
+            margin-bottom: 10px;
+        }
+
+        .p-l-25 {
+            padding-left: 25px;
+        }
+        
+        .divider {
+            margin-top: 25px;
+            margin-bottom: 25px;
+            height: 50px;
+        }
+
+        .tc {
+            display: flex;
+            font-size: 13px;
+            justify-content: space-between;
+            border: 1px solid gray;
+        }
+
+        .tc div:first-child {
+            background-color: gainsboro;
+            padding: 5px 15px;
+        }
+
+        .tc div:first-child p {
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .tc div:last-child {
+            padding: 5px 15px;
+        }
+
+        .tc div:last-child p {
+            margin: 0;
+        }
+
+        .fz-12 {
+            font-size: 12px;
+        }
+
+        .tc.flex-start {
+            justify-content: flex-start;
+        }
+
+        .tcc {
+            max-width: 177px;
+            margin: auto;
+            border: 1px solid gray;
+        }
+
+        .tcc .tr {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid black;
+        }
+        
+        .tcc .tr div {
+            width: 50%;
+        }
+
+        .tcc .tr div:first-child {
+            border-right: 1px solid black;
+        }
+
+        .tcc .tr p {
+            margin: 3px 0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="center"><b>CARTA DE AVISO GENERAL</b></p>
+        <div class="tc">
+            <div><p>Número de Contrato: {NUMBER_CONTRACT}</p></div>
+            <div><p>{NUMBER_CONTRACT_USER}</p></div>
+        </div>
+        <p class="center fz-12">
+            PRESTAQI, S.A.P.I de C.V<br>
+            {NAME_ACREDITED}
+        </p>
+        <div class="tc flex-start">
+            <div><p>1</p></div>
+            <div><p>PRESTAQI, S.A.P.I de C.V</p></div>
+        </div>
+        <span class="fz-12">Nombre del Representante Legal de PrestaQi, S.A.P.I de C.V (en adelante PrestaQi): Anuar Rubio Jalili</span>
+        <br><br>
+
+        <div class="tc flex-start">
+            <div><p>2</p></div>
+            <div><p>{NAME_ACREDITED}</p></div>
+        </div>
+        <span class="fz-12">Nombre de LA COMPAÑIA del Beneficiario: {NAME_COMPANY}</span>
+        <br><br>
+
+        <div class="tc flex-start">
+            <div><p>3</p></div>
+            <div><p>{NAME_COMPANY} (en adelante La Compañia)</p></div>
+        </div>
+        <br><br>
+
+        <div class="tc flex-start">
+            <div style="display: flex;justify-content: center;align-items: center;"><p>4</p></div>
+            <div style="background-color: gainsboro;padding: 0 15px;"><p><b>Registro Federal de Contribuyentes:</b></p></div>
+            <div style="display: flex;justify-content: center;align-items: center;"><p>{RFC}</p></div>
+        </div>
+        <div class="tc flex-start">
+            <div style="justify-content: center;align-items: center;display: flex;"><p>5</p></div>
+            <div style="padding: 0;width: 100%;">
+                <div><p><b>Domicilio Convencional</b></p></div>
+                <div style="padding: 0;display: flex;">
+                    <div style="width: 40%;">Calle y Número (Exterior e Interior) / Colonia o Fraccionamiento / Delegación o Municipio / Código Postal / Entidad Federativa</div>
+                    <div style="display: flex;justify-content: center;align-items: center;">
+                        {ADDRESS} / {COLONY} / {MUNICIPALITY} / {ZIP_CODE} / {STATE}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tc flex-start">
+            <div style="display: flex;justify-content: center;align-items: center;"><p>6</p></div>
+            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center"><b>Banco</b></p></div>
+            <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{BANK}</p></div>
+            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center">Cuenta</p></div>
+            <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{NUMBER_ACCOUNT}</p></div>
+            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center">Clabe interbancaria</p></div>
+            <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{CLABE}</p></div>
+        </div>
+        <p class="center fz-12"><b>DESCRIPCIÓN DE LOS SERVICIOS GENERALES</b></p>
+        <div class="tc flex-start" style="background-color: gainsboro;">
+            <div style="display: flex;justify-content: center;align-items: center;"><p>7</p></div>
+            <div style="display: flex;justify-content: center;align-items: center;"><p><b>Descripción detallada de los Servicios</b></p></div>
+        </div>
+        <div class="tc">
+            <p style="padding: 0px 15px" class="fz-12">
+                <b>
+                    PrestaQi entregará los recursos económicos que solicite el Beneficiario y que apruebe PrestaQi en calidad
+                    de Mutuo, precia suscripción del CONTRATO DE MUTUO, según las cláusulas del contrato número
+                    {NUMBER_CONTRACT_USER} que PrestaQi firmó con La Compañía.
+                </b>
+            </p>
+        </div>
+        <div class="divider"></div>
+        <div style="max-width: 230px;">
+            <hr>
+        </div>
+        <p style="font-size: 10px;">
+            <span>1</span> La presente se firma de manera digital, fungiendo la misma como el equivalente funcional a la firma en papel, la
+            cual surte todos los efectos legales, y la misma no podrá ser invalidada o anulada, manifestando el Beneficiario que
+            para ello obtuvo un nombre de usuario y creó una contraseña en el Portal PrestaQi, la cual firma a su entera
+            conformidad, enviando para debida constancia los datos de identificación que se le requirieron al momento de darse
+            de alta en el mismo, como lo son: Identificación Oficial por ambos lados (legible), fotografía sosteniendo dicha
+            identificación (legible).
+        </p>
+        <p style="font-size: 10px;">
+            <span>2</span> Por este conducto, el Beneficiario autoriza a La Compañía para entregar a PrestaQi una copia de su contrato de
+            trabajo a fin de hacer sabedora a esta última de que todos los datos manifestados son ciertos, previa la aceptación de
+            los términos y condiciones del Aviso de Privacidad que PrestaQi puso a su disposición.
+            <i>
+                Este documento es meramente ejemplificativo a fin de que LAS PARTES del Contrato de Mutuo
+                tengan conocimiento del mismo, y funge según se especifica en el clausulado de dicho contrato.
+            </i>
+        </p>
+    </div>
+</body>
+</html>
