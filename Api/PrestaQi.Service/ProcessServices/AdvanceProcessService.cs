@@ -72,6 +72,7 @@ namespace PrestaQi.Service.ProcessServices
                 var commissionPeriodId = this._PeriodCommissionRetrieve.Where(p => p.Period_Id == accredited.Period_Id && p.Type_Month == endDay).FirstOrDefault().id;
                 commissionPerioDetail = this._PeriodCommissionDetailRetrieve.Where(p => p.Period_Commission_Id == commissionPeriodId && p.Day_Month == DateTime.Now.Day).FirstOrDefault();
                 commission = Convert.ToInt32(commissionPerioDetail.Commission);
+                advanceCalculated.Day_For_Payment = commissionPerioDetail.Day_Payement;
             }
 
             switch (accredited.Period_Id)
@@ -133,6 +134,8 @@ namespace PrestaQi.Service.ProcessServices
                         isMaxAmount = true;
                         calculateAmount.Amount = Math.Round(accredited.Net_Monthly_Salary / 4);
                     }
+
+                    advanceCalculated.Day_For_Payment = (limitDate.Date - DateTime.Now.Date).Days;
                     break;
             }
 
@@ -272,9 +275,9 @@ namespace PrestaQi.Service.ProcessServices
 
                 advance.Promotional_Setting = calculatePromotional.Amount;
                 advance.Day_Moratorium = DateTime.Now.Date > advance.Limit_Date.Date ?
-                    (DateTime.Now.Date - advance.Limit_Date).Days : 0;
+                    (DateTime.Now.Date - advance.Limit_Date.Date).Days : 0;
                 advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
-                Math.Round((advance.Amount * ((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
+                Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
                 0;
                 advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
                 advance.Vat = Math.Round(advance.Subtotal * vat, 2);
