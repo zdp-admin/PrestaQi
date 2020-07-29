@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Montserrat';
+            line-height: 18px
+        }
+
+        .container {
+            padding: 25px;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .m-t-40 {
+            margin-top: 40px;
+        }
+
+        .m-b-10 {
+            margin-bottom: 10px;
+        }
+
+        .p-l-25 {
+            padding-left: 25px;
+        }
+        
+        .divider {
+            margin-top: 25px;
+            margin-bottom: 25px;
+            height: 50px;
+        }
+
+        .tc {
+            display: flex;
+            font-size: 13px;
+            justify-content: space-between;
+            border: 1px solid gray;
+        }
+
+        .tc div:first-child {
+            background-color: gainsboro;
+            padding: 5px 15px;
+        }
+
+        .tc div:first-child p {
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .tc div:last-child {
+            padding: 5px 15px;
+        }
+
+        .tc div:last-child p {
+            margin: 0;
+        }
+
+        .fz-12 {
+            font-size: 12px;
+        }
+
+        .tc.flex-start {
+            justify-content: flex-start;
+        }
+
+        .tcc {
+            max-width: 177px;
+            margin: auto;
+            border: 1px solid gray;
+        }
+
+        .tcc .tr {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid black;
+        }
+        
+        .tcc .tr div {
+            width: 50%;
+        }
+
+        .tcc .tr div:first-child {
+            border-right: 1px solid black;
+        }
+
+        .tcc .tr p {
+            margin: 3px 0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="center"><b>CARTA MANDATO</b></p>
+        <br><br>
+        <p class="fz-12">Código: {CODE}</p>
+        <p class="fz-12">
+            Yo, el señor {NAME}, en mi calidad de Beneficiario del programa de adelanto de
+            nóminas de PrestaQi, S.A.P.I. de C.V., por medio de esta CARTA INSTRUCCIÓN reconozco que solicité al
+            día de hoy {DAY} de {MONTH} del año {YEAR}, la cantidad de MXN ${AMOUNT} ({AMOUNT_LETTER}) a la compañía PrestaQi, S.A.P.I. de C.V., formando el presente documento parte integral del
+            Contrato de Mutuo número ({NUMBER_CONTRACT_MUTUO}) que suscribí en calidad de MUTUATARIO con PrestaQi, S.A.P.I de C.V., en calidad de Mutuante (el
+            “Mutuo”), por lo que en este acto instruyo a La Compañía (según dicho término se define en el
+            “Mutuo”) a retener dicha cantidad más los intereses y comisiones generados a partir de la aplicación
+            de la siguiente fórmula:
+        </p>
+        <p class="fz-12">
+            {AMOUNT} + ((({AMOUNT} x 60%))/360) x {DAYS} + {COMISION} = {TOTAL_AMOUNT}
+        </p>
+        <p class="fz-12">
+            Dicha retención de MXN ${TOTAL_AMOUNT} se deberá de llevar a cabo al término del presente
+            periodo de pago de honorarios, al tenor del Contrato de Prestación de Servicios Personales
+            Independientes que tengo vigente con La Compañía, y se le deberá de entregar íntegro a PrestaQi,
+            S.A.P.I. de C.V., fungiendo la presente como mi voluntad más amplia y eficaz a fin de hacer sabedora a
+            La Compañía (según dicho término se define en el “Mutuo”) mi consentimiento de que se retenga del
+            costo de mis honorarios la cantidad antes descrita a fin de solventar mi obligación de pago con
+            PrestaQi, S.A.P.I. de C.V., cediéndole por lo tanto los derechos de cobro de dichos honorarios, hasta la
+            total liquidación del adeudo que tengo con dicha compañía.
+        </p>
+        
+        <div class="divider"></div>
+        <div style="max-width: 230px;">
+            <hr>
+        </div>
+        <p style="font-size: 10px;">
+            <i><span>3</span> La firma del presente documento se plasma de manera digital, fungiendo la misma como el equivalente
+            funcional a la firma en papel, la cual surte todos los efectos legales, y la misma no podrá ser invalidada o
+            anulada.<br>
+            Este documento es meramente ejemplificativo a fin de que LAS PARTES del Contrato de Mutuo tengan
+            conocimiento del mismo, y funge según se especifica en el clausulado de dicho contrato.</i>
+        </p>
+    </div>
+</body>
+</html>

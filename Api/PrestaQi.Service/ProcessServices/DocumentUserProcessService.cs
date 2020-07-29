@@ -7,6 +7,7 @@ using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Service.Tools;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -40,8 +41,8 @@ namespace PrestaQi.Service.ProcessServices
                 var institution = this._InstitutionRetrieveService.Find(investor.Institution_Id);
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
                 var capital = this._CapitalRetrieveService.Find(documentInvestor.CapitalId);
-               
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, 
+
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
                     configurations.Where(p => p.Configuration_Name == "INVESTOR_CONTRACT").FirstOrDefault().Configuration_Value))).ReadToEnd();
 
                 textHtml = textHtml.Replace("{CONTRACT_NUMBER}", investor.Contract_number);
@@ -96,7 +97,7 @@ namespace PrestaQi.Service.ProcessServices
                 }
 
                 MemoryStream fileModified = new MemoryStream(Utilities.GetFile(configurations,
-                   configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT_MODIFIED").FirstOrDefault().Configuration_Value  + accredited.Contract_number + ".docx"));
+                   configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT_MODIFIED").FirstOrDefault().Configuration_Value + accredited.Contract_number + ".docx"));
 
                 return fileModified;
             }
@@ -134,6 +135,168 @@ namespace PrestaQi.Service.ProcessServices
             }
         }
 
+        public string ExecuteProcess(CartaAvisoGeneral cartaAvisoGeneral)
+        {
+            try
+            {
+                string fileConfig = "ACCREDITED_AS_CARTA_AVISO_GENERAL";
 
+                if (cartaAvisoGeneral.accredited.TypeContract?.Code == "sueldoysalario")
+                {
+                    fileConfig = "ACCREDITED_SS_CARTA_AVISO_GENERAL";
+                }
+
+
+                var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
+                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+
+                textHtml = textHtml.Replace("{NUMBER_CONTRACT}", "1");
+                textHtml = textHtml.Replace("{NUMBER_CONTRACT_USER}", cartaAvisoGeneral.accredited.Contract_number);
+                textHtml = textHtml.Replace("{NAME_ACREDITED}", $"{cartaAvisoGeneral.accredited.First_Name} {cartaAvisoGeneral.accredited.Last_Name}");
+                textHtml = textHtml.Replace("{NAME_COMPANY}", cartaAvisoGeneral.accredited.Company_Name);
+                textHtml = textHtml.Replace("{RFC}", cartaAvisoGeneral.accredited.Rfc);
+                textHtml = textHtml.Replace("{ADDRESS}", cartaAvisoGeneral.accredited.Address);
+                textHtml = textHtml.Replace("{COLONY}", cartaAvisoGeneral.accredited.Colony);
+                textHtml = textHtml.Replace("{MUNICIPALITY}", cartaAvisoGeneral.accredited.Municipality);
+                textHtml = textHtml.Replace("{ZIP_CODE}", cartaAvisoGeneral.accredited.Zip_Code);
+                textHtml = textHtml.Replace("{STATE}", cartaAvisoGeneral.accredited.State);
+                textHtml = textHtml.Replace("{BANK}", cartaAvisoGeneral.accredited.Institution_Name);
+                textHtml = textHtml.Replace("{NUMBER_ACCOUNT}", cartaAvisoGeneral.accredited.Account_Number);
+                textHtml = textHtml.Replace("{CLABE}", cartaAvisoGeneral.accredited.Clabe);
+
+                textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
+
+                textHtml = HttpUtility.HtmlDecode(textHtml);
+
+                return textHtml;
+
+
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error: {exception.Message}");
+            }
+        }
+
+        public string ExecuteProcess(CartaMandato cartaMandato)
+        {
+            try
+            {
+                DateTime date = DateTime.Now;
+                string fileConfig = "ACCREDITED_AS_CARTA_MANDATO";
+
+                if (cartaMandato.accredited.TypeContract?.Code == "sueldoysalario")
+                {
+                    fileConfig = "ACCREDITED_SS_CARTA_MANDATO";
+                }
+
+
+                var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
+                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+
+                textHtml = textHtml.Replace("{CODE}", "1");
+                textHtml = textHtml.Replace("{NAME}", $"{cartaMandato.accredited.First_Name.ToUpper()}  {cartaMandato.accredited.Last_Name.ToUpper()}");
+                textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
+                textHtml = textHtml.Replace("{MONTH}", date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
+                textHtml = textHtml.Replace("{YEAR}", date.Year.ToString());
+                textHtml = textHtml.Replace("{AMOUNT}", cartaMandato.advance.Amount.ToString());
+                textHtml = textHtml.Replace("{AMOUNT_LETTER}", new Moneda().Convertir(cartaMandato.advance.Amount.ToString(), true, "PESOS"));
+                textHtml = textHtml.Replace("{NUMBER_CONTRACT_MUTUO}", "1");
+                textHtml = textHtml.Replace("{DAYS}", cartaMandato.advance.Requested_Day.ToString());
+                textHtml = textHtml.Replace("{COMISION}", cartaMandato.advance.Comission.ToString());
+                textHtml = textHtml.Replace("{TOTAL_AMOUNT}", cartaMandato.advance.Total_Withhold.ToString());
+
+
+                textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
+
+                textHtml = HttpUtility.HtmlDecode(textHtml);
+
+                return textHtml;
+
+
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error: {exception.Message}");
+            }
+        }
+
+        public string ExecuteProcess(ContratoMutuo contratoMutuo)
+        {
+            try
+            {
+                DateTime date = DateTime.Now;
+                string fileConfig = "ACCREDITED_AS_CONTRATO_MUTUO";
+
+                if (contratoMutuo.accredited.TypeContract?.Code == "sueldoysalario")
+                {
+                    fileConfig = "ACCREDITED_SS_CONTRATO_MUTUO";
+                }
+
+
+                var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
+                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+
+                textHtml = textHtml.Replace("{NUMBER_CONTRACT}", "1");
+                textHtml = textHtml.Replace("{NAME_ACREDITED}", $"{contratoMutuo.accredited.First_Name.ToUpper()}  {contratoMutuo.accredited.Last_Name.ToUpper()}");
+                textHtml = textHtml.Replace("{COMPANY_NAME}", contratoMutuo.accredited.Company_Name);
+                textHtml = textHtml.Replace("{AMOUNT_MAX}", "2500");
+                textHtml = textHtml.Replace("{AMOUNT_MAX_LETTER}", new Moneda().Convertir("2500", true, "PESOS"));
+                textHtml = textHtml.Replace("{INTERES_RATE}", "60");
+                textHtml = textHtml.Replace("{INTERES_RATE_LETTER}", new Moneda().Convertir("60", true, "PESOS"));
+                textHtml = textHtml.Replace("{INTEREST_MORATORIO}", "60");
+                textHtml = textHtml.Replace("{INTEREST_MORATORIO_LETTER}", new Moneda().Convertir("60", true, "PESOS"));
+                textHtml = textHtml.Replace("{ADDRESS_ACREDITED}", $"{contratoMutuo.accredited.Address}, {contratoMutuo.accredited.Colony}, {contratoMutuo.accredited.Municipality}, {contratoMutuo.accredited.Zip_Code}, {contratoMutuo.accredited.State}");
+                textHtml = textHtml.Replace("{EMAIL_ACREDITED}", contratoMutuo.accredited.Mail);
+                textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
+                textHtml = textHtml.Replace("{MONTH}", date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
+                textHtml = textHtml.Replace("{YEAR}", date.Year.ToString());
+
+
+                textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
+
+                textHtml = HttpUtility.HtmlDecode(textHtml);
+
+                return textHtml;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error: {exception.Message}");
+            }
+        }
+
+        public string ExecuteProcess(TransferenciaDatosPersonales transferenciaDatosPersonales)
+        {
+            try
+            {
+                DateTime date = DateTime.Now;
+                string fileConfig = "ACCREDITED_TRANSFERT_DATA_PERSONAL";
+
+
+                var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
+                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+
+                textHtml = textHtml.Replace("{COMPANY}", transferenciaDatosPersonales.accredited.Company_Name);
+                textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
+                textHtml = textHtml.Replace("{MONTH}", date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
+                textHtml = textHtml.Replace("{YEAR}", date.Year.ToString());
+                textHtml = textHtml.Replace("{NAME}", $"{transferenciaDatosPersonales.accredited.First_Name.ToUpper()} {transferenciaDatosPersonales.accredited.Last_Name.ToUpper()}");
+
+
+                textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
+
+                textHtml = HttpUtility.HtmlDecode(textHtml);
+
+                return textHtml;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error: {exception.Message}");
+            }
+        }
     }
 }

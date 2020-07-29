@@ -108,5 +108,123 @@ namespace PrestaQi.Api.Controllers
                 Content = html
             };
         }
+
+        [HttpGet, Route("GetCartaAvisoGeneral"), AllowAnonymous]
+        public IActionResult GetCartaAvisoGeneral([FromQuery] string token)
+        {
+            string html = string.Empty;
+
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token);
+            var tokenS = handler.ReadToken(token) as JwtSecurityToken;
+
+            var userId = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "UserId").Value);
+            var type = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "Type").Value);
+
+            var data = this._UserRetrieveService.RetrieveResult<UserByType, UserLogin>(new UserByType()
+            {
+                UserType = ((PrestaQiEnum.UserType)type),
+                User_Id = userId
+            });
+
+            if (type == (int)PrestaQiEnum.UserType.Acreditado)
+                html = this._DocumentUserWriteService.ExecuteProcess<CartaAvisoGeneral, string>(new CartaAvisoGeneral { accredited = data.User as Accredited });
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = html
+            };
+        }
+
+        [HttpGet, Route("GetCartaMandato"), AllowAnonymous]
+        public IActionResult GetCartaMandato([FromQuery] string token)
+        {
+            string html = string.Empty;
+
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token);
+            var tokenS = handler.ReadToken(token) as JwtSecurityToken;
+
+            var userId = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "UserId").Value);
+            var type = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "Type").Value);
+
+            var data = this._UserRetrieveService.RetrieveResult<UserByType, UserLogin>(new UserByType()
+            {
+                UserType = ((PrestaQiEnum.UserType)type),
+                User_Id = userId
+            });
+
+            var advance = new Advance();
+
+            if (type == (int)PrestaQiEnum.UserType.Acreditado)
+                html = this._DocumentUserWriteService.ExecuteProcess<CartaMandato, string>(new CartaMandato { accredited = data.User as Accredited, advance = advance });
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = html
+            };
+        }
+
+        [HttpGet, Route("GetContratoMutuo"), AllowAnonymous]
+        public IActionResult GetContratoMutuo([FromQuery] string token)
+        {
+            string html = string.Empty;
+
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token);
+            var tokenS = handler.ReadToken(token) as JwtSecurityToken;
+
+            var userId = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "UserId").Value);
+            var type = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "Type").Value);
+
+            var data = this._UserRetrieveService.RetrieveResult<UserByType, UserLogin>(new UserByType()
+            {
+                UserType = ((PrestaQiEnum.UserType)type),
+                User_Id = userId
+            });
+
+            if (type == (int)PrestaQiEnum.UserType.Acreditado)
+                html = this._DocumentUserWriteService.ExecuteProcess<ContratoMutuo, string>(new ContratoMutuo { accredited = data.User as Accredited });
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = html
+            };
+        }
+
+        [HttpGet, Route("GetTransferenciaDatosPersonales"), AllowAnonymous]
+        public IActionResult GetTransferenciaDatosPersonales([FromQuery] string token)
+        {
+            string html = string.Empty;
+
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token);
+            var tokenS = handler.ReadToken(token) as JwtSecurityToken;
+
+            var userId = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "UserId").Value);
+            var type = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "Type").Value);
+
+            var data = this._UserRetrieveService.RetrieveResult<UserByType, UserLogin>(new UserByType()
+            {
+                UserType = ((PrestaQiEnum.UserType)type),
+                User_Id = userId
+            });
+
+            if (type == (int)PrestaQiEnum.UserType.Acreditado)
+                html = this._DocumentUserWriteService.ExecuteProcess<TransferenciaDatosPersonales, string>(new TransferenciaDatosPersonales { accredited = data.User as Accredited });
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = html
+            };
+        }
     }
 }
