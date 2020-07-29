@@ -78,6 +78,8 @@ namespace PrestaQi.Model
         public string State { get; set; }
         [Column("is_blocked")]
         public bool Is_Blocked { get; set; }
+        [Column("end_day_payment")]
+        public DateTime End_Day_Payment { get; set; }
         #endregion
     }
 }

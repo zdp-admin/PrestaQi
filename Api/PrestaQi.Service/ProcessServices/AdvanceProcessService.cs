@@ -105,23 +105,28 @@ namespace PrestaQi.Service.ProcessServices
                     }
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
-                    startDate = DateTime.Now.StartOfWeek(DayOfWeek.Monday);
+                    var dayWeek = accredited.End_Day_Payment.DayOfWeek;
+
+                    if (DateTime.Now.DayOfWeek == dayWeek)
+                        startDate = DateTime.Now.StartOfWeek(dayWeek).AddDays(-6);
+                    else
+                        startDate = DateTime.Now.StartOfWeek(dayWeek).AddDays(1);
+                    
                     endDate = startDate.AddDays(6);
                     limitDate = endDate;
 
-                    if ((int)DateTime.Now.DayOfWeek <= 4)
-                        commission = commission + ((int)DateTime.Now.DayOfWeek - 1);
-
-                    if (DateTime.Now.Day >= endDate.AddDays(-2).Day)
+                    if (DateTime.Now.Date >= endDate.AddDays(-2).Date)
                     {
                         DateTime today = DateTime.Today;
-                        int daysUntilMonday = ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7;
+                        int daysUntilMonday = ((int)dayWeek - (int)today.DayOfWeek + 7) % 7;
                         if (daysUntilMonday == 0)
-                            daysUntilMonday = 7;
+                            daysUntilMonday = 1;
 
-                        DateTime nextWeekMonday = today.AddDays(daysUntilMonday);
+                        DateTime nextWeekMonday = ((int)dayWeek - (int)today.DayOfWeek + 7) % 7 == 0 ? today.AddDays(daysUntilMonday) : today.AddDays(daysUntilMonday).AddDays(1);
                         limitDate = nextWeekMonday.AddDays(6);
                     }
+                    else
+                        commission = commission + ((DateTime.Now.Date - startDate.Date).Days);
 
                     if (calculateAmount.Amount == 0)
                     {
@@ -142,7 +147,7 @@ namespace PrestaQi.Service.ProcessServices
 
             double intereset = (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Mensual) || (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal) ?
                 Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * commissionPerioDetail.Day_Payement), 2) :
-                Math.Round(((calculateAmount.Amount * annualInterest / finantialDay) * (period.Period_Value - DateTime.Now.Day)), 2);
+                Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * (limitDate.Date - DateTime.Now.Date).Days), 2);
 
             double subtotal = intereset + commission;
             double vatTotal = Math.Round(subtotal * vat, 2);
