@@ -7,5 +7,6 @@ namespace PrestaQi.Model.Dto.Input
     public class CartaAvisoGeneral
     {
         public Accredited accredited { get; set; }
+        public AccreditedContractMutuo contractMutuo { get; set; }
     }
 }

@@ -33,6 +33,8 @@ namespace PrestaQi.DataAccess
         public DbSet<LogError> LogErrors { get; set; }
         public DbSet<PeriodCommission> PeriodCommission { get; set; }
         public DbSet<PeriodCommissionDetail> PeriodCommissionDetail { get; set; }
+        public DbSet<AccreditedContractMutuo> accreditedContractMutuos { get; set; }
+        public DbSet<AcreditedCartaMandato> acreditedCartaMandatos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

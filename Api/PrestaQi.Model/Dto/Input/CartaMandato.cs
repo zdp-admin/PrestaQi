@@ -8,5 +8,7 @@ namespace PrestaQi.Model.Dto.Input
     {
         public Accredited accredited { get; set; }
         public Advance advance { get; set; }
+        public AcreditedCartaMandato acreditedCartaMandato { get; set; }
+        public AccreditedContractMutuo contractMutuo { get; set; }
     }
 }

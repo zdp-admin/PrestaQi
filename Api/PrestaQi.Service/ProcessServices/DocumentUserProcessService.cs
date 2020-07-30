@@ -151,7 +151,7 @@ namespace PrestaQi.Service.ProcessServices
                 string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
                     configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
 
-                textHtml = textHtml.Replace("{NUMBER_CONTRACT}", "1");
+                textHtml = textHtml.Replace("{NUMBER_CONTRACT}", cartaAvisoGeneral.contractMutuo.id.ToString());
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT_USER}", cartaAvisoGeneral.accredited.Contract_number);
                 textHtml = textHtml.Replace("{NAME_ACREDITED}", $"{cartaAvisoGeneral.accredited.First_Name} {cartaAvisoGeneral.accredited.Last_Name}");
                 textHtml = textHtml.Replace("{NAME_COMPANY}", cartaAvisoGeneral.accredited.Company_Name);
@@ -196,15 +196,15 @@ namespace PrestaQi.Service.ProcessServices
                 string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
                     configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
 
-                textHtml = textHtml.Replace("{CODE}", "1");
+                textHtml = textHtml.Replace("{CODE}", cartaMandato.acreditedCartaMandato.id.ToString());
                 textHtml = textHtml.Replace("{NAME}", $"{cartaMandato.accredited.First_Name.ToUpper()}  {cartaMandato.accredited.Last_Name.ToUpper()}");
                 textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
                 textHtml = textHtml.Replace("{MONTH}", date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
                 textHtml = textHtml.Replace("{YEAR}", date.Year.ToString());
                 textHtml = textHtml.Replace("{AMOUNT}", cartaMandato.advance.Amount.ToString());
                 textHtml = textHtml.Replace("{AMOUNT_LETTER}", new Moneda().Convertir(cartaMandato.advance.Amount.ToString(), true, "PESOS"));
-                textHtml = textHtml.Replace("{NUMBER_CONTRACT_MUTUO}", "1");
-                textHtml = textHtml.Replace("{DAYS}", cartaMandato.advance.Requested_Day.ToString());
+                textHtml = textHtml.Replace("{NUMBER_CONTRACT_MUTUO}", cartaMandato.contractMutuo.id.ToString());
+                textHtml = textHtml.Replace("{DAYS}", cartaMandato.advance.Day_For_Payment.ToString());
                 textHtml = textHtml.Replace("{COMISION}", cartaMandato.advance.Comission.ToString());
                 textHtml = textHtml.Replace("{TOTAL_AMOUNT}", cartaMandato.advance.Total_Withhold.ToString());
 
@@ -240,15 +240,16 @@ namespace PrestaQi.Service.ProcessServices
                 string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
                     configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
 
-                textHtml = textHtml.Replace("{NUMBER_CONTRACT}", "1");
+
+                textHtml = textHtml.Replace("{NUMBER_CONTRACT}", contratoMutuo.contractMutuo.id.ToString());
                 textHtml = textHtml.Replace("{NAME_ACREDITED}", $"{contratoMutuo.accredited.First_Name.ToUpper()}  {contratoMutuo.accredited.Last_Name.ToUpper()}");
                 textHtml = textHtml.Replace("{COMPANY_NAME}", contratoMutuo.accredited.Company_Name);
-                textHtml = textHtml.Replace("{AMOUNT_MAX}", "2500");
-                textHtml = textHtml.Replace("{AMOUNT_MAX_LETTER}", new Moneda().Convertir("2500", true, "PESOS"));
-                textHtml = textHtml.Replace("{INTERES_RATE}", "60");
-                textHtml = textHtml.Replace("{INTERES_RATE_LETTER}", new Moneda().Convertir("60", true, "PESOS"));
-                textHtml = textHtml.Replace("{INTEREST_MORATORIO}", "60");
-                textHtml = textHtml.Replace("{INTEREST_MORATORIO_LETTER}", new Moneda().Convertir("60", true, "PESOS"));
+                textHtml = textHtml.Replace("{AMOUNT_MAX}", contratoMutuo.advance.Maximum_Amount.ToString());
+                textHtml = textHtml.Replace("{AMOUNT_MAX_LETTER}", new Moneda().Convertir(contratoMutuo.advance.Maximum_Amount.ToString(), true, "PESOS"));
+                textHtml = textHtml.Replace("{INTERES_RATE}", contratoMutuo.accredited.Interest_Rate.ToString());
+                textHtml = textHtml.Replace("{INTERES_RATE_LETTER}", new Moneda().Convertir(contratoMutuo.accredited.Interest_Rate.ToString(), true, "PESOS"));
+                textHtml = textHtml.Replace("{INTEREST_MORATORIO}", contratoMutuo.accredited.Moratoruim_Interest_Rate.ToString());
+                textHtml = textHtml.Replace("{INTEREST_MORATORIO_LETTER}", new Moneda().Convertir(contratoMutuo.accredited.Moratoruim_Interest_Rate.ToString(), true, "PESOS"));
                 textHtml = textHtml.Replace("{ADDRESS_ACREDITED}", $"{contratoMutuo.accredited.Address}, {contratoMutuo.accredited.Colony}, {contratoMutuo.accredited.Municipality}, {contratoMutuo.accredited.Zip_Code}, {contratoMutuo.accredited.State}");
                 textHtml = textHtml.Replace("{EMAIL_ACREDITED}", contratoMutuo.accredited.Mail);
                 textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
