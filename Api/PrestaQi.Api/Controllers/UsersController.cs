@@ -22,17 +22,32 @@ namespace PrestaQi.Api.Controllers
         IWriteService<User> _UserWriteService;
         IRetrieveService<User> _UserRetrieveService;
         IProcessService<DocumentUser> _DocumentUserWriteService;
+        IRetrieveService<AccreditedContractMutuo> _AccreditedContractMutuo;
+        IWriteService<AccreditedContractMutuo> _AccreditedContractMutuoWrite;
+        IProcessService<Advance> _AdvanceProcessService;
+        IRetrieveService<AcreditedCartaMandato> _AcreditedCartaMandato;
+        IWriteService<AcreditedCartaMandato> _AcreditedCartaMandatoWrite;
 
         public UsersController(
             IWriteService<User> userWriteService, 
             IRetrieveService<User> userRetrieveService,
-            IProcessService<DocumentUser> documentUserWriteService
+            IProcessService<DocumentUser> documentUserWriteService,
+            IRetrieveService<AccreditedContractMutuo> accreditedContractMutuo,
+            IWriteService<AccreditedContractMutuo> accreditedContractMutuoWrite,
+            IProcessService<Advance> advanceProcessService,
+            IRetrieveService<AcreditedCartaMandato> acreditedCartaMandato,
+            IWriteService<AcreditedCartaMandato> acreditedCartaMandatoWrite
             )
         {
             this._UserWriteService = userWriteService;
             this._UserRetrieveService = userRetrieveService;
             this._DocumentUserWriteService = documentUserWriteService;
-        }
+            this._AccreditedContractMutuo = accreditedContractMutuo;
+            this._AccreditedContractMutuoWrite = accreditedContractMutuoWrite;
+            this._AdvanceProcessService = advanceProcessService;
+            this._AcreditedCartaMandato = acreditedCartaMandato;
+            this._AcreditedCartaMandatoWrite = acreditedCartaMandatoWrite;
+    }
 
         [HttpGet, Route("[action]")]
         public IActionResult GetList([FromQuery] bool onlyActive)
@@ -127,8 +142,18 @@ namespace PrestaQi.Api.Controllers
                 User_Id = userId
             });
 
+            var accredited = data.User as Accredited;
+
+            var contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+
+            if (contractMutuo is null)
+            {
+                this._AccreditedContractMutuoWrite.Create(new AccreditedContractMutuo { Accredited_Id = accredited.id, Path_Contract = "", created_at = DateTime.Now, updated_at = DateTime.Now });
+                contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+            }
+
             if (type == (int)PrestaQiEnum.UserType.Acreditado)
-                html = this._DocumentUserWriteService.ExecuteProcess<CartaAvisoGeneral, string>(new CartaAvisoGeneral { accredited = data.User as Accredited });
+                html = this._DocumentUserWriteService.ExecuteProcess<CartaAvisoGeneral, string>(new CartaAvisoGeneral { accredited = accredited, contractMutuo = contractMutuo });
 
             return new ContentResult
             {
@@ -139,7 +164,11 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("GetCartaMandato"), AllowAnonymous]
-        public IActionResult GetCartaMandato([FromQuery] string token)
+        public IActionResult GetCartaMandato([FromQuery] string token, 
+                                             [FromQuery] double amount, 
+                                             [FromQuery] int days, 
+                                             [FromQuery] int commision, 
+                                             [FromQuery] double totalAmount)
         {
             string html = string.Empty;
 
@@ -157,9 +186,31 @@ namespace PrestaQi.Api.Controllers
             });
 
             var advance = new Advance();
+            advance.Amount = amount;
+            advance.Day_For_Payment = days;
+            advance.Comission = commision;
+            advance.Total_Withhold = totalAmount;
+
+            var accredited = data.User as Accredited;
+
+            var cartaMandato = this._AcreditedCartaMandato.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+
+            if (cartaMandato is null)
+            {
+                this._AcreditedCartaMandatoWrite.Create(new AcreditedCartaMandato { Accredited_Id = accredited.id, Path_Contract = "", created_at = DateTime.Now, updated_at = DateTime.Now });
+                cartaMandato = this._AcreditedCartaMandato.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+            }
+
+            var contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+
+            if (contractMutuo is null)
+            {
+                this._AccreditedContractMutuoWrite.Create(new AccreditedContractMutuo { Accredited_Id = accredited.id, Path_Contract = "", created_at = DateTime.Now, updated_at = DateTime.Now });
+                contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+            }
 
             if (type == (int)PrestaQiEnum.UserType.Acreditado)
-                html = this._DocumentUserWriteService.ExecuteProcess<CartaMandato, string>(new CartaMandato { accredited = data.User as Accredited, advance = advance });
+                html = this._DocumentUserWriteService.ExecuteProcess<CartaMandato, string>(new CartaMandato { accredited = accredited, advance = advance, acreditedCartaMandato = cartaMandato, contractMutuo = contractMutuo });
 
             return new ContentResult
             {
@@ -187,8 +238,20 @@ namespace PrestaQi.Api.Controllers
                 User_Id = userId
             });
 
+            var accredited = data.User as Accredited;
+            var calculateAmount = new CalculateAmount { Accredited_Id = accredited.id };
+            var advance = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(calculateAmount);
+
+            var contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+
+            if (contractMutuo is null)
+            {
+                this._AccreditedContractMutuoWrite.Create(new AccreditedContractMutuo { Accredited_Id = accredited.id, Path_Contract = "", created_at = DateTime.Now, updated_at = DateTime.Now});
+                contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+            }
+
             if (type == (int)PrestaQiEnum.UserType.Acreditado)
-                html = this._DocumentUserWriteService.ExecuteProcess<ContratoMutuo, string>(new ContratoMutuo { accredited = data.User as Accredited });
+                html = this._DocumentUserWriteService.ExecuteProcess<ContratoMutuo, string>(new ContratoMutuo { accredited = accredited, contractMutuo = contractMutuo, advance = advance });
 
             return new ContentResult
             {
