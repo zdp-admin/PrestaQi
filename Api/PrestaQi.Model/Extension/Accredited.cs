@@ -20,6 +20,7 @@ namespace PrestaQi.Model
         public string TypeName { get; set; }
         [NotMapped]
         public TypeContract TypeContract { get; set; }
+        [NotMapped]
         public double Credit_Limit { get; set; }
 
     }
