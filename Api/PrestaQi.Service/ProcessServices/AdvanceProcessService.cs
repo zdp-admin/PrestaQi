@@ -139,7 +139,7 @@ namespace PrestaQi.Service.ProcessServices
             }
 
             double intereset = (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Mensual) || (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal) ?
-                Math.Round(calculateAmount.Amount * commissionPerioDetail.Interest, 2) :
+                Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * commissionPerioDetail.Day_Payement), 2) :
                 Math.Round(((calculateAmount.Amount * annualInterest / finantialDay) * (period.Period_Value - DateTime.Now.Day)), 2);
 
             double subtotal = intereset + commission;
