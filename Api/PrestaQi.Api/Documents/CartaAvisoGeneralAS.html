@@ -2,18 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Document</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
         * {
             font-family: 'Montserrat';
-        }
-
-        .container {
-            padding: 25px;
-            min-width: 650px;
         }
 
         .center {
@@ -96,6 +91,18 @@
             margin: 3px 0;
         }
 
+        .content-info-bank {
+            padding: 0 !important;
+            width: 100%;
+            display: flex;
+        }
+
+        @media (max-width: 600px) {
+            .content-info-bank {
+                flex-direction: column;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -148,12 +155,14 @@
         </div>
         <div class="tc flex-start">
             <div style="display: flex;justify-content: center;align-items: center;"><p>6</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center"><b>Banco</b></p></div>
-            <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{BANK}</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center">Cuenta</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{NUMBER_ACCOUNT}</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center">Clabe interbancaria</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{CLABE}</p></div>
+            <div class="content-info-bank">
+                <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center"><b>Banco</b></p></div>
+                <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{BANK}</p></div>
+                <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center">Cuenta</p></div>
+                <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{NUMBER_ACCOUNT}</p></div>
+                <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;padding: 0 10px;"><p class="center">Clabe interbancaria</p></div>
+                <div style="display: flex;justify-content: center;align-items: center;padding: 0 10px;"><p class="center">{CLABE}</p></div>
+            </div>
         </div>
         <p class="center fz-12"><b>DESCRIPCIÓN DE LOS SERVICIOS GENERALES</b></p>
         <div class="tc flex-start" style="background-color: gainsboro;">

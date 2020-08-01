@@ -11,11 +11,6 @@
             font-family: 'Montserrat';
         }
 
-        .container {
-            padding: 25px;
-            min-width: 650px;
-        }
-
         .center {
             text-align: center;
         }
@@ -94,6 +89,18 @@
 
         .tcc .tr p {
             margin: 3px 0;
+        }
+
+        .content-info-bank {
+            padding: 0 !important;
+            width: 100%;
+            display: flex;
+        }
+
+        @media (max-width: 600px) {
+            .content-info-bank {
+                flex-direction: column;
+            }
         }
 
     </style>
@@ -828,12 +835,14 @@
         </div>
         <div class="tc flex-start">
             <div style="display: flex;justify-content: center;align-items: center;"><p>6</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;"><p class="center"><b>Banco</b></p></div>
-            <div style="display: flex;justify-content: center;align-items: center;"><p class="center">[Nombre del banco]</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;"><p class="center">Cuenta</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;"><p class="center">[Numero de Cuenta]</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;"><p class="center">Clabe interbancaria</p></div>
-            <div style="display: flex;justify-content: center;align-items: center;"><p class="center">[Clabe del cliente]</p></div>
+            <div class="content-info-bank">
+                <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;"><p class="center"><b>Banco</b></p></div>
+                <div style="display: flex;justify-content: center;align-items: center;"><p class="center">[Nombre del banco]</p></div>
+                <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;"><p class="center">Cuenta</p></div>
+                <div style="display: flex;justify-content: center;align-items: center;"><p class="center">[Numero de Cuenta]</p></div>
+                <div style="display: flex;justify-content: center;align-items: center;background-color: gainsboro;"><p class="center">Clabe interbancaria</p></div>
+                <div style="display: flex;justify-content: center;align-items: center;"><p class="center">[Clabe del cliente]</p></div>
+            </div>
         </div>
         <p class="center fz-12"><b>DESCRIPCIÓN DE LOS SERVICIOS GENERALES</b></p>
         <div class="tc flex-start" style="background-color: gainsboro;">
