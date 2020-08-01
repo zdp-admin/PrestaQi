@@ -85,7 +85,7 @@ namespace PrestaQi.Service.ProcessServices
 
                     if (calculateAmount.Amount == 0)
                     {
-                        calculateAmount.Amount = Math.Round(accredited.Net_Monthly_Salary / 2);
+                        advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary / 2);
                         isMaxAmount = true;
                     }
 
@@ -102,7 +102,7 @@ namespace PrestaQi.Service.ProcessServices
                     if (calculateAmount.Amount == 0)
                     {
                         isMaxAmount = true;
-                        calculateAmount.Amount = Math.Round(accredited.Net_Monthly_Salary / 2);
+                        advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary / 2);
                     }
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
@@ -132,7 +132,7 @@ namespace PrestaQi.Service.ProcessServices
                     if (calculateAmount.Amount == 0)
                     {
                         isMaxAmount = true;
-                        calculateAmount.Amount = Math.Round(accredited.Net_Monthly_Salary / 4);
+                        advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary / 4);
                     }
 
                     advanceCalculated.Day_For_Payment = (limitDate.Date - DateTime.Now.Date).Days;
@@ -142,11 +142,9 @@ namespace PrestaQi.Service.ProcessServices
             var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
             p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date && p.Paid_Status == 0).ToList();
 
+            advanceCalculated.Maximum_Amount = Math.Round(advances.Count > 0 ? advanceCalculated.Maximum_Amount - advances.Sum(p => p.Total_Withhold) : advanceCalculated.Maximum_Amount);
             if (isMaxAmount)
-            {
-                advanceCalculated.Maximum_Amount = Math.Round(advances.Count > 0 ? calculateAmount.Amount - advances.Sum(p => p.Total_Withhold) : calculateAmount.Amount);
-                return advanceCalculated;
-            }
+                calculateAmount.Amount = advanceCalculated.Maximum_Amount;
 
             double intereset = (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Mensual) || (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal) ?
                 Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * commissionPerioDetail.Day_Payement), 2) :
@@ -167,6 +165,7 @@ namespace PrestaQi.Service.ProcessServices
             advanceCalculated.Subtotal = subtotal;
             advanceCalculated.Limit_Date = limitDate;
             advanceCalculated.Date_Advance = DateTime.Now;
+            advanceCalculated.Maximum_Amount = isMaxAmount ? Math.Round(advanceCalculated.Maximum_Amount - subtotal - vatTotal) : 0;
 
             return advanceCalculated;
         }

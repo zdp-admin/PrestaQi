@@ -20,12 +20,18 @@ namespace PrestaQi.Service.ProcessServices
     public class ExportAdvanceProcessService : ProcessService<ExportAdvance>
     {
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
+        IRetrieveService<Company> _CompanyRetrieveService;
+        IRetrieveService<Accredited> _AccreditedRetrieveService;
 
         public ExportAdvanceProcessService(
-            IRetrieveService<Configuration> configurationRetrieveService
+            IRetrieveService<Configuration> configurationRetrieveService,
+            IRetrieveService<Company> companyRetrieveService,
+            IRetrieveService<Accredited> accreditedRetrieveService
             )
         {
             this._ConfigurationRetrieveService = configurationRetrieveService;
+            this._CompanyRetrieveService = companyRetrieveService;
+            this._AccreditedRetrieveService = accreditedRetrieveService;
         }
 
         public MemoryStream ExecuteProcess(ExportAdvance export)
@@ -38,6 +44,26 @@ namespace PrestaQi.Service.ProcessServices
                 GeneratePdf(export.Accredited, columns);
         }
 
+        public MemoryStream ExecuteProcess(ExportMyAdvance exportMyAdvance)
+        {
+            var accredited = this._AccreditedRetrieveService.Find(exportMyAdvance.Accredited_Id);
+            var configuration = this._ConfigurationRetrieveService.Where(p => p.Configuration_Name == "COLUMNS_ADVANCE_EXPORT").FirstOrDefault();
+            List<string> columns = configuration.Configuration_Value.Split('|').ToList();
+
+            AccreditedExportData accreditedExportData = new AccreditedExportData()
+            {
+                Advances = exportMyAdvance.Advances,
+                Contract_Number = accredited.Contract_number,
+                First_Name = accredited.First_Name,
+                Identify = accredited.id.ToString(),
+                Interest_Rate = accredited.Interest_Rate,
+                Last_Name = accredited.Last_Name,
+                Company_Name = this._CompanyRetrieveService.Find(accredited.Company_Id).Description
+            };
+
+            return GenerateExcel(accreditedExportData, columns);
+        }
+
         MemoryStream GenerateExcel(AccreditedExportData accredited, List<string> columns)
         {
             using (MemoryStream memoryStream = new MemoryStream())
@@ -46,6 +72,7 @@ namespace PrestaQi.Service.ProcessServices
                 var workSheet = workBook.Worksheets.Add("Data");
 
                 var rangeId = workSheet.Range(1, 1, 1, columns.Count);
+                rangeId.Merge();
                 rangeId.Value = $"ID {accredited.Identify}";
                 rangeId.Style.Font.Bold = true;
                 rangeId.Style.Font.SetFontSize(20);

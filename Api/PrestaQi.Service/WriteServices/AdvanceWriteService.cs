@@ -39,7 +39,7 @@ namespace PrestaQi.Service.WriteServices
             advance.Date_Advance = DateTime.Now;
             advance.created_at = DateTime.Now;
             advance.updated_at = DateTime.Now;
-            advance.Enabled = true;
+            advance.Enabled = false;
             advance.Paid_Status = (int)PrestaQiEnum.AdvanceStatus.NoPagado;
 
             var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
@@ -65,13 +65,6 @@ namespace PrestaQi.Service.WriteServices
                             tracking_key = spei.resultado.claveRastreo
                         });
 
-                        /*this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
-                        {
-                            Amount = advance.Amount,
-                            Accredited_Id = calculateAmount.Accredited_Id,
-                            Accredited = accredited,
-                            Advance = advance
-                        });*/
                     }
 
                     return created;
