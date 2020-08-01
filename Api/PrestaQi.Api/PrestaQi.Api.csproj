@@ -47,6 +47,9 @@
     <None Update="Documents\AccreditedContract.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Documents\avisodeprivacidad.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Documents\CartaAvisoGeneralAS.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
