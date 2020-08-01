@@ -6,9 +6,12 @@ using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Api.Notification;
 using PrestaQi.Model;
+using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Enum;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace PrestaQi.Api.Controllers
@@ -21,19 +24,21 @@ namespace PrestaQi.Api.Controllers
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IProcessService<Advance> _AdvanceProcessService;
         IProcessService<PaidAdvance> _PaidAdvanceProcessService;
+        IProcessService<ExportAdvance> _ExportAdvanceProcessService;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
         IWriteService<Model.Notification> _NotificationWriteService;
 
         public IConfiguration Configuration { get; }
 
         public AdvancesController(
-            IWriteService<Advance> advanceWriteService, 
+            IWriteService<Advance> advanceWriteService,
             IRetrieveService<Advance> advanceRetrieveService,
             IProcessService<Advance> advanceProcessService,
             IProcessService<PaidAdvance> paidAdvanceProcessService,
             IWriteService<Model.Notification> notificationWriteService,
             NotificationsMessageHandler notificationsMessageHandler,
-        IConfiguration configuration
+            IConfiguration configuration,
+            IProcessService<ExportAdvance> exportAdvanceProcessService
             )
         {
             this._AdvanceWriteService = advanceWriteService;
@@ -42,6 +47,7 @@ namespace PrestaQi.Api.Controllers
             this._NotificationsMessageHandler = notificationsMessageHandler;
             this._PaidAdvanceProcessService = paidAdvanceProcessService;
             this._NotificationWriteService = notificationWriteService;
+            this._ExportAdvanceProcessService = exportAdvanceProcessService;
             Configuration = configuration;
         }
 
@@ -56,7 +62,18 @@ namespace PrestaQi.Api.Controllers
         public IActionResult Post(CalculateAmount calculateAmount)
         {
             calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
-            return Ok(this._AdvanceWriteService.Create<CalculateAmount, bool>(calculateAmount), "Generator Advance");
+
+            var limitCredit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(new CalculateAmount()
+            {
+                Accredited_Id = calculateAmount.Accredited_Id,
+                Amount = 0
+            });
+
+            if (calculateAmount.Amount >= limitCredit.Maximum_Amount)
+                throw new SystemValidationException($"No se puede realizar el préstamos, ya que la cantidad {calculateAmount.Amount:C} " +
+                    $"excede el monto máximo {limitCredit.Maximum_Amount:C}");
+            else
+                 return Ok(this._AdvanceWriteService.Create<CalculateAmount, bool>(calculateAmount), "Generator Advance");
         }
 
         [HttpGet, Route("GetByAccredited/{id}")]
@@ -82,6 +99,22 @@ namespace PrestaQi.Api.Controllers
             var advance = this._AdvanceProcessService.ExecuteProcess<CalculatePromotional, Advance>(calculatePromotional);
             this._AdvanceWriteService.Update(advance);
             return Ok(advance);
+        }
+
+        [HttpGet, Route("ExportMyAdvances/{id}")]
+        public IActionResult ExportMyAdvances(int id)
+        {
+            var file = this._ExportAdvanceProcessService.ExecuteProcess<ExportMyAdvance, MemoryStream>(new ExportMyAdvance()
+            {
+                 Accredited_Id = id,
+                  Advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == id).ToList()
+            });
+
+            return this.File(
+                    fileContents: file.ToArray(),
+                    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileDownloadName: "MyAdvances" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx"
+                );
         }
 
         void SendNotifiationSetPaidAdvance(List<int> advanceIds)

@@ -18,6 +18,7 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Accredited> _AccreditedRetrieveService;
         IRetrieveService<Repayment> _RepaymentRetrieveService;
         IProcessService<ordenPagoWS> _OrdenPagoProcessService;
+        IWriteRepository<Advance> _AdvanceWriteRepository;
 
         public SpeiResponseWriteService(
             IWriteRepository<SpeiResponse> repository,
@@ -25,7 +26,8 @@ namespace PrestaQi.Service.WriteServices
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<Accredited> accreditedRetrieveService,
             IRetrieveService<Repayment> repaymentRetrieveService,
-            IProcessService<ordenPagoWS> ordenPagoProcessService
+            IProcessService<ordenPagoWS> ordenPagoProcessService,
+            IWriteRepository<Advance> advanceWriteRepository
             ) : base(repository)
         {
             this._SpeiResponseRetrieveService = speiResponseRetrieveService;
@@ -33,6 +35,7 @@ namespace PrestaQi.Service.WriteServices
             this._AccreditedRetrieveService = accreditedRetrieveService;
             this._RepaymentRetrieveService = repaymentRetrieveService;
             this._OrdenPagoProcessService = ordenPagoProcessService;
+            this._AdvanceWriteRepository = advanceWriteRepository;
         }
 
         public override bool Create(SpeiResponse entity)
@@ -82,6 +85,9 @@ namespace PrestaQi.Service.WriteServices
 
                 if (speiTransactionResult.Success && stateChange.CausaDevolucion == 0)
                 {
+                    advance.Enabled = true;
+                    this._AdvanceWriteRepository.Update(advance);
+
                     this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
                     {
                         Amount = advance.Amount,
@@ -90,6 +96,13 @@ namespace PrestaQi.Service.WriteServices
                         Advance = advance
                     });
                 }
+
+                if (speiTransactionResult.Success && stateChange.CausaDevolucion > 0)
+                {
+                    advance.Enabled = false;
+                    this._AdvanceWriteRepository.Update(advance);
+                }
+
                 return speiTransactionResult;
             }
             catch (Exception exception)
