@@ -10,16 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PdfSharp;
-using PdfSharp.Pdf;
-using TheArtOfDev.HtmlRenderer.PdfSharp;
 using System.Net;
-using System.Net.Mail;
-using System.Web;
-using PdfSharp.Drawing;
 using iText.Kernel.Pdf;
-using DocumentFormat.OpenXml.Packaging;
-using OpenXmlPowerTools;
+using iText.Html2pdf;
 
 namespace PrestaQi.Service.ProcessServices
 {
@@ -31,6 +24,10 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Institution> _InstitutionRetrieveService;
         IRetrieveService<Contact> _ContactRetrieveService;
         IProcessService<DocumentUser> _DocumentUserProcessService;
+        IRetrieveService<AcreditedCartaMandato> _AcreditedCartaMandato;
+        IWriteService<AcreditedCartaMandato> _AcreditedCartaMandatoWrite;
+        IRetrieveService<AccreditedContractMutuo> _AccreditedContractMutuo;
+        IWriteService<AccreditedContractMutuo> _AccreditedContractMutuoWrite;
 
 
         public OrdenPagoProcessService(
@@ -39,7 +36,11 @@ namespace PrestaQi.Service.ProcessServices
            IRetrieveService<Advance> advanceRetrieveService,
            IRetrieveService<Institution> institutionRetrieveService,
            IRetrieveService<Contact> contactRetrieveService,
-           IProcessService<DocumentUser> documentUserProcessService
+           IProcessService<DocumentUser> documentUserProcessService,
+             IRetrieveService<AcreditedCartaMandato> acreditedCartaMandato,
+        IWriteService<AcreditedCartaMandato> acreditedCartaMandatoWrite,
+        IRetrieveService<AccreditedContractMutuo> accreditedContractMutuo,
+        IWriteService<AccreditedContractMutuo> accreditedContractMutuoWrite
             )
         {
             
@@ -49,6 +50,10 @@ namespace PrestaQi.Service.ProcessServices
             this._InstitutionRetrieveService = institutionRetrieveService;
             this._ContactRetrieveService = contactRetrieveService;
             this._DocumentUserProcessService = documentUserProcessService;
+            this._AcreditedCartaMandato = acreditedCartaMandato;
+            this._AcreditedCartaMandatoWrite = acreditedCartaMandatoWrite;
+            this._AccreditedContractMutuo = accreditedContractMutuo;
+            this._AccreditedContractMutuoWrite = accreditedContractMutuoWrite;
         }
 
         public ResponseSpei ExecuteProcess(OrderPayment orderPayment)
@@ -146,11 +151,29 @@ namespace PrestaQi.Service.ProcessServices
                 var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
                 var accredited = this._AccreditedRetrieveService.Find(sendSpeiMail.Accredited_Id);
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                var docHtml = this._DocumentUserProcessService.ExecuteProcess<DocumentAccredited, MemoryStream>(new DocumentAccredited()
+                /*var docHtml = this._DocumentUserProcessService.ExecuteProcess<DocumentAccredited, MemoryStream>(new DocumentAccredited()
                 {
                     Accredited = sendSpeiMail.Accredited,
                     Advance = sendSpeiMail.Advance
-                });
+                });*/
+
+                var cartaMandato = this._AcreditedCartaMandato.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+
+                if (cartaMandato is null)
+                {
+                    this._AcreditedCartaMandatoWrite.Create(new AcreditedCartaMandato { Accredited_Id = accredited.id, Path_Contract = "", created_at = DateTime.Now, updated_at = DateTime.Now });
+                    cartaMandato = this._AcreditedCartaMandato.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+                }
+
+                var contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+
+                if (contractMutuo is null)
+                {
+                    this._AccreditedContractMutuoWrite.Create(new AccreditedContractMutuo { Accredited_Id = accredited.id, Path_Contract = "", created_at = DateTime.Now, updated_at = DateTime.Now });
+                    contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
+                }
+
+                string html = this._DocumentUserProcessService.ExecuteProcess<CartaMandato, string>(new CartaMandato { accredited = accredited, advance = sendSpeiMail.Advance, acreditedCartaMandato = cartaMandato, contractMutuo = contractMutuo });
 
                 var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
                 var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "MAI_ADVANCE");
@@ -165,17 +188,30 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
                 messageMail.Message = textHtml;
 
+                var memoryStream = new MemoryStream();
+                using (var pdfWriter = new PdfWriter(memoryStream))
+                {
+                    pdfWriter.SetCloseStream(false);
+                    using (var document = HtmlConverter.ConvertToDocument(html, pdfWriter))
+                    {
+
+                    }
+                }
+
+                memoryStream.Position = 0;
+
                 FileMail fileMil = new FileMail()
                 {
                     FileName = configurations.FirstOrDefault(p => p.Configuration_Name == "CONTRACT_ACCREDITED_NAME").Configuration_Value,
-                    File = docHtml
+                    File = memoryStream
                 };
+
 
 
                 if (Utilities.SendEmail(new List<string> { accredited.Mail_Mandate_Latter, accredited.Mail }, messageMail, mailConf, fileMil))
                 {
-                    if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")))
-                        File.Delete(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx"));
+                    /*if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")))
+                        File.Delete(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx"));*/
                 }
 
 
