@@ -194,8 +194,16 @@ namespace PrestaQi.Service.ProcessServices
                     pdfWriter.SetCloseStream(false);
                     using (var document = HtmlConverter.ConvertToDocument(html, pdfWriter))
                     {
+                        using (FileStream fs = new FileStream(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + DateTime.Now.ToString("yyyy-mm-dd") + ".pdf"), FileMode.OpenOrCreate))
+                        {
+                            memoryStream.CopyTo(fs);
+                            fs.Flush();
 
+                            cartaMandato.Path_Contract = $"{configurations.Find(p => p.Configuration_Name == "URL_APP").Configuration_Value}Temporal/{accredited.Contract_number}{DateTime.Now:yyyy-mm-dd}.pdf";
+                            this._AcreditedCartaMandatoWrite.Update(cartaMandato);
+                        }
                     }
+                    
                 }
 
                 memoryStream.Position = 0;
@@ -206,13 +214,7 @@ namespace PrestaQi.Service.ProcessServices
                     File = memoryStream
                 };
 
-
-
-                if (Utilities.SendEmail(new List<string> { accredited.Mail_Mandate_Latter, accredited.Mail }, messageMail, mailConf, fileMil))
-                {
-                    /*if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")))
-                        File.Delete(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx"));*/
-                }
+                Utilities.SendEmail(new List<string> { accredited.Mail_Mandate_Latter, accredited.Mail }, messageMail, mailConf, fileMil);
 
 
                 return true;
