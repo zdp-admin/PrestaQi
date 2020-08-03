@@ -15,6 +15,24 @@
             text-align: center;
         }
 
+        .title {
+            text-align: center;
+            font-size: 17px;
+            color: #11027c !important;
+        }
+
+        p > b {
+            color: #1b1a1f;
+        }
+
+        .title b {
+            color: #11027c !important;
+        }
+        
+        p, span {
+            color: gray;
+        }
+
         .m-t-40 {
             margin-top: 40px;
         }
@@ -48,6 +66,7 @@
         .tc div:first-child p {
             margin: 0;
             font-weight: bold;
+            color: #1b1a1f;
         }
 
         .tc div:last-child {
@@ -107,7 +126,7 @@
 </head>
 <body>
     <div class="container">
-        <p>CONTRATO DE MUTUO CON INTERÉS NÚMERO: {NUMBER_CONTRACT}</p>
+        <p class="title"><b>CONTRATO DE MUTUO CON INTERÉS NÚMERO: {NUMBER_CONTRACT}</b></p>
         <P>
             CONTRATO DE MUTUO CON INTERÉS (EL <u>"CONTRATO"</u>) QUE CELEBRAN, POR UNA
             PARTE, LA SOCIEDAD PRESTAQI, S.A.P.I. DE C.V., EN SU CARÁCTER DE MUTUANTE (EN
