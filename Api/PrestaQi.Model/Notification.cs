@@ -1,4 +1,5 @@
-﻿using PrestaQi.Model.General;
+﻿using PrestaQi.Model.Enum;
+using PrestaQi.Model.General;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrestaQi.Model
@@ -20,5 +21,7 @@ namespace PrestaQi.Model
         public string Icon { get; set; }
         [Column("data_text")]
         public string Data_Text { get; set; }
+        [Column("notificationtype")]
+        public PrestaQiEnum.NotificationType NotificationType { get; set; }
     }
 }

@@ -10,7 +10,6 @@ namespace PrestaQi.Model
     {
         [NotMapped]
         public dynamic Data { get; set; }
-        [NotMapped]
-        public PrestaQiEnum.NotificationType NotificationType { get; set; }
+        
     }
 }

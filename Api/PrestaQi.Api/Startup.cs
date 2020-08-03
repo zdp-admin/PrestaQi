@@ -1,3 +1,5 @@
+using InsiscoCore.Base.Service;
+using InsiscoCore.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -92,6 +94,8 @@ namespace PrestaQi.Api
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            MonitoringService.Initialize(serviceProvider, Configuration);
 
             app.UseRequestLocalization();
             app.UseCors("PrestaQiPolicy");
