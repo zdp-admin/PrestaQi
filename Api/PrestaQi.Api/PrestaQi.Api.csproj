@@ -78,6 +78,9 @@
     <None Update="Documents\InvestorContract.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Documents\terminosycondiciones.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Documents\TransferenciaDatosPersonales.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
