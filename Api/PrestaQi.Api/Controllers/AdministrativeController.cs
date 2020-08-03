@@ -1,4 +1,5 @@
-﻿using InsiscoCore.Base.Service;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using InsiscoCore.Base.Service;
 using iText.Forms.Xfdf;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
+using PrestaQi.Service.Tools;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -25,6 +27,7 @@ namespace PrestaQi.Api.Controllers
         IWriteService<Accredited> _AccreditedWriteService;
         IProcessService<User> _UserProcessService;
         IRetrieveService<Contact> _ContactRetrieveService;
+        IRetrieveService<Model.Configuration> _ConfigurationRetrieveService;
         IConfiguration _Configuration;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
         IWriteService<Model.Notification> _NotificationWriteService;
@@ -38,8 +41,9 @@ namespace PrestaQi.Api.Controllers
             IWriteService<User> userWriteService,
             IRetrieveService<Contact> contactRetrieveService,
             IWriteService<Model.Notification> notificationWriteService,
-        IConfiguration configuration,
-            NotificationsMessageHandler notificationsMessageHandler
+            IConfiguration configuration,
+            NotificationsMessageHandler notificationsMessageHandler,
+            IRetrieveService<Model.Configuration> configurationRetrieveService
             ) : base()
         {
             this._InvestorWriteService = investorWriteService;
@@ -51,6 +55,7 @@ namespace PrestaQi.Api.Controllers
             this._NotificationWriteService = notificationWriteService;
             this._Configuration = configuration;
             this._NotificationsMessageHandler = notificationsMessageHandler;
+            this._ConfigurationRetrieveService = configurationRetrieveService;
         }
 
         [HttpPut, Route("[action]"), Authorize]
@@ -155,18 +160,75 @@ namespace PrestaQi.Api.Controllers
         [HttpPut, Route("ChangeStatusUser"), Authorize]
         public IActionResult ChangeStatusUser(DisableUser disableUser)
         {
-            var user = this._UserRetrieveService.RetrieveResult<DisableUser, UserLogin>(disableUser);
+            return Ok(ChangeStatus(disableUser).Item1);
+        }
 
+        [HttpPut, Route("DeleteAccount"), Authorize]
+        public IActionResult DeleteAccount(DisableUser disableUser)
+        {
+            var result = ChangeStatus(disableUser);
+
+            if (result.Item1)
+            {
+                SendNotificationChangeStatus(result.Item2);
+            }
+
+            return Ok(result.Item1);
+        }
+
+        (bool, string) ChangeStatus(DisableUser disableUser)
+        {
+            string name = string.Empty;
             bool success = false;
 
-            if (disableUser.Type == 1)
-                success = this._UserWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() {  User = user.User});
-            if (disableUser.Type == 2)
-                success = this._InvestorWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() { User = user.User });
-            if (disableUser.Type == 3)
-                success = this._AccreditedWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() { User = user.User });
+            var user = this._UserRetrieveService.RetrieveResult<DisableUser, UserLogin>(disableUser);
 
-            return Ok(success);
+            if (disableUser.Type == (int)PrestaQiEnum.UserType.Administrador)
+            {
+                success = this._UserWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() { User = user.User });
+                name = $"{((User)user.User).First_Name} {((User)user.User).Last_Name}";
+            }
+            if (disableUser.Type == (int)PrestaQiEnum.UserType.Inversionista)
+            {
+                success = this._InvestorWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() { User = user.User });
+                name = $"{((Investor)user.User).First_Name} {((Investor)user.User).Last_Name}";
+            }
+            if (disableUser.Type == (int)PrestaQiEnum.UserType.Acreditado)
+            {
+                success = this._AccreditedWriteService.Update<ChangeStatusUser, bool>(new Model.Dto.Input.ChangeStatusUser() { User = user.User });
+                name = $"{((Accredited)user.User).First_Name} {((Accredited)user.User).Last_Name}";
+            }
+
+            return (success, name);
+        }
+
+        void SendNotificationChangeStatus(string name)
+        {
+            var notificationAdmin = _Configuration.GetSection("Notification").GetSection("DeleteUser").Get<Model.Notification>();
+            notificationAdmin.Message = string.Format(notificationAdmin.Message, name);
+
+            notificationAdmin.NotificationType = PrestaQiEnum.NotificationType.DeleteUser;
+            notificationAdmin.User_Type = (int)PrestaQiEnum.UserType.Administrador;
+            notificationAdmin.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
+
+            var admintratorList = _UserRetrieveService.Where(p => p.Enabled == true && p.Deleted_At == null).ToList();
+
+            foreach (var item in admintratorList)
+            {
+                notificationAdmin.User_Id = item.id;
+                _NotificationWriteService.Create(notificationAdmin);
+                _ = _NotificationsMessageHandler.SendMessageToAllAsync(notificationAdmin);
+                notificationAdmin.id = 0;
+            }
+
+            var configurations = _ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+            var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
+
+            Utilities.SendEmail(admintratorList.Select(p => p.Mail).ToList(), new MessageMail()
+            {
+                Message = notificationAdmin.Message,
+                Subject = notificationAdmin.Title
+            }, mailConf);
         }
     }
 }

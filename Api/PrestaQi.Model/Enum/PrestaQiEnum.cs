@@ -45,7 +45,8 @@
             AdvanceStatus,
             ChangeStatusCapital,
             SetPaymentAdvance,
-            PaymentInterest
+            PaymentInterest,
+            DeleteUser
         }
 
         public enum NotificationIconType
