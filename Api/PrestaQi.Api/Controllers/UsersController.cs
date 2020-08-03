@@ -209,8 +209,8 @@ namespace PrestaQi.Api.Controllers
                 contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
             }
 
-            if (type == (int)PrestaQiEnum.UserType.Acreditado)
-                html = this._DocumentUserWriteService.ExecuteProcess<CartaMandato, string>(new CartaMandato { accredited = accredited, advance = advance, acreditedCartaMandato = cartaMandato, contractMutuo = contractMutuo });
+            if (type == (int)PrestaQiEnum.UserType.Acreditado) 
+                html = this._DocumentUserWriteService.ExecuteProcess<CartaMandato, string>(new CartaMandato { CheckedHide = true, accredited = accredited, advance = advance, acreditedCartaMandato = cartaMandato, contractMutuo = contractMutuo });
 
             return new ContentResult
             {

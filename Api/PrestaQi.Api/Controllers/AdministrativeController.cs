@@ -29,6 +29,7 @@ namespace PrestaQi.Api.Controllers
         IRetrieveService<Contact> _ContactRetrieveService;
         IRetrieveService<Model.Configuration> _ConfigurationRetrieveService;
         IConfiguration _Configuration;
+        IRetrieveService<UserModule> _UserModuleRetrieveService;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
         IWriteService<Model.Notification> _NotificationWriteService;
 
@@ -43,7 +44,8 @@ namespace PrestaQi.Api.Controllers
             IWriteService<Model.Notification> notificationWriteService,
             IConfiguration configuration,
             NotificationsMessageHandler notificationsMessageHandler,
-            IRetrieveService<Model.Configuration> configurationRetrieveService
+            IRetrieveService<Model.Configuration> configurationRetrieveService,
+            IRetrieveService<UserModule> userModuleRetrieveService
             ) : base()
         {
             this._InvestorWriteService = investorWriteService;
@@ -56,6 +58,7 @@ namespace PrestaQi.Api.Controllers
             this._Configuration = configuration;
             this._NotificationsMessageHandler = notificationsMessageHandler;
             this._ConfigurationRetrieveService = configurationRetrieveService;
+            this._UserModuleRetrieveService = userModuleRetrieveService;
         }
 
         [HttpPut, Route("[action]"), Authorize]
@@ -212,7 +215,10 @@ namespace PrestaQi.Api.Controllers
             notificationAdmin.User_Type = (int)PrestaQiEnum.UserType.Administrador;
             notificationAdmin.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
 
-            var admintratorList = _UserRetrieveService.Where(p => p.Enabled == true && p.Deleted_At == null).ToList();
+            List<int> modules = new List<int>() { 5, 7 };
+
+            var userModule = _UserModuleRetrieveService.Where(p => modules.Contains(p.module_id)).Select(p => p.user_id).ToList();
+            var admintratorList = _UserRetrieveService.Where(p => p.Enabled == true && p.Deleted_At == null && userModule.Contains(p.id)).ToList();
 
             foreach (var item in admintratorList)
             {
