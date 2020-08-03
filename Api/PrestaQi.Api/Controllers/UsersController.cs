@@ -289,5 +289,31 @@ namespace PrestaQi.Api.Controllers
                 Content = html
             };
         }
+
+        [HttpGet, Route("GetTerminosCondiciones"), AllowAnonymous]
+        public IActionResult GetTerminosCondiciones([FromQuery] string token)
+        {
+            string html = this._DocumentUserWriteService.ExecuteProcess<TerminosCondiciones, string>(new TerminosCondiciones() { });
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = html
+            };
+        }
+
+        [HttpGet, Route("GetAvisoPrivacidad"), AllowAnonymous]
+        public IActionResult GetAvisoPrivacidad([FromQuery] string token)
+        {
+            string html = this._DocumentUserWriteService.ExecuteProcess<AvisoPrivacidad, string>(new AvisoPrivacidad() { });
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = html
+            };
+        }
     }
 }

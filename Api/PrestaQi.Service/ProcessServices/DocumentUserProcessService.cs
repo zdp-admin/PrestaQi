@@ -299,5 +299,54 @@ namespace PrestaQi.Service.ProcessServices
                 throw new SystemValidationException($"Error: {exception.Message}");
             }
         }
+
+        public string ExecuteProcess(TerminosCondiciones terminosCondiciones)
+        {
+            try
+            {
+                DateTime date = DateTime.Now;
+                string fileConfig = "URL_TERMINOSYCONDICIONES";
+
+
+                var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
+                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+
+                textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
+
+                textHtml = HttpUtility.HtmlDecode(textHtml);
+
+                return textHtml;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error: {exception.Message}");
+            }
+        }
+
+        public string ExecuteProcess(AvisoPrivacidad avisoPrivacidad)
+        {
+            try
+            {
+                DateTime date = DateTime.Now;
+                string fileConfig = "URL_AVISOPROVACIDAD";
+
+
+                var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
+                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
+                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+
+                textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
+
+                textHtml = HttpUtility.HtmlDecode(textHtml);
+
+                return textHtml;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error: {exception.Message}");
+            }
+        }
+
     }
 }
