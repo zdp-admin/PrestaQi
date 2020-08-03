@@ -44,7 +44,8 @@
             CapitalCall,
             AdvanceStatus,
             ChangeStatusCapital,
-            SetPaymentAdvance
+            SetPaymentAdvance,
+            PaymentInterest
         }
 
         public enum NotificationIconType
