@@ -166,6 +166,7 @@ namespace PrestaQi.Api.Controllers
         [HttpPut, Route("DeleteAccount"), Authorize]
         public IActionResult DeleteAccount(DisableUser disableUser)
         {
+            disableUser.Value = false;
             var result = ChangeStatus(disableUser);
 
             if (result.Item1)
