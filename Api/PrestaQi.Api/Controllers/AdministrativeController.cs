@@ -9,6 +9,7 @@ using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
+using PrestaQi.Service.Tools;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
