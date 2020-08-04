@@ -209,6 +209,11 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{TOTAL_AMOUNT}", cartaMandato.advance.Total_Withhold.ToString());
 
 
+                if (cartaMandato.CheckedHide)
+                {
+                    textHtml = textHtml.Replace("class=\"x\"", "class=\"checkHide\"");
+                }
+
                 textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
 
                 textHtml = HttpUtility.HtmlDecode(textHtml);
