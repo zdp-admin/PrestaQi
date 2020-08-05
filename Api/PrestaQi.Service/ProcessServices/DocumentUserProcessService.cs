@@ -207,6 +207,7 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{DAYS}", cartaMandato.advance.Day_For_Payment.ToString());
                 textHtml = textHtml.Replace("{COMISION}", cartaMandato.advance.Comission.ToString());
                 textHtml = textHtml.Replace("{TOTAL_AMOUNT}", cartaMandato.advance.Total_Withhold.ToString());
+                textHtml = textHtml.Replace("{INTEREST_RATE}", cartaMandato.accredited.Interest_Rate.ToString());
 
 
                 if (cartaMandato.CheckedHide)
