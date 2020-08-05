@@ -168,7 +168,7 @@ namespace PrestaQi.Service.ProcessServices
         (List<MyInvestment>, int) GenerateInvestments(GetMyInvestment getMyInvestment)
         {
             int totalRecord = 0;
-            
+
             if (getMyInvestment.Source == 1 && (getMyInvestment.Page == 0 || getMyInvestment.NumRecord == 0))
             {
                 getMyInvestment.Page = 1;
@@ -196,7 +196,7 @@ namespace PrestaQi.Service.ProcessServices
             }
             else
                 listCapitalByInvestor = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id && p.Investment_Status == (int)PrestaQiEnum.InvestmentEnum.Activa).OrderBy(p => p.id).ToList();
-            
+
             List<MyInvestment> myInvestments = new List<MyInvestment>();
 
             if (listCapitalByInvestor.Count > 0)
@@ -222,7 +222,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 myInvestments.ForEach(p =>
                 {
-                    var currenPeriod = p.MyInvestmentDetails.FindIndex(s => DateTime.Now.Date >= s.Start_Date &&   DateTime.Now.Date <= s.End_Date.Date);
+                    var currenPeriod = p.MyInvestmentDetails.FindIndex(s => DateTime.Now.Date >= s.Start_Date && DateTime.Now.Date <= s.End_Date.Date);
 
                     if (currenPeriod >= 0)
                         p.MyInvestmentDetails[currenPeriod].IsPeriodActual = true;
@@ -233,10 +233,8 @@ namespace PrestaQi.Service.ProcessServices
 
                         if (!detail.IsPayment)
                         {
-                            if (detail.Principal_Payment == 0)
-                            {
-                                detail.Interest_Payment = Math.Round((detail.Outstanding_Balance * ((double)p.Interest_Rate / 100)) / periodValue);
-                            }
+                            detail.Interest_Payment = Math.Round((detail.Outstanding_Balance * ((double)p.Interest_Rate / 100)) / periodValue);
+
 
                             if (!detail.IsPeriodActual)
                             {
@@ -260,7 +258,7 @@ namespace PrestaQi.Service.ProcessServices
                     });
 
                     var detailShow = p.MyInvestmentDetails.FirstOrDefault(p => !p.IsPayment);
-                    
+
                     if (detailShow != null)
                     {
                         p.Interest_Payable = detailShow.Interest_Payment;
