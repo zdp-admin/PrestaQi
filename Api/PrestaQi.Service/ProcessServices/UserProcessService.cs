@@ -207,7 +207,7 @@ namespace PrestaQi.Service.ProcessServices
                             if (VerifiyMail(user.Mail))
                                 users.Add(user);
                             else
-                                messages.Append($"{Environment.NewLine} - {user.Mail} already exists. Line: {row.ToString()}");
+                                messages.Append($"{Environment.NewLine} - {user.Mail} ya existe. Línea: {row.ToString()}");
 
                             row += 1;
                         }
@@ -237,6 +237,8 @@ namespace PrestaQi.Service.ProcessServices
                         int row = 1;
                         while (!parser.EndOfData)
                         {
+                            bool save = true;
+
                             string[] fields = parser.ReadFields();
 
                             if (row == 1)
@@ -259,6 +261,40 @@ namespace PrestaQi.Service.ProcessServices
                                 Mail = fields[10]
                             };
 
+                            if (investor.Account_Number.Length != 10)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - El Número de cuenta [{investor.Account_Number}] debe estar formado por 10 dígitos. Línea: {row}");
+                            }
+                            else
+                            {
+                                long accountNumber = 0;
+                                long.TryParse(investor.Account_Number, out accountNumber);
+
+                                if (accountNumber == 0)
+                                {
+                                    save = false;
+                                    messages.Append($"{Environment.NewLine} - El Número de cuenta [{investor.Account_Number}] no tiene el formato correcto. Línea: {row}");
+                                }
+                            }
+
+                            if (investor.Clabe.Length != 18)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - La Clabe [{investor.Clabe}] debe estar formado por 18 dígitos. Línea: {row}");
+                            }
+                            else
+                            {
+                                long clabe = 0;
+                                long.TryParse(investor.Clabe, out clabe);
+
+                                if (clabe == 0)
+                                {
+                                    save = false;
+                                    messages.Append($"{Environment.NewLine} - La Clabe [{investor.Clabe}] no tiene el formato correcto. Línea: {row}");
+                                }
+                            }
+
                             var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[6])).FirstOrDefault();
 
                             if (institution != null)
@@ -266,12 +302,15 @@ namespace PrestaQi.Service.ProcessServices
                                 investor.Institution_Id = institution.id;
 
                                 if (VerifiyMail(investor.Mail))
-                                    investors.Add(investor);
+                                {
+                                    if (save)
+                                        investors.Add(investor);
+                                }
                                 else
-                                    messages.Append($"{Environment.NewLine} - {investor.Mail} already exists. Line: {row}");
+                                    messages.Append($"{Environment.NewLine} - {investor.Mail} ya existe. Línea: {row}");
                             }
                             else
-                                messages.Append($"{Environment.NewLine} - Bank code [{fields[6]}] was not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Código de Banco [{fields[6]}] no encontrado. Línea: {row}");
 
                             row += 1;
                         }
@@ -282,7 +321,7 @@ namespace PrestaQi.Service.ProcessServices
             if (investors.Count > 0 || messages.Length > 0)
                 return new ResponseFile() { Entities = investors, Message = messages };
 
-            throw new SystemValidationException("No records found");
+            throw new SystemValidationException("No se encontraron registros");
         }
 
         ResponseFile ProcessFileAccredited(byte[] file)
@@ -337,11 +376,13 @@ namespace PrestaQi.Service.ProcessServices
                                 End_Day_Payment = Convert.ToDateTime(fields[25])
                             };
 
+
+
                             var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[19])).FirstOrDefault();
                             if (institution == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Bank code [{fields[19]}] was not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Código de Banco [{fields[19]}] no encontrado. Línea: {row}");
                             }
                             else
                                 accredited.Institution_Id = institution.id;
@@ -350,7 +391,7 @@ namespace PrestaQi.Service.ProcessServices
                             if (gender == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Gender [{fields[17]}] not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Género [{fields[17]}] no encontrado. Línea: {row}");
                             }
                             else
                                 accredited.Gender_Id = gender.id;
@@ -359,17 +400,68 @@ namespace PrestaQi.Service.ProcessServices
                             if (company == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Company [{fields[7]}] not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Empresa [{fields[7]}] no encontrada. Línea: {row}");
                                 accredited.Company_Name = fields[2];
                             }
                             else
                                 accredited.Company_Id = company.id;
 
-                            var period = this._PeriodRetrieveService.Where(p => p.Description == fields[18]).FirstOrDefault();
+                            if (accredited.Zip_Code.Length != 5)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - El Código Postal [{accredited.Zip_Code}] debe estar formado por 5 dígitos. Línea: {row}");
+                            }
+                            else
+                            {
+                                int postalCode = 0;
+                                int.TryParse(accredited.Zip_Code, out postalCode);
+
+                                if (postalCode == 0)
+                                {
+                                    save = false;
+                                    messages.Append($"{Environment.NewLine} - El Código Postal [{accredited.Zip_Code}] no tiene el formato correcto. Línea: {row}");
+                                }
+                            }
+
+                            if (accredited.Account_Number.Length != 10)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - El Número de cuenta [{accredited.Account_Number}] debe estar formado por 10 dígitos. Línea: {row}");
+                            }
+                            else
+                            {
+                                long accountNumber = 0;
+                                long.TryParse(accredited.Account_Number, out accountNumber);
+
+                                if (accountNumber == 0)
+                                {
+                                    save = false;
+                                    messages.Append($"{Environment.NewLine} - El Número de cuenta [{accredited.Account_Number}] no tiene el formato correcto. Línea: {row}");
+                                }
+                            }
+
+                            if (accredited.Clabe.Length != 18)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - La Clabe [{accredited.Clabe}] debe estar formado por 18 dígitos. Línea: {row}");
+                            }
+                            else
+                            {
+                                long clabe = 0;
+                                long.TryParse(accredited.Clabe, out clabe);
+
+                                if (clabe == 0)
+                                {
+                                    save = false;
+                                    messages.Append($"{Environment.NewLine} - La Clabe [{accredited.Clabe}] no tiene el formato correcto. Línea: {row}");
+                                }
+                            }
+
+                            var period = this._PeriodRetrieveService.Where(p => p.Description == fields[18] && p.User_Type == 2).FirstOrDefault();
                             if (period == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Period [{fields[18]}] not found. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - Perdiodo [{fields[18]}] no encontrado. Línea: {row}");
                             }
                             else
                                 accredited.Period_Id = period.id;
@@ -387,7 +479,7 @@ namespace PrestaQi.Service.ProcessServices
                             if (!VerifiyMail(accredited.Mail))
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - {accredited.Mail} already exists. Line: {row}");
+                                messages.Append($"{Environment.NewLine} - {accredited.Mail} ya existe. Línea: {row}");
                             }
 
 
@@ -404,7 +496,7 @@ namespace PrestaQi.Service.ProcessServices
             if (accrediteds.Count > 0 || messages.Length > 0)
                 return new ResponseFile() { Entities = accrediteds, Message = messages };
 
-            throw new SystemValidationException("No records found");
+            throw new SystemValidationException("No se encontraron registros");
         }
 
         bool VerifiyMail(string mail)

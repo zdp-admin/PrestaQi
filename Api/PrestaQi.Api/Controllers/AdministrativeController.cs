@@ -163,7 +163,12 @@ namespace PrestaQi.Api.Controllers
         [HttpPut, Route("ChangeStatusUser"), Authorize]
         public IActionResult ChangeStatusUser(DisableUser disableUser)
         {
-            return Ok(ChangeStatus(disableUser).Item1);
+            bool success = ChangeStatus(disableUser).Item1;
+
+            if (success && disableUser.IsDelete)
+                SendNotificationRemoveUser(disableUser.UserId, ((PrestaQiEnum.UserType)disableUser.Type));
+
+            return Ok(success);
         }
 
         [HttpPut, Route("DeleteAccount"), Authorize]
@@ -236,6 +241,19 @@ namespace PrestaQi.Api.Controllers
                 Message = notificationAdmin.Message,
                 Subject = notificationAdmin.Title
             }, mailConf);
+        }
+
+        void SendNotificationRemoveUser(int userId, PrestaQiEnum.UserType prestaQiEnum)
+        {
+            var notificationAdmin = _Configuration.GetSection("Notification").GetSection("RemoveUser").Get<Model.Notification>();
+            notificationAdmin.NotificationType = PrestaQiEnum.NotificationType.RemoveUser;
+            notificationAdmin.User_Type = (int)prestaQiEnum;
+            notificationAdmin.Icon = PrestaQiEnum.NotificationIconType.info.ToString();
+
+            notificationAdmin.User_Id = userId;
+            _NotificationWriteService.Create(notificationAdmin);
+            _ = _NotificationsMessageHandler.SendMessageToAllAsync(notificationAdmin);
+
         }
     }
 }

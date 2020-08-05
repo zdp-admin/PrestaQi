@@ -42,10 +42,7 @@ namespace PrestaQi.Service.ProcessServices
 
             int periodValue = periods.FirstOrDefault(perdiod => perdiod.id == capital.period_id).Period_Value;
 
-            if (detail.Principal_Payment == 0)
-            {
-                detail.Interest_Payment = Math.Round((detail.Outstanding_Balance * ((double)capital.Interest_Rate / 100)) / periodValue);
-            }
+            detail.Interest_Payment = Math.Round((detail.Outstanding_Balance * ((double)capital.Interest_Rate / 100)) / periodValue);
 
             if (!detail.IsPeriodActual)
             {
