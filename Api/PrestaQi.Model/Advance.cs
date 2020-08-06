@@ -39,5 +39,7 @@ namespace PrestaQi.Model
         public double Promotional_Setting { get; set; }
         [Column("day_for_payment")]
         public int Day_For_Payment { get; set; }
+        [Column("interest_rate")]
+        public int Interest_Rate { get; set; }
     }
 }

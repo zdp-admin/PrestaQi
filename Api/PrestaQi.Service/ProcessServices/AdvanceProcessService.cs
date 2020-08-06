@@ -165,6 +165,7 @@ namespace PrestaQi.Service.ProcessServices
             advanceCalculated.Subtotal = subtotal;
             advanceCalculated.Limit_Date = limitDate;
             advanceCalculated.Date_Advance = DateTime.Now;
+            advanceCalculated.Interest_Rate = accredited.Interest_Rate;
             advanceCalculated.Maximum_Amount = isMaxAmount ? Math.Round(advanceCalculated.Maximum_Amount - subtotal - vatTotal) : 0;
 
             return advanceCalculated;
