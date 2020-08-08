@@ -182,7 +182,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 string textHtml = new StreamReader(new MemoryStream(Tools.Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
                 textHtml = textHtml.Replace("{NAME}", accredited.First_Name);
-                textHtml = textHtml.Replace("{AMOUNT}", sendSpeiMail.Amount.ToString("C"));
+                textHtml = textHtml.Replace("{AMOUNT}", sendSpeiMail.Amount.ToString("C2"));
                 textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
                 textHtml = textHtml.Replace("{MAIL_SOPORTE}", contacts.Find(p => p.id == 2).Contact_Data);
                 textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);

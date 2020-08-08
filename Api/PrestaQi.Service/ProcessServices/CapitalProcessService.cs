@@ -184,18 +184,27 @@ namespace PrestaQi.Service.ProcessServices
             List<Capital> listCapitalByInvestor = new List<Capital>();
 
             if (getMyInvestment.Source == 1)
-                totalRecord = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id).ToList().Count;
-            else
-                totalRecord = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id && p.Investment_Status == (int)PrestaQiEnum.InvestmentEnum.Activa).ToList().Count;
-
-            if (getMyInvestment.Source == 1)
             {
-                listCapitalByInvestor = this._CapitalRetrieveService
-                    .Where(p => p.investor_id == getMyInvestment.Investor_Id)
-                    .OrderBy(p => p.id).Skip((getMyInvestment.Page - 1) * getMyInvestment.NumRecord).Take(getMyInvestment.NumRecord).ToList();
+                totalRecord = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id).ToList().Count;
+                
+                if (getMyInvestment.Type == 0)
+                {
+                    listCapitalByInvestor = this._CapitalRetrieveService
+                        .Where(p => p.investor_id == getMyInvestment.Investor_Id)
+                        .OrderBy(p => p.id).Skip((getMyInvestment.Page - 1) * getMyInvestment.NumRecord).Take(getMyInvestment.NumRecord).ToList();
+                }
+                else
+                {
+                    listCapitalByInvestor = this._CapitalRetrieveService
+                        .Where(p => p.investor_id == getMyInvestment.Investor_Id)
+                        .OrderBy(p => p.id).ToList();
+                }
             }
             else
+            {
+                totalRecord = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id && p.Investment_Status == (int)PrestaQiEnum.InvestmentEnum.Activa).ToList().Count;
                 listCapitalByInvestor = this._CapitalRetrieveService.Where(p => p.investor_id == getMyInvestment.Investor_Id && p.Investment_Status == (int)PrestaQiEnum.InvestmentEnum.Activa).OrderBy(p => p.id).ToList();
+            }
 
             List<MyInvestment> myInvestments = new List<MyInvestment>();
 

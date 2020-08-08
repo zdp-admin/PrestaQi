@@ -8,5 +8,6 @@ namespace PrestaQi.Model.FireBase
     {
         public string body { get; set; }
         public string title { get; set; }
+        public int badge { get; set; }
     }
 }

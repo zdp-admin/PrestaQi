@@ -44,7 +44,7 @@ namespace PrestaQi.Service.ProcessServices
                     SendFirebase sendFirebase = new SendFirebase()
                     {
                         priority = "high",
-                        notification = new FireNotification() { body = notification.Message, title = notification.Title },
+                        notification = new FireNotification() { body = notification.Message, title = notification.Title, badge = 1 },
                         registration_ids = devices
                     };
                     sendFirebase.data = new ExpandoObject();

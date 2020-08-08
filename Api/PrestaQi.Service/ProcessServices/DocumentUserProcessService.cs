@@ -48,7 +48,7 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{CONTRACT_NUMBER}", investor.Contract_number);
                 textHtml = textHtml.Replace("{INVESTOR_NAME}", $"{investor.First_Name} {investor.Last_Name}");
                 textHtml = textHtml.Replace("{DATE}", DateTime.Now.ToString("dd/MM/yyyy"));
-                textHtml = textHtml.Replace("{AMOUNT}", capital.Amount.ToString());
+                textHtml = textHtml.Replace("{AMOUNT}", capital.Amount.ToString("C2"));
                 textHtml = textHtml.Replace("{INSTITUTION_NAME}", institution.Description);
                 textHtml = textHtml.Replace("{CLABE}", investor.Clabe);
                 textHtml = textHtml.Replace("{ACCOUNT_NUMBER}", investor.Account_Number);
@@ -201,12 +201,12 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
                 textHtml = textHtml.Replace("{MONTH}", date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
                 textHtml = textHtml.Replace("{YEAR}", date.Year.ToString());
-                textHtml = textHtml.Replace("{AMOUNT}", cartaMandato.advance.Amount.ToString());
+                textHtml = textHtml.Replace("{AMOUNT}", cartaMandato.advance.Amount.ToString("C2"));
                 textHtml = textHtml.Replace("{AMOUNT_LETTER}", new Moneda().Convertir(cartaMandato.advance.Amount.ToString(), true, "PESOS"));
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT_MUTUO}", cartaMandato.contractMutuo.id.ToString());
                 textHtml = textHtml.Replace("{DAYS}", cartaMandato.advance.Day_For_Payment.ToString());
-                textHtml = textHtml.Replace("{COMISION}", cartaMandato.advance.Comission.ToString());
-                textHtml = textHtml.Replace("{TOTAL_AMOUNT}", cartaMandato.advance.Total_Withhold.ToString());
+                textHtml = textHtml.Replace("{COMISION}", cartaMandato.advance.Comission.ToString("C2"));
+                textHtml = textHtml.Replace("{TOTAL_AMOUNT}", cartaMandato.advance.Total_Withhold.ToString("C2"));
                 textHtml = textHtml.Replace("{INTEREST_RATE}", cartaMandato.accredited.Interest_Rate.ToString());
 
 
@@ -250,7 +250,7 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT}", contratoMutuo.contractMutuo.id.ToString());
                 textHtml = textHtml.Replace("{NAME_ACREDITED}", $"{contratoMutuo.accredited.First_Name.ToUpper()}  {contratoMutuo.accredited.Last_Name.ToUpper()}");
                 textHtml = textHtml.Replace("{COMPANY_NAME}", contratoMutuo.accredited.Company_Name);
-                textHtml = textHtml.Replace("{AMOUNT_MAX}", contratoMutuo.advance.Maximum_Amount.ToString());
+                textHtml = textHtml.Replace("{AMOUNT_MAX}", contratoMutuo.advance.Maximum_Amount.ToString("C2"));
                 textHtml = textHtml.Replace("{AMOUNT_MAX_LETTER}", new Moneda().Convertir(contratoMutuo.advance.Maximum_Amount.ToString(), true, "PESOS"));
                 textHtml = textHtml.Replace("{INTERES_RATE}", contratoMutuo.accredited.Interest_Rate.ToString());
                 textHtml = textHtml.Replace("{INTERES_RATE_LETTER}", new Moneda().Convertir(contratoMutuo.accredited.Interest_Rate.ToString(), true, "PESOS"));
