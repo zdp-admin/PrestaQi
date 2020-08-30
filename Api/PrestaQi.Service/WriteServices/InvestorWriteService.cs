@@ -170,7 +170,7 @@ namespace PrestaQi.Service.WriteServices
             var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "INVESTOR_CREATE");
 
             var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
-            string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+            string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), messageMail.Message));
             textHtml = textHtml.Replace("{NAME}", name);
             textHtml = textHtml.Replace("{MAIL}", mail);
             textHtml = textHtml.Replace("{PASSWORD}", password);

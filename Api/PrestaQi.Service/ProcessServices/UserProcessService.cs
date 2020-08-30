@@ -112,7 +112,7 @@ namespace PrestaQi.Service.ProcessServices
                 var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
                 var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "RECOVERY_PASSWORD");
                 var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), messageMail.Message));
                 textHtml = textHtml.Replace("{PASSWORD}", sendMailRecoveryPassword.Password);
                 textHtml = textHtml.Replace("{NAME}", sendMailRecoveryPassword.Name);
                 textHtml = textHtml.Replace("{WHATSAPP}", sendMailRecoveryPassword.Contacts.Find(p => p.id == 1).Contact_Data);
@@ -516,7 +516,7 @@ namespace PrestaQi.Service.ProcessServices
             var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
             var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "CHANGE_PASS");
             var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
-            string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+            string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), messageMail.Message));
             textHtml = textHtml.Replace("{NAME}", sendMailChangePassword.Name);
             textHtml = textHtml.Replace("{WHATSAPP}", sendMailChangePassword.Contacts.Find(p => p.id == 1).Contact_Data);
             textHtml = textHtml.Replace("{MAIL_SOPORTE}", sendMailChangePassword.Contacts.Find(p => p.id == 2).Contact_Data);

@@ -177,7 +177,7 @@ namespace PrestaQi.Service.WriteServices
             var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "CAPITAL_CREATE");
 
             var messageMail = JsonConvert.DeserializeObject<MessageMail>(messageConfig.Configuration_Value);
-            string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+            string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), messageMail.Message));
             textHtml = textHtml.Replace("{NAME}", investor.First_Name);
             textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
             textHtml = textHtml.Replace("{MAIL_SOPORTE}", contacts.Find(p => p.id == 2).Contact_Data);

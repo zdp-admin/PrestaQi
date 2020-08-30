@@ -15,7 +15,7 @@ using System.Net;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]"), Authorize]
+    [Route("api/[controller]")]
     [ApiController]
     public class UsersController : CustomController
     {

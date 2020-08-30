@@ -61,7 +61,7 @@ namespace PrestaQi.Service.ProcessServices
             try
             {
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                byte[] file = Tools.Utilities.GetFile(configurations, configurations.Find(p => p.Configuration_Name == "CERTIFIED_FTP").Configuration_Value);
+                byte[] file = File.ReadAllBytes(Path.Combine(Directory.GetCurrentDirectory(), configurations.Find(p => p.Configuration_Name == "CERTIFIED_FTP").Configuration_Value));
 
                 var accredited = this._AccreditedRetrieveService.Find(orderPayment.Accredited_Id);
                 
@@ -180,7 +180,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 var messageMail = JsonConvert.DeserializeObject<PrestaQi.Model.Dto.Input.MessageMail>(messageConfig.Configuration_Value);
 
-                string textHtml = new StreamReader(new MemoryStream(Tools.Utilities.GetFile(configurations, messageMail.Message))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), messageMail.Message));
                 textHtml = textHtml.Replace("{NAME}", accredited.First_Name);
                 textHtml = textHtml.Replace("{AMOUNT}", sendSpeiMail.Amount.ToString("C2"));
                 textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);

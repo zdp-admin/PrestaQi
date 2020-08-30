@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Packaging;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using Microsoft.VisualBasic.FileIO;
 using OpenXmlPowerTools;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
@@ -42,8 +43,7 @@ namespace PrestaQi.Service.ProcessServices
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
                 var capital = this._CapitalRetrieveService.Find(documentInvestor.CapitalId);
 
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == "INVESTOR_CONTRACT").FirstOrDefault().Configuration_Value))).ReadToEnd();
+                string textHtml = System.IO.File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == "INVESTOR_CONTRACT").FirstOrDefault().Configuration_Value));
 
                 textHtml = textHtml.Replace("{CONTRACT_NUMBER}", investor.Contract_number);
                 textHtml = textHtml.Replace("{INVESTOR_NAME}", $"{investor.First_Name} {investor.Last_Name}");
@@ -74,8 +74,8 @@ namespace PrestaQi.Service.ProcessServices
 
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
 
-                MemoryStream file = new MemoryStream(Utilities.GetFile(configurations,
-                     configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT").FirstOrDefault().Configuration_Value));
+
+                MemoryStream file = new MemoryStream(File.ReadAllBytes(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT").FirstOrDefault().Configuration_Value)));
 
                 using (WordprocessingDocument doc = WordprocessingDocument.Open(file, true))
                 {
@@ -96,8 +96,7 @@ namespace PrestaQi.Service.ProcessServices
                     doc.SaveAs(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")).Close();
                 }
 
-                MemoryStream fileModified = new MemoryStream(Utilities.GetFile(configurations,
-                   configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT_MODIFIED").FirstOrDefault().Configuration_Value + accredited.Contract_number + ".docx"));
+                MemoryStream fileModified = new MemoryStream(File.ReadAllBytes(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + ".docx")));
 
                 return fileModified;
             }
@@ -112,8 +111,7 @@ namespace PrestaQi.Service.ProcessServices
             try
             {
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT_LOGIN").FirstOrDefault().Configuration_Value))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == "ACCREDITED_CONTRACT_LOGIN").FirstOrDefault().Configuration_Value));
 
                 textHtml = textHtml.Replace("{CONTRACT_NUMBER}", accredited.Contract_number);
                 textHtml = textHtml.Replace("{ACCREDITED_NAME}", $"{accredited.First_Name} {accredited.Last_Name}");
@@ -148,8 +146,7 @@ namespace PrestaQi.Service.ProcessServices
 
 
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value));
 
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT}", cartaAvisoGeneral.contractMutuo.id.ToString());
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT_USER}", cartaAvisoGeneral.accredited.Contract_number);
@@ -193,8 +190,7 @@ namespace PrestaQi.Service.ProcessServices
 
 
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value));
 
                 textHtml = textHtml.Replace("{CODE}", cartaMandato.acreditedCartaMandato.id.ToString());
                 textHtml = textHtml.Replace("{NAME}", $"{cartaMandato.accredited.First_Name.ToUpper()}  {cartaMandato.accredited.Last_Name.ToUpper()}");
@@ -243,8 +239,7 @@ namespace PrestaQi.Service.ProcessServices
 
 
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value));
 
 
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT}", contratoMutuo.contractMutuo.id.ToString());
@@ -284,8 +279,7 @@ namespace PrestaQi.Service.ProcessServices
 
 
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value));
 
                 textHtml = textHtml.Replace("{COMPANY}", transferenciaDatosPersonales.accredited.Company_Name);
                 textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
@@ -315,8 +309,7 @@ namespace PrestaQi.Service.ProcessServices
 
 
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value));
 
                 textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
 
@@ -339,8 +332,7 @@ namespace PrestaQi.Service.ProcessServices
 
 
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                string textHtml = new StreamReader(new MemoryStream(Utilities.GetFile(configurations,
-                    configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value))).ReadToEnd();
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value));
 
                 textHtml = Regex.Replace(textHtml, @"\t|\n|\r", "");
 

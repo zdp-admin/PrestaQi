@@ -11,7 +11,7 @@ using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]"), Authorize]
+    [Route("api/[controller]")]
     [ApiController]
     public class InvestorsController : CustomController
     {
