@@ -107,7 +107,7 @@ namespace PrestaQi.Service.WriteServices
             }
             catch (Exception exception)
             {
-                throw new SystemValidationException($"Error update Spei: {exception.Message}");
+                throw new SystemValidationException($"Error update Spei: {exception}");
             }
         }
 

@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using iText.Kernel.Pdf;
 using iText.Html2pdf;
+using PrestaQi.Model.Configurations;
 
 namespace PrestaQi.Service.ProcessServices
 {
@@ -194,16 +195,19 @@ namespace PrestaQi.Service.ProcessServices
                     pdfWriter.SetCloseStream(false);
                     using (var document = HtmlConverter.ConvertToDocument(html, pdfWriter))
                     {
-                        using (FileStream fs = new FileStream(Path.Combine(Directory.GetCurrentDirectory(), @"Temporal\" + accredited.Contract_number + DateTime.Now.ToString("yyyy-mm-dd") + ".pdf"), FileMode.OpenOrCreate))
-                        {
-                            memoryStream.CopyTo(fs);
-                            fs.Flush();
-
-                            cartaMandato.Path_Contract = $"{configurations.Find(p => p.Configuration_Name == "URL_APP").Configuration_Value}Temporal/{accredited.Contract_number}{DateTime.Now:yyyy-mm-dd}.pdf";
-                            this._AcreditedCartaMandatoWrite.Update(cartaMandato);
-                        }
                     }
                     
+                }
+
+                memoryStream.Position = 0;
+
+                using (FileStream fs = new FileStream(Path.Combine(Directory.GetCurrentDirectory(), accredited.Contract_number + DateTime.Now.ToString("yyyy-mm-dd") + ".pdf"), FileMode.OpenOrCreate))
+                {
+                    memoryStream.CopyTo(fs);
+                    fs.Flush();
+
+                    cartaMandato.Path_Contract = $"{configurations.Find(p => p.Configuration_Name == "URL_APP").Configuration_Value}{accredited.Contract_number}{DateTime.Now:yyyy-mm-dd}.pdf";
+                    this._AcreditedCartaMandatoWrite.Update(cartaMandato);
                 }
 
                 memoryStream.Position = 0;
@@ -221,6 +225,7 @@ namespace PrestaQi.Service.ProcessServices
             }
             catch (Exception exception)
             {
+                //throw new SystemValidationException($"Error update Spei: {exception}");
                 return false;
             }
         }
