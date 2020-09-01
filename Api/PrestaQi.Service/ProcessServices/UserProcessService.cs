@@ -261,13 +261,9 @@ namespace PrestaQi.Service.ProcessServices
                                 Mail = fields[10]
                             };
 
-                            if (investor.Account_Number.Length != 10)
+                            if (investor.Account_Number.Length > 1 && investor.Account_Number.Length <= 11)
                             {
-                                save = false;
-                                messages.Append($"{Environment.NewLine} - El Número de cuenta [{investor.Account_Number}] debe estar formado por 10 dígitos. Línea: {row}");
-                            }
-                            else
-                            {
+
                                 long accountNumber = 0;
                                 long.TryParse(investor.Account_Number, out accountNumber);
 
@@ -276,6 +272,11 @@ namespace PrestaQi.Service.ProcessServices
                                     save = false;
                                     messages.Append($"{Environment.NewLine} - El Número de cuenta [{investor.Account_Number}] no tiene el formato correcto. Línea: {row}");
                                 }
+                            }
+                            else
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - El Número de cuenta [{investor.Account_Number}] debe estar formado por menos de 12 dígitos. Línea: {row}");
                             }
 
                             if (investor.Clabe.Length != 18)
@@ -423,12 +424,7 @@ namespace PrestaQi.Service.ProcessServices
                                 }
                             }
 
-                            if (accredited.Account_Number.Length != 10)
-                            {
-                                save = false;
-                                messages.Append($"{Environment.NewLine} - El Número de cuenta [{accredited.Account_Number}] debe estar formado por 10 dígitos. Línea: {row}");
-                            }
-                            else
+                            if (accredited.Account_Number.Length > 1 && accredited.Account_Number.Length <= 11 )
                             {
                                 long accountNumber = 0;
                                 long.TryParse(accredited.Account_Number, out accountNumber);
@@ -438,6 +434,11 @@ namespace PrestaQi.Service.ProcessServices
                                     save = false;
                                     messages.Append($"{Environment.NewLine} - El Número de cuenta [{accredited.Account_Number}] no tiene el formato correcto. Línea: {row}");
                                 }
+                            }
+                            else
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - El Número de cuenta [{accredited.Account_Number}] debe estar formado por 10 dígitos. Línea: {row}");
                             }
 
                             if (accredited.Clabe.Length != 18)

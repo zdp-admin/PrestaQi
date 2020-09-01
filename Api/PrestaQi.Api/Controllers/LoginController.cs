@@ -71,17 +71,17 @@ namespace PrestaQi.Api.Controllers
             switch (user.Type)
             {
                 case 1:
-                    nameComplete = $"{((User)user.User).First_Name} {((User)user.User).Last_Name}";
+                    nameComplete = $"{((User)user.User).First_Name.TrimStart().TrimEnd()} {((User)user.User).Last_Name.TrimStart().TrimEnd()}";
                     mail = ((User)user.User).Mail;
                     id = ((User)user.User).id;
                     break;
                 case 2:
-                    nameComplete = $"{((Investor)user.User).First_Name} {((Investor)user.User).Last_Name}";
+                    nameComplete = $"{((Investor)user.User).First_Name.TrimStart().TrimEnd()} {((Investor)user.User).Last_Name.TrimStart().TrimEnd()}";
                     mail = ((Investor)user.User).Mail;
                     id = ((Investor)user.User).id;
                     break;
                 case 3:
-                    nameComplete = $"{((Accredited)user.User).First_Name} {((Accredited)user.User).Last_Name}";
+                    nameComplete = $"{((Accredited)user.User).First_Name.TrimStart().TrimEnd()} {((Accredited)user.User).Last_Name.TrimStart().TrimEnd()}";
                     mail = ((Accredited)user.User).Mail;
                     id = ((Accredited)user.User).id;
                     break;
