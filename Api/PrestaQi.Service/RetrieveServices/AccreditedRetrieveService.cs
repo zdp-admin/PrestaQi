@@ -20,6 +20,7 @@ namespace PrestaQi.Service.RetrieveServices
         IRetrieveService<Institution> _InsitutionRetrieveService;
         IRetrieveService<TypeContract> _TypeContractService;
         IProcessService<Advance> _AdvanceProcessService;
+        IRetrieveService<Configuration> _ConfigurationRetrieveService;
 
         public AccreditedRetrieveService(
             IRetrieveRepository<Accredited> repository,
@@ -28,7 +29,8 @@ namespace PrestaQi.Service.RetrieveServices
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<Institution> insitutionRetrieveService,
             IRetrieveService<TypeContract> typeContractService,
-            IProcessService<Advance> advanceProcessService
+            IProcessService<Advance> advanceProcessService,
+            IRetrieveService<Configuration> configurationRetrieveService
             ) : base(repository)
         {
             this._PeriodRetrieveService = periodRetrieveService;
@@ -37,6 +39,7 @@ namespace PrestaQi.Service.RetrieveServices
             this._InsitutionRetrieveService = insitutionRetrieveService;
             this._TypeContractService = typeContractService;
             this._AdvanceProcessService = advanceProcessService;
+            this._ConfigurationRetrieveService = configurationRetrieveService;
         }
 
         public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
@@ -94,12 +97,15 @@ namespace PrestaQi.Service.RetrieveServices
 
         IEnumerable<Accredited> GetList(List<Accredited> list)
         {
-            
+            var configurations = this._ConfigurationRetrieveService.Where(p => true).ToList();
             var periods = this._PeriodRetrieveService.Where(p => p.User_Type == 2).ToList();
             var companies = this._CompanyRetrieveService.Where(p => true).ToList();
             var institutions = this._InsitutionRetrieveService.Where(p => true).ToList();
             var typeContracts = this._TypeContractService.Where(p => true).ToList();
 
+            double gross_percentage = Convert.ToDouble(configurations.Find(p => p.Configuration_Name == "GROSS_MONTHLY_SALARY_PERCENTAGE").Configuration_Value) / 100;
+            double net_percentage = Convert.ToDouble(configurations.Find(p => p.Configuration_Name == "NET_MONTHLY_SALARY_PERCENTAGE").Configuration_Value) / 100;
+            
             list.ForEach(p =>
             {
                 p.Institution_Name = institutions.FirstOrDefault(institution => institution.id == p.Institution_Id).Description;
@@ -113,6 +119,14 @@ namespace PrestaQi.Service.RetrieveServices
                 {
                     Accredited_Id = p.id
                 }).Maximum_Amount;
+
+                if (p.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.WagesAndSalaries)
+                {
+                    p.Advance_Autorhized_Amount = Math.Round(p.Gross_Monthly_Salary * gross_percentage, 2);
+                    p.Advance_Via_Payroll = Math.Round(p.Net_Monthly_Salary * net_percentage, 2);
+                    p.Authorized_Advance_After_Obligations = Math.Round(p.Advance_Autorhized_Amount - p.Other_Obligations, 2);
+                    p.Payroll_Advance_Authorized_After_Obligations = Math.Round(p.Advance_Via_Payroll - p.Other_Obligations, 2);
+                }
             });
 
             return list;

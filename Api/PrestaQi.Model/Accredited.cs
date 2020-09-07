@@ -49,6 +49,10 @@ namespace PrestaQi.Model
         public string Position { get => _position.Decrypt(); set => _position = value.Encrypt(); }
         [Column("net_monthly_salary")]
         public double Net_Monthly_Salary { get; set; }
+        [Column("gross_monthly_salary")]
+        public double Gross_Monthly_Salary { get; set; }
+        [Column("other_obligations")]
+        public double Other_Obligations { get; set; }
         [Column("rfc")]
         [Encrypted(nameof(_rfc))]
         public string Rfc { get => _rfc.Decrypt(); set => _rfc = value.Encrypt(); }

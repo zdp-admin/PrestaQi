@@ -57,5 +57,11 @@
            info = 3,
            error = 4
         }
+
+        public enum AccreditedContractType
+        {
+            WagesAndSalaries = 1,
+            AssimilatedToSalary = 2
+        }
     }
 }
