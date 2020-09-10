@@ -12,7 +12,7 @@ using PrestaQi.Model.Dto.Output;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]"), Authorize]
     [ApiController]
     public class AccreditedsController : CustomController
     {

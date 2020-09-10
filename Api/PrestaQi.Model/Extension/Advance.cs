@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrestaQi.Model
 {
@@ -10,5 +11,7 @@ namespace PrestaQi.Model
         public double Initial { get; set; }
         [NotMapped]
         public double Final { get; set; }
+        [NotMapped]
+        public List<AdvanceDetail>  AdvanceDetails { get; set; }
     }
 }
