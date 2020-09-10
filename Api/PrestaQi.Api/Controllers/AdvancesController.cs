@@ -55,7 +55,7 @@ namespace PrestaQi.Api.Controllers
         public IActionResult CalculateAdvance(CalculateAmount calculateAmount)
         {
             calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
-            return Ok(this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(calculateAmount));
+            return Ok(this._AdvanceProcessService.ExecuteProcess<CalculateAmount, List<Advance>>(calculateAmount).FirstOrDefault());
         }
 
         [HttpPost]
@@ -63,15 +63,15 @@ namespace PrestaQi.Api.Controllers
         {
             calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
 
-            var limitCredit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(new CalculateAmount()
+            var limitCredit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, List<Advance>>(new CalculateAmount()
             {
                 Accredited_Id = calculateAmount.Accredited_Id,
                 Amount = 0
             });
 
-            if (calculateAmount.Amount >= limitCredit.Maximum_Amount)
+            if (calculateAmount.Amount >= limitCredit.FirstOrDefault().Maximum_Amount)
                 throw new SystemValidationException($"No se puede realizar el préstamos, ya que la cantidad {calculateAmount.Amount:C} " +
-                    $"excede el monto máximo {limitCredit.Maximum_Amount:C}");
+                    $"excede el monto máximo {limitCredit.FirstOrDefault().Maximum_Amount:C}");
             else
                  return Ok(this._AdvanceWriteService.Create<CalculateAmount, bool>(calculateAmount), "Generator Advance");
         }

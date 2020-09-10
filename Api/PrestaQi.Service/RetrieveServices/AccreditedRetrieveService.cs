@@ -115,10 +115,10 @@ namespace PrestaQi.Service.RetrieveServices
                 p.Type = (int)PrestaQiEnum.UserType.Acreditado;
                 p.TypeName = PrestaQiEnum.UserType.Acreditado.ToString();
                 p.TypeContract = typeContracts.FirstOrDefault(tc => tc.id == p.Type_Contract_Id);
-                p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(new CalculateAmount()
+                p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, List<Advance>>(new CalculateAmount()
                 {
                     Accredited_Id = p.id
-                }).Maximum_Amount;
+                }).FirstOrDefault().Maximum_Amount;
 
                 if (p.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.WagesAndSalaries)
                 {

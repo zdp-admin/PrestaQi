@@ -6,5 +6,9 @@ namespace PrestaQi.Model
     {
         [NotMapped]
         public double Maximum_Amount { get; set; }
+        [NotMapped]
+        public double Initial { get; set; }
+        [NotMapped]
+        public double Final { get; set; }
     }
 }

@@ -9,13 +9,14 @@ using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
 
 namespace PrestaQi.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]"), Authorize]
     [ApiController]
     public class UsersController : CustomController
     {
@@ -240,7 +241,7 @@ namespace PrestaQi.Api.Controllers
 
             var accredited = data.User as Accredited;
             var calculateAmount = new CalculateAmount { Accredited_Id = accredited.id };
-            var advance = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(calculateAmount);
+            var advance = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, List<Advance>>(calculateAmount).FirstOrDefault();
 
             var contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
 
