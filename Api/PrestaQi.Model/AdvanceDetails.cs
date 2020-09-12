@@ -33,5 +33,9 @@ namespace PrestaQi.Model
         public DateTime Limit_Date { get; set; }
         [Column("day_for_payment")]
         public int Day_For_Payment { get; set; }
+        [Column("initial")]
+        public double Initial { get; set; }
+        [Column("final")]
+        public double Final { get; set; }
     }
 }

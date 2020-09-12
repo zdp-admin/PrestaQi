@@ -20,6 +20,8 @@ namespace PrestaQi.Service.WriteServices
         IWriteService<SpeiResponse> _SpeiWriteService;
         IRetrieveService<Accredited> _AccreditedRetrieveService;
         IWriteService<AdvanceDetail> _AdvanceDetailWriteService;
+        IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
+        IRetrieveService<Advance> _AdvanceRepository;
 
         public AdvanceWriteService(
             IWriteRepository<Advance> repository,
@@ -27,7 +29,9 @@ namespace PrestaQi.Service.WriteServices
             IProcessService<ordenPagoWS> ordenPagoProcessService,
             IWriteService<SpeiResponse> speiWriteService,
             IRetrieveService<Accredited> accreditedRetrieveService,
-            IWriteService<AdvanceDetail> advanceDetailWriteService
+            IWriteService<AdvanceDetail> advanceDetailWriteService,
+            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
+            IRetrieveService<Advance> advanceRepository
             ) : base(repository)
         {
             this._AdvacenProcessService = advanceProcessService;
@@ -35,6 +39,8 @@ namespace PrestaQi.Service.WriteServices
             this._SpeiWriteService = speiWriteService;
             this._AccreditedRetrieveService = accreditedRetrieveService;
             this._AdvanceDetailWriteService = advanceDetailWriteService;
+            this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
+            this._AdvanceRepository = advanceRepository;
         }
 
         public bool Create(CalculateAmount calculateAmount)
@@ -51,34 +57,10 @@ namespace PrestaQi.Service.WriteServices
                 advance.Paid_Status = (int)PrestaQiEnum.AdvanceStatus.NoPagado;
             });
 
-            if (advances.Count == 1)
                 advance = advances.FirstOrDefault();
-            else
-            {
-                advance = new Advance()
-                {
-                    Accredited_Id = advances.FirstOrDefault().Accredited_Id,
-                    Amount = Math.Round(advances.Sum(p => p.Amount), 2),
-                    Comission = advances.FirstOrDefault().Comission,
-                    created_at = DateTime.Now,
-                    Date_Advance = DateTime.Now,
-                    Day_For_Payment = advances.FirstOrDefault().Day_For_Payment,
-                    Day_Moratorium = advances.FirstOrDefault().Day_Moratorium,
-                    Enabled = false,
-                    Interest = advances.Sum(p => p.Interest),
-                    Interest_Moratorium = Math.Round(advances.Sum(p => p.Interest_Moratorium), 2),
-                    Interest_Rate = advances.FirstOrDefault().Interest_Rate,
-                    Limit_Date = advances.FirstOrDefault().Limit_Date,
-                    Paid_Status = (int)PrestaQiEnum.AdvanceStatus.NoPagado,
-                    Promotional_Setting = advances.FirstOrDefault().Promotional_Setting,
-                    Requested_Day = advances.FirstOrDefault().Requested_Day,
-                    Subtotal = Math.Round(advances.Sum(p => p.Subtotal), 2),
-                    Total_Withhold = Math.Round(advances.Sum(p => p.Total_Withhold), 2),
-                    updated_at = DateTime.Now,
-                    Vat = advances.Sum(p => p.Vat)
-                };
-            }
-          
+
+            
+
             var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
             {
                 Accredited_Id = calculateAmount.Accredited_Id,
@@ -89,12 +71,12 @@ namespace PrestaQi.Service.WriteServices
             {
                 if (spei.resultado.id > 0)
                 {
-                    bool created = base.Create(advance);
+                   bool created = base.Create(advance);
 
                     if (created)
                     {
                         if (advances.Count > 1)
-                            SaveDetail(advance.id, advances);
+                            SaveDetail(advance.id, accredited.id, advances);
 
                         this._SpeiWriteService.Create(new SpeiResponse()
                         {
@@ -104,7 +86,6 @@ namespace PrestaQi.Service.WriteServices
                             tracking_id = spei.resultado.id,
                             tracking_key = spei.resultado.claveRastreo
                         });
-
                     }
 
                     return created;
@@ -120,9 +101,21 @@ namespace PrestaQi.Service.WriteServices
 
         }
 
-        private void SaveDetail(int advanceId, List<Advance> advances)
+        private void SaveDetail(int advanceId, int accreditedId, List<Advance> advances)
         {
+            DateTime limitDate = advances.FirstOrDefault().Limit_Date;
+            double amount = advances.FirstOrDefault().Amount;
+
+            advances.RemoveAt(0);
             List<AdvanceDetail> advanceDetails = new List<AdvanceDetail>();
+
+            var details = (from a in this._AdvanceDetailRetrieveService.Where(p => true)
+                           join b in this._AdvanceRepository.Where(p => p.Accredited_Id == accreditedId) on a.Advance_Id equals b.id
+                           where a.Limit_Date.Date >= limitDate.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
+                           select a).OrderBy(p => p.Advance_Id).ToList();
+            
+            if (details.Count > 0) 
+                this._AdvanceDetailWriteService.Delete(details);
 
             advances.ForEach(p =>
             {
@@ -143,13 +136,30 @@ namespace PrestaQi.Service.WriteServices
                     Subtotal = p.Subtotal,
                     Total_Withhold = p.Total_Withhold,
                     updated_at = p.updated_at,
-                    Vat = p.Vat
+                    Vat = p.Vat,
+                    Initial = p.Initial,
+                    Final = p.Final
                 };
 
                 advanceDetails.Add(advanceDetail);
             });
 
             this._AdvanceDetailWriteService.Create(advanceDetails);
+
+            var detail = (from a in this._AdvanceDetailRetrieveService.Where(p => true)
+                          join b in this._AdvanceRepository.Where(p => p.Accredited_Id == accreditedId) on a.Advance_Id equals b.id
+                          where a.Limit_Date.Date == DateTime.Now.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
+                          select a).OrderBy(p => p.Advance_Id).FirstOrDefault();
+
+            if (detail != null)
+            {
+                detail.Initial = detail.Initial + amount;
+                detail.Final = Math.Round(detail.Initial - detail.Amount, MidpointRounding.AwayFromZero);
+
+                this._AdvanceDetailWriteService.Update(detail);
+            }
+
+            
         }
 
     }

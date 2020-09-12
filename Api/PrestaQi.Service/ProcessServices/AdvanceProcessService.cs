@@ -25,6 +25,7 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Period> _PeriodRetrieveService;
         IRetrieveService<PeriodCommission> _PeriodCommissionRetrieve;
         IRetrieveService<PeriodCommissionDetail> _PeriodCommissionDetailRetrieve;
+        IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
 
 
         public AdvanceProcessService(
@@ -33,7 +34,8 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<Configuration> configurationRetrieveService,
             IRetrieveService<Period> periodRetrieveService,
             IRetrieveService<PeriodCommission> periodCommissionRetrieve,
-            IRetrieveService<PeriodCommissionDetail> periodCommissionDetailRetrieve
+            IRetrieveService<PeriodCommissionDetail> periodCommissionDetailRetrieve,
+            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService
             )
         {
             this._AcreditedRetrieveService = acreditedRetrieveService;
@@ -42,6 +44,7 @@ namespace PrestaQi.Service.ProcessServices
             this._PeriodRetrieveService = periodRetrieveService;
             this._PeriodCommissionRetrieve = periodCommissionRetrieve;
             this._PeriodCommissionDetailRetrieve = periodCommissionDetailRetrieve;
+            this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
     }
 
         public List<Advance> ExecuteProcess(CalculateAmount calculateAmount)
@@ -55,10 +58,17 @@ namespace PrestaQi.Service.ProcessServices
             if (accredited.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.AssimilatedToSalary || result.Item2)
                 return new List<Advance>() { result.Item1 };
 
-            if (result.Item1.Total_Withhold <= maximumAmountDiscountByPeriod)
+            var advanceDetails = (from a in this._AdvanceDetailRetrieveService.Where(p => true)
+                                  join b in this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id) on a.Advance_Id equals b.id
+                                  where a.Limit_Date.Date >= result.Item1.Limit_Date.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
+                                  select a).OrderBy(p => p.Advance_Id).ToList();
+
+
+            if ((result.Item1.Total_Withhold + advanceDetails.Sum(p => p.Total_Withhold)) <= maximumAmountDiscountByPeriod)
                 return new List<Advance>() { result.Item1 };
 
-            var resultList = CalculateAdvanceList(calculateAmount, accredited, result.Item1, periodPercentage, maximumAmountDiscountByPeriod);
+            var resultList = CalculateAdvanceList(calculateAmount, accredited, result.Item1, periodPercentage, maximumAmountDiscountByPeriod,
+                advanceDetails);
 
             return resultList;
         }
@@ -191,8 +201,23 @@ namespace PrestaQi.Service.ProcessServices
         }
 
         private List<Advance> CalculateAdvanceList(CalculateAmount calculateAmount, Accredited accredited, Advance firtsAdvance,
-            double periodPercentage, double maximumAmountDiscountByPeriod)
+            double periodPercentage, double maximumAmountDiscountByPeriod, List<AdvanceDetail> advanceDetails)
         {
+            Advance principalAdvance = firtsAdvance.CloneJson<Advance>();
+
+            if (advanceDetails.Count > 0)
+            {
+                var details = advanceDetails.Where(p => p.Limit_Date.Date == firtsAdvance.Limit_Date.Date);
+
+                firtsAdvance.Amount += details.Sum(p => p.Initial);
+                firtsAdvance.Comission += details.Sum(p => p.Comission);
+                firtsAdvance.Interest += details.Sum(p => p.Interest);
+                firtsAdvance.Vat += details.Sum(p => p.Vat);
+                firtsAdvance.Subtotal += details.Sum(p => p.Subtotal);
+                calculateAmount.Amount = firtsAdvance.Amount;
+                firtsAdvance.Total_Withhold = firtsAdvance.Amount + firtsAdvance.Subtotal + firtsAdvance.Vat;
+            }
+
             double grossPercentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "GROSS_MONTHLY_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
             double netPercentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "NET_MONTHLY_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
             double maximumAmountDiscountByMonth = Math.Round((accredited.Gross_Monthly_Salary * grossPercentage) - accredited.Other_Obligations, 2);
@@ -202,7 +227,7 @@ namespace PrestaQi.Service.ProcessServices
             if (numberPayments < 2 && firtsAdvance.Total_Withhold > maximumAmountDiscountByPeriod)
                 numberPayments = 2;
 
-            int numberPaymentsTotal = Convert.ToInt32(Math.Truncate(firtsAdvance.Total_Withhold / maximumAmountDiscountByPeriod) + 1);
+            int numberPaymentsTotal = Convert.ToInt32(Math.Round(firtsAdvance.Total_Withhold / maximumAmountDiscountByPeriod) + 1);
             double amountNumberPayment = firtsAdvance.Amount / numberPayments;
 
             if (amountNumberPayment + firtsAdvance.Subtotal + firtsAdvance.Vat < maximumAmountDiscountByPeriod)
@@ -217,11 +242,12 @@ namespace PrestaQi.Service.ProcessServices
             }
 
             firtsAdvance.Initial = calculateAmount.Amount;
-            firtsAdvance.Final = Math.Round(firtsAdvance.Initial - firtsAdvance.Amount);
+            firtsAdvance.Final = Math.Round(firtsAdvance.Initial - firtsAdvance.Amount, MidpointRounding.AwayFromZero);
 
 
             List<Advance> advances = new List<Advance>();
             firtsAdvance.Date_Advance = DateTime.Now;
+
             advances.Add(firtsAdvance);
 
             int endDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
@@ -248,7 +274,7 @@ namespace PrestaQi.Service.ProcessServices
                 double interestAux2 = ((accredited.Net_Monthly_Salary / 2) > 0 && advanceAux.Total_Withhold == 0) ? advanceAux.Final * dayForPayment * 0.0017 : 0;
                 var nextInterest = Math.Round(nextCommission * dayForPayment * 0.0017 + interestAux + interestAux2, 2);
 
-                var nextVat = Math.Round((nextCommission + nextInterest) * vat, 2);
+                var nextVat = Math.Round((advanceAux.Comission + nextInterest) * vat, 2);
 
                 if (amountNumberPayment + nextInterest + nextVat < maximumAmountDiscountByPeriod)
                 {
@@ -276,11 +302,13 @@ namespace PrestaQi.Service.ProcessServices
                     Date_Advance = advanceAux.Limit_Date,
                     Interest_Rate = accredited.Interest_Rate,
                     Initial = advanceAux.Final,
-                    Final = Math.Round(advanceAux.Final - amount)
+                    Final = Math.Round(advanceAux.Final - amount, MidpointRounding.AwayFromZero)
                 };
 
                 advances.Add(advance);
             }
+
+            advances.Insert(0, principalAdvance);
 
             return advances;
         }

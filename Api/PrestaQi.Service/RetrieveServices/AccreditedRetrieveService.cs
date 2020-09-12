@@ -122,6 +122,7 @@ namespace PrestaQi.Service.RetrieveServices
 
                 if (p.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.WagesAndSalaries)
                 {
+
                     p.Advance_Autorhized_Amount = Math.Round(p.Gross_Monthly_Salary * gross_percentage, 2);
                     p.Advance_Via_Payroll = Math.Round(p.Net_Monthly_Salary * net_percentage, 2);
                     p.Authorized_Advance_After_Obligations = Math.Round(p.Advance_Autorhized_Amount - p.Other_Obligations, 2);

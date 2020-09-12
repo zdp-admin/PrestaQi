@@ -10,10 +10,12 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace PrestaQi.Service.Tools
 {
-    public class Utilities
+    public static class Utilities
     {
         public static string GetPasswordRandom()
         {
@@ -173,6 +175,54 @@ namespace PrestaQi.Service.Tools
         }
 
 
+        public static T Clone<T>(T source)
+        {
+            if (!typeof(T).IsSerializable)
+            {
+                throw new ArgumentException("The type must be serializable.", nameof(source));
+            }
 
+            // Don't serialize a null object, simply return the default for that object
+            if (Object.ReferenceEquals(source, null))
+            {
+                return default(T);
+            }
+
+            IFormatter formatter = new BinaryFormatter();
+            Stream stream = new MemoryStream();
+            using (stream)
+            {
+                formatter.Serialize(stream, source);
+                stream.Seek(0, SeekOrigin.Begin);
+                return (T)formatter.Deserialize(stream);
+            }
+        }
+
+        public static T CloneJson<T>(this T source)
+        {
+            // Don't serialize a null object, simply return the default for that object
+            if (Object.ReferenceEquals(source, null))
+            {
+                return default(T);
+            }
+
+            // initialize inner objects individually
+            // for example in default constructor some list property initialized with some values,
+            // but in 'source' these items are cleaned -
+            // without ObjectCreationHandling.Replace default constructor values will be added to result
+            var deserializeSettings = new JsonSerializerSettings { ObjectCreationHandling = ObjectCreationHandling.Replace };
+
+            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source), deserializeSettings);
+        }
+
+        public static double RoundUpValue(double value, int decimalpoint)
+        {
+            var result = Math.Round(value, decimalpoint);
+            if (result < value)
+            {
+                result += Math.Pow(10, -decimalpoint);
+            }
+            return result;
+        }
     }
 }
