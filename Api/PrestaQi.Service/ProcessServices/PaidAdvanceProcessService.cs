@@ -12,21 +12,27 @@ namespace PrestaQi.Service.ProcessServices
     {
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IWriteService<Advance> _AdvanceWriteService;
+        IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
+        IWriteService<AdvanceDetail> _AdvanceDetailWriteService;
         IWriteService<PaidAdvance> _PaidAdvanceWriteService;
         IRetrieveService<PaidAdvance> _PaidAdvanceRetrieveService;
+
 
         public PaidAdvanceProcessService(
             IRetrieveService<Advance> advanceRetrieveService,
             IWriteService<Advance> advanceWriteService,
             IWriteService<PaidAdvance> paidAdvanceWriteService,
-            IRetrieveService<PaidAdvance> paidAdvanceRetrieveService
+            IRetrieveService<PaidAdvance> paidAdvanceRetrieveService,
+            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
+            IWriteService<AdvanceDetail> advanceDetailWriteService
             )
         {
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._AdvanceWriteService = advanceWriteService;
             this._PaidAdvanceWriteService = paidAdvanceWriteService;
             this._PaidAdvanceRetrieveService = paidAdvanceRetrieveService;
-
+            this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
+            this._AdvanceDetailWriteService = advanceDetailWriteService;
         }
 
         public bool ExecuteProcess(SetPayAdvance data)
@@ -44,7 +50,8 @@ namespace PrestaQi.Service.ProcessServices
 
             if (createPay)
             {
-                var advances = this._AdvanceRetrieveService.Where(p => data.AdvanceIds.Contains(p.id)).ToList();
+                var advanceIds = data.AdvanceIds.Where(p => p.Contract_Type_Id == 2).Select(p => p.Advance_Id);
+                var advances = this._AdvanceRetrieveService.Where(p => advanceIds.Contains(p.id)).ToList();
                 advances.ForEach(p =>
                 {
                     p.updated_at = DateTime.Now;
@@ -53,6 +60,17 @@ namespace PrestaQi.Service.ProcessServices
                         (int)PrestaQiEnum.AdvanceStatus.Pagado;
                 });
                 this._AdvanceWriteService.Update(advances);
+
+                var advanceDetailIds = data.AdvanceIds.Where(p => p.Contract_Type_Id == 1).Select(p => p.Advance_Id);
+                var advanceDetails = this._AdvanceDetailRetrieveService.Where(p => advanceIds.Contains(p.id)).ToList();
+                advanceDetails.ForEach(p =>
+                {
+                    p.updated_at = DateTime.Now;
+                    p.Enabled = data.IsPartial ? true : false;
+                    p.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
+                        (int)PrestaQiEnum.AdvanceStatus.Pagado;
+                });
+                this._AdvanceDetailWriteService.Update(advanceDetails);
 
                 if (!data.IsPartial)
                 {

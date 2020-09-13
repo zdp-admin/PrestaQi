@@ -4,6 +4,7 @@ using OpenXmlPowerTools;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Model.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,13 +18,15 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<PaidAdvance> _PaidAdvanceRetrieveService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
+        IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
 
         public AccreditedProcessService(
             IRetrieveService<Company> companyRetrieveService,
             IRetrieveService<Accredited> accreditedRetrieveService,
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<PaidAdvance> paidAdvanceRetrieveService,
-            IRetrieveService<Configuration> configurationRetrieveService
+            IRetrieveService<Configuration> configurationRetrieveService,
+            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService
             )
         {
             this._CompanyRetrieveService = companyRetrieveService;
@@ -31,6 +34,7 @@ namespace PrestaQi.Service.ProcessServices
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._PaidAdvanceRetrieveService = paidAdvanceRetrieveService;
             this._ConfigurationRetrieveService = configurationRetrieveService;
+            this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
         }
 
         public List<AdvanceReceivable> ExecuteProcess(AdvancesReceivableByFilter filter)
@@ -65,24 +69,38 @@ namespace PrestaQi.Service.ProcessServices
                 Interest_Rate = accredited.Interest_Rate,
                 Moratoruim_Interest_Rate = accredited.Moratoruim_Interest_Rate,
                 NameComplete = $"{accredited.First_Name} {accredited.Last_Name}",
-                Is_Blocked = accredited.Is_Blocked
+                Is_Blocked = accredited.Is_Blocked,
+                TypeContractId = (int)accredited.Type_Contract_Id
             }).ToList();
 
             detail.ForEach(accredited =>
             {
-                accredited.Advances.ForEach(advance =>
+                if (accredited.TypeContractId == (int)PrestaQiEnum.AccreditedContractType.AssimilatedToSalary)
                 {
-                    advance.Day_Moratorium = DateTime.Now.Date > advance.Limit_Date.Date ?
-                        (DateTime.Now.Date - advance.Limit_Date).Days : 0;
-                    advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
-                    Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
-                    0;
-                    advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
-                    advance.Vat = Math.Round(advance.Subtotal * vat, 2);
-                    advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
-                });
+                    accredited.Advances.ForEach(advance =>
+                    {
+                        advance.Day_Moratorium = DateTime.Now.Date > advance.Limit_Date.Date ?
+                            (DateTime.Now.Date - advance.Limit_Date).Days : 0;
+                        advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
+                        Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
+                        0;
+                        advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
+                        advance.Vat = Math.Round(advance.Subtotal * vat, 2);
+                        advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
+                    });
 
-                accredited.Payment = Math.Round(accredited.Advances.Sum(p => p.Total_Withhold), 2);
+                    accredited.Payment = Math.Round(accredited.Advances.Sum(p => p.Total_Withhold), 2);
+                }
+                else
+                {
+                    accredited.Advances.Clear();
+                    var advanceDetails = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.Accredited_Id && p.Paid_Status == 2).ToList();
+                    advanceDetails.Add(this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.Accredited_Id && p.Paid_Status == 0).FirstOrDefault());
+
+                    accredited.AdvanceDetails = advanceDetails;
+
+                    accredited.Payment = Math.Round(accredited.AdvanceDetails.Sum(p => p.Total_Withhold), 2);
+                }
             });
 
             var result = companies.Select(company => new AdvanceReceivable()

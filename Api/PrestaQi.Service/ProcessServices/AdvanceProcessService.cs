@@ -58,10 +58,11 @@ namespace PrestaQi.Service.ProcessServices
             if (accredited.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.AssimilatedToSalary || result.Item2)
                 return new List<Advance>() { result.Item1 };
 
-            var advanceDetails = (from a in this._AdvanceDetailRetrieveService.Where(p => true)
+            var advanceDetails = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
+            p.Limit_Date.Date >= result.Item1.Limit_Date.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).ToList();  /*(from a in this._AdvanceDetailRetrieveService.Where(p => true)
                                   join b in this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id) on a.Advance_Id equals b.id
                                   where a.Limit_Date.Date >= result.Item1.Limit_Date.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
-                                  select a).OrderBy(p => p.Advance_Id).ToList();
+                                  select a).OrderBy(p => p.Advance_Id).ToList();*/
 
 
             if ((result.Item1.Total_Withhold + advanceDetails.Sum(p => p.Total_Withhold)) <= maximumAmountDiscountByPeriod)
@@ -407,10 +408,40 @@ namespace PrestaQi.Service.ProcessServices
         {
             try
             {
+                var accredited = this._AcreditedRetrieveService.Find(calculatePromotional.Accredited_Id);
                 int finantialDay = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "FINANCIAL_DAYS").FirstOrDefault().Configuration_Value);
                 double vat = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value) / 100;
                 var advance = this._AdvanceRetrieveService.Find(calculatePromotional.Advance_Id);
-                var accredited = this._AcreditedRetrieveService.Find(advance.Accredited_Id);
+
+                if (advance == null)
+                    throw new SystemValidationException("No se encontró el adelando");
+
+                advance.Promotional_Setting = calculatePromotional.Amount;
+                advance.Day_Moratorium = DateTime.Now.Date > advance.Limit_Date.Date ?
+                    (DateTime.Now.Date - advance.Limit_Date.Date).Days : 0;
+                advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
+                Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
+                0;
+                advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
+                advance.Vat = Math.Round(advance.Subtotal * vat, 2);
+                advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
+
+                return advance;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error al calcular el Ajuste: {exception.Message}");
+            }
+        }
+
+        public AdvanceDetail ExecuteProcess(CalculatePromotionalDetail calculatePromotional)
+        {
+            try
+            {
+                var accredited = this._AcreditedRetrieveService.Find(calculatePromotional.Accredited_Id);
+                int finantialDay = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "FINANCIAL_DAYS").FirstOrDefault().Configuration_Value);
+                double vat = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value) / 100;
+                var advance = this._AdvanceDetailRetrieveService.Find(calculatePromotional.Advance_Id);
 
                 if (advance == null)
                     throw new SystemValidationException("No se encontró el adelando");

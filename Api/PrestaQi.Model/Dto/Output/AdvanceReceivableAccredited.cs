@@ -15,5 +15,7 @@ namespace PrestaQi.Model.Dto.Output
         public double Payment { get; set; }
         public bool Is_Blocked { get; set; }
         public List<Advance> Advances { get; set; }
+        public List<AdvanceDetail> AdvanceDetails { get; set; }
+        public int TypeContractId { get; set; }
     }
 }

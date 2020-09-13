@@ -57,9 +57,7 @@ namespace PrestaQi.Service.WriteServices
                 advance.Paid_Status = (int)PrestaQiEnum.AdvanceStatus.NoPagado;
             });
 
-                advance = advances.FirstOrDefault();
-
-            
+            advance = advances.FirstOrDefault();
 
             var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
             {
@@ -71,7 +69,7 @@ namespace PrestaQi.Service.WriteServices
             {
                 if (spei.resultado.id > 0)
                 {
-                   bool created = base.Create(advance);
+                    bool created = base.Create(advance);
 
                     if (created)
                     {
@@ -121,6 +119,7 @@ namespace PrestaQi.Service.WriteServices
             {
                 AdvanceDetail advanceDetail = new AdvanceDetail()
                 {
+                    Accredited_Id = accreditedId,
                     Advance_Id = advanceId,
                     Amount = p.Amount,
                     Comission = p.Comission,
@@ -146,10 +145,12 @@ namespace PrestaQi.Service.WriteServices
 
             this._AdvanceDetailWriteService.Create(advanceDetails);
 
-            var detail = (from a in this._AdvanceDetailRetrieveService.Where(p => true)
+            var detail = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accreditedId &&
+            p.Limit_Date.Date == DateTime.Now.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).FirstOrDefault();
+                    /*(from a in this._AdvanceDetailRetrieveService.Where(p => true)
                           join b in this._AdvanceRepository.Where(p => p.Accredited_Id == accreditedId) on a.Advance_Id equals b.id
                           where a.Limit_Date.Date == DateTime.Now.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
-                          select a).OrderBy(p => p.Advance_Id).FirstOrDefault();
+                          select a).OrderBy(p => p.Advance_Id).FirstOrDefault();*/
 
             if (detail != null)
             {

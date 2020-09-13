@@ -37,5 +37,13 @@ namespace PrestaQi.Model
         public double Initial { get; set; }
         [Column("final")]
         public double Final { get; set; }
+        [Column("accredited_id")]
+        public int Accredited_Id { get; set; }
+        [Column("day_moratorium")]
+        public int Day_Moratorium { get; set; }
+        [Column("interest_moratorium")]
+        public double Interest_Moratorium { get; set; }
+        [Column("promotional_setting")]
+        public double Promotional_Setting { get; set; }
     }
 }

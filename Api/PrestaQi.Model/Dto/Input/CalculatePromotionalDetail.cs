@@ -4,11 +4,10 @@ using System.Text;
 
 namespace PrestaQi.Model.Dto.Input
 {
-    public class CalculatePromotional
+    public class CalculatePromotionalDetail
     {
         public int Advance_Id { get; set; }
         public int Accredited_Id { get; set; }
-        public int Type_Contract_Id { get; set; }
         public int Amount { get; set; }
     }
 }

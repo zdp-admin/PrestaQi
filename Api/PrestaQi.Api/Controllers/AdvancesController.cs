@@ -27,6 +27,7 @@ namespace PrestaQi.Api.Controllers
         IProcessService<ExportAdvance> _ExportAdvanceProcessService;
         private NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
         IWriteService<Model.Notification> _NotificationWriteService;
+        IWriteService<AdvanceDetail> _AdvanceDetailWriteService;
 
         public IConfiguration Configuration { get; }
 
@@ -38,7 +39,8 @@ namespace PrestaQi.Api.Controllers
             IWriteService<Model.Notification> notificationWriteService,
             NotificationsMessageHandler notificationsMessageHandler,
             IConfiguration configuration,
-            IProcessService<ExportAdvance> exportAdvanceProcessService
+            IProcessService<ExportAdvance> exportAdvanceProcessService,
+            IWriteService<AdvanceDetail> advanceDetailWriteService
             )
         {
             this._AdvanceWriteService = advanceWriteService;
@@ -48,6 +50,7 @@ namespace PrestaQi.Api.Controllers
             this._PaidAdvanceProcessService = paidAdvanceProcessService;
             this._NotificationWriteService = notificationWriteService;
             this._ExportAdvanceProcessService = exportAdvanceProcessService;
+            this._AdvanceDetailWriteService = advanceDetailWriteService;
             Configuration = configuration;
         }
 
@@ -96,9 +99,23 @@ namespace PrestaQi.Api.Controllers
         [HttpPut, Route("CalculatePromotional")]
         public IActionResult CalucaltePromotional(CalculatePromotional calculatePromotional)
         {
-            var advance = this._AdvanceProcessService.ExecuteProcess<CalculatePromotional, Advance>(calculatePromotional);
-            this._AdvanceWriteService.Update(advance);
-            return Ok(advance);
+            if (calculatePromotional.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.AssimilatedToSalary)
+            {
+                var advance = this._AdvanceProcessService.ExecuteProcess<CalculatePromotional, Advance>(calculatePromotional);
+                this._AdvanceWriteService.Update(advance);
+                return Ok(advance);
+            }
+            else
+            {
+                var advance = this._AdvanceProcessService.ExecuteProcess<CalculatePromotionalDetail, AdvanceDetail>(new CalculatePromotionalDetail()
+                {
+                    Accredited_Id = calculatePromotional.Accredited_Id,
+                    Advance_Id = calculatePromotional.Advance_Id,
+                    Amount = calculatePromotional.Amount
+                });
+                this._AdvanceDetailWriteService.Update(advance);
+                return Ok(advance);
+            }
         }
 
         [HttpGet, Route("ExportMyAdvances/{id}")]
@@ -117,10 +134,9 @@ namespace PrestaQi.Api.Controllers
                 );
         }
 
-        void SendNotifiationSetPaidAdvance(List<int> advanceIds)
+        void SendNotifiationSetPaidAdvance(List<PaidAdvanceType> advanceIds)
         {
-            var accreditedIds = this._AdvanceRetrieveService.Where(p => advanceIds.Contains(p.id)).Select(p => p.Accredited_Id).ToList();
-            
+            var accreditedIds = advanceIds.Select(p => p.Accredited_Id).Distinct().ToList();   
             var notification = Configuration.GetSection("Notification").GetSection("SetPaymentAdvance").Get<Model.Notification>();
 
             notification.NotificationType = PrestaQiEnum.NotificationType.SetPaymentAdvance;

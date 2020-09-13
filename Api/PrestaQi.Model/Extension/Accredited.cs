@@ -13,6 +13,8 @@ namespace PrestaQi.Model
         [NotMapped]
         public List<Advance> Advances { get; set; }
         [NotMapped]
+        public List<AdvanceDetail> AdvanceDetails { get; set; }
+        [NotMapped]
         public string Institution_Name { get; set; }
         [NotMapped]
         public int Type { get; set; }
