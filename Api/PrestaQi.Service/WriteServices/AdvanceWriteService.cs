@@ -22,6 +22,9 @@ namespace PrestaQi.Service.WriteServices
         IWriteService<AdvanceDetail> _AdvanceDetailWriteService;
         IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
         IRetrieveService<Advance> _AdvanceRepository;
+        IRetrieveService<Configuration> _ConfigutarionRetrieveService;
+        IRetrieveService<PeriodCommission> _PeriodCommissionRetrieve;
+        IRetrieveService<PeriodCommissionDetail> _PeriodCommissionDetailRetrieve;
 
         public AdvanceWriteService(
             IWriteRepository<Advance> repository,
@@ -31,7 +34,10 @@ namespace PrestaQi.Service.WriteServices
             IRetrieveService<Accredited> accreditedRetrieveService,
             IWriteService<AdvanceDetail> advanceDetailWriteService,
             IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
-            IRetrieveService<Advance> advanceRepository
+            IRetrieveService<Advance> advanceRepository,
+            IRetrieveService<Configuration> configurationRetrieveService,
+            IRetrieveService<PeriodCommission> periodCommissionRetrieve,
+            IRetrieveService<PeriodCommissionDetail> periodCommissionDetailRetrieve
             ) : base(repository)
         {
             this._AdvacenProcessService = advanceProcessService;
@@ -41,6 +47,9 @@ namespace PrestaQi.Service.WriteServices
             this._AdvanceDetailWriteService = advanceDetailWriteService;
             this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
             this._AdvanceRepository = advanceRepository;
+            this._ConfigutarionRetrieveService = configurationRetrieveService;
+            this._PeriodCommissionRetrieve = periodCommissionRetrieve;
+            this._PeriodCommissionDetailRetrieve = periodCommissionDetailRetrieve;
         }
 
         public bool Create(CalculateAmount calculateAmount)
@@ -59,11 +68,13 @@ namespace PrestaQi.Service.WriteServices
 
             advance = advances.FirstOrDefault();
 
-            var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
+            /*var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
             {
                 Accredited_Id = calculateAmount.Accredited_Id,
                 Advance = advance
-            });
+            });*/
+
+            var spei = new ResponseSpei() { resultado = new resultado() { id = 4500, claveRastreo = "TESTFF12333", descripcionError = "" } } ;
 
             try
             {
@@ -107,16 +118,23 @@ namespace PrestaQi.Service.WriteServices
             advances.RemoveAt(0);
             List<AdvanceDetail> advanceDetails = new List<AdvanceDetail>();
 
-            var details = (from a in this._AdvanceDetailRetrieveService.Where(p => true)
-                           join b in this._AdvanceRepository.Where(p => p.Accredited_Id == accreditedId) on a.Advance_Id equals b.id
+            var advancesDetails = this._AdvanceDetailRetrieveService.Where(p => true).ToList();
+            var advancesList = this._AdvanceRepository.Where(p => p.Accredited_Id == accreditedId).ToList();
+
+            var details = (from a in advancesDetails
+                           join b in advancesList on a.Advance_Id equals b.id
                            where a.Limit_Date.Date >= limitDate.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
                            select a).OrderBy(p => p.Advance_Id).ToList();
             
             if (details.Count > 0) 
                 this._AdvanceDetailWriteService.Delete(details);
 
+            Accredited accredited = this._AccreditedRetrieveService.Find(accreditedId);
+
             advances.ForEach(p =>
             {
+                var recalcInteres = this.CalculateInterestAndVat(
+                    new CalculateAmount() { Amount = p.Amount, Accredited_Id = accreditedId }, accredited, p.Limit_Date.Day);
                 AdvanceDetail advanceDetail = new AdvanceDetail()
                 {
                     Accredited_Id = accreditedId,
@@ -128,14 +146,14 @@ namespace PrestaQi.Service.WriteServices
                     Date_Advance = p.Date_Advance,
                     Day_For_Payment = p.Day_For_Payment,
                     Enabled = p.Enabled,
-                    Interest = p.Interest,
+                    Interest = recalcInteres.Item1 , //p.Interest,
                     Limit_Date = p.Limit_Date,
                     Paid_Status = p.Paid_Status,
                     Requested_Day = p.Requested_Day,
                     Subtotal = p.Subtotal,
                     Total_Withhold = p.Total_Withhold,
                     updated_at = p.updated_at,
-                    Vat = p.Vat,
+                    Vat = recalcInteres.Item2, //p.Vat,
                     Initial = p.Initial,
                     Final = p.Final
                 };
@@ -161,6 +179,34 @@ namespace PrestaQi.Service.WriteServices
             }
 
             
+        }
+
+        public (double, double) CalculateInterestAndVat(CalculateAmount calculateAmount, Accredited accredited, int dayForPayment)
+        {
+            Advance advanceCalculated = new Advance();
+            DateTime startDate = DateTime.Now;
+            DateTime endDate = DateTime.Now;
+            DateTime limitDate = DateTime.Now;
+            int day = DateTime.Now.Day;
+            PeriodCommissionDetail commissionPerioDetail = new PeriodCommissionDetail();
+            double annualInterest = ((double)accredited.Interest_Rate / 100);
+            int finantialDay = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "FINANCIAL_DAYS").FirstOrDefault().Configuration_Value);
+            double vat = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value) / 100;
+
+            int endDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+
+            if (accredited.Period_Id != (int)PrestaQiEnum.PerdioAccredited.Semanal)
+            {
+                var commissionPeriodId = this._PeriodCommissionRetrieve.Where(p => p.Period_Id == accredited.Period_Id && p.Type_Month == endDay).FirstOrDefault().id;
+                commissionPerioDetail = this._PeriodCommissionDetailRetrieve.Where(p => p.Period_Commission_Id == commissionPeriodId && p.Day_Month == dayForPayment).FirstOrDefault();
+                advanceCalculated.Day_For_Payment = commissionPerioDetail.Day_Payement;
+            }
+
+            double intereset = (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Mensual) || (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal) ?
+                Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * commissionPerioDetail.Day_Payement), 2) :
+                Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * (limitDate.Date - DateTime.Now.Date).Days), 2);
+
+            return (intereset, intereset * vat);
         }
 
     }

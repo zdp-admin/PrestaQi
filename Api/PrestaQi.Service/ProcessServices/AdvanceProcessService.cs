@@ -228,13 +228,14 @@ namespace PrestaQi.Service.ProcessServices
             if (numberPayments < 2 && firtsAdvance.Total_Withhold > maximumAmountDiscountByPeriod)
                 numberPayments = 2;
 
-            int numberPaymentsTotal = Convert.ToInt32(Math.Round(firtsAdvance.Total_Withhold / maximumAmountDiscountByPeriod) + 1);
-            double amountNumberPayment = firtsAdvance.Amount / numberPayments;
+            int numberPaymentsTotal = Convert.ToInt32(Math.Round(firtsAdvance.Total_Withhold / maximumAmountDiscountByPeriod) + 1); // 2
 
-            if (amountNumberPayment + firtsAdvance.Subtotal + firtsAdvance.Vat < maximumAmountDiscountByPeriod)
+            double amountNumberPayment = firtsAdvance.Amount / numberPayments; // 800
+
+            if (amountNumberPayment + firtsAdvance.Subtotal + firtsAdvance.Vat < maximumAmountDiscountByPeriod) // 874.62
             {
-                firtsAdvance.Total_Withhold = Math.Round(amountNumberPayment + firtsAdvance.Subtotal + firtsAdvance.Vat, 2);
-                firtsAdvance.Amount = amountNumberPayment;
+                firtsAdvance.Total_Withhold = Math.Round(amountNumberPayment + firtsAdvance.Subtotal + firtsAdvance.Vat, 2); // 874.62
+                firtsAdvance.Amount = amountNumberPayment; // 800
             }
             else
             {
@@ -242,8 +243,8 @@ namespace PrestaQi.Service.ProcessServices
                 firtsAdvance.Amount = Math.Round(firtsAdvance.Total_Withhold - firtsAdvance.Subtotal - firtsAdvance.Vat, 2);
             }
 
-            firtsAdvance.Initial = calculateAmount.Amount;
-            firtsAdvance.Final = Math.Round(firtsAdvance.Initial - firtsAdvance.Amount, MidpointRounding.AwayFromZero);
+            firtsAdvance.Initial = calculateAmount.Amount; //1600
+            firtsAdvance.Final = Math.Round(firtsAdvance.Initial - firtsAdvance.Amount, MidpointRounding.AwayFromZero); // 800
 
 
             List<Advance> advances = new List<Advance>();
