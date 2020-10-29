@@ -128,7 +128,7 @@ namespace PrestaQi.Api.Controllers
                             Password = result.Password,
                             Name = name,
                             Contacts = contacts
-                    }
+                        }
                     ));
             }
 

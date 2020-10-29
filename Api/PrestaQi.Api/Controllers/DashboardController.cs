@@ -50,5 +50,11 @@ namespace PrestaQi.Api.Controllers
         {
             return Ok(this._CapitalProcessService.ExecuteProcess<GetInvestment, InvestmentDashboard>(getInvestment));
         }
+
+        [HttpPost, Route("Contact")]
+        public IActionResult Contact(ContactForm contact)
+        {
+            return Ok();
+        }
     }
 }

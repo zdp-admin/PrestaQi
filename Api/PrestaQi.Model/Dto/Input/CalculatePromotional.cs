@@ -7,6 +7,6 @@ namespace PrestaQi.Model.Dto.Input
     public class CalculatePromotional
     {
         public int Advance_Id { get; set; }
-        public int Amount { get; set; }
+        public double Amount { get; set; }
     }
 }

@@ -77,9 +77,9 @@ namespace PrestaQi.Service.ProcessServices
                     advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
                     Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
                     0;
-                    advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
+                    advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission;
                     advance.Vat = Math.Round(advance.Subtotal * vat, 2);
-                    advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
+                    advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat + advance.Promotional_Setting, 2);
                 });
 
                 accredited.Payment = Math.Round(accredited.Advances.Sum(p => p.Total_Withhold), 2);
