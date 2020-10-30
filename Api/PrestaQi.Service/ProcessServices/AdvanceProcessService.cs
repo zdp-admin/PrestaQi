@@ -116,6 +116,18 @@ namespace PrestaQi.Service.ProcessServices
                         isMaxAmount = true;
                     }
 
+                    if (DateTime.Now.Day >= 15)
+                    {
+                        startDate = new DateTime(endDate.Year, endDate.Month, 15);
+                        endDate = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
+                    }
+
+                    if (DateTime.Now.Day < 15)
+                    {
+                        startDate = new DateTime(startDate.Year, startDate.Month, 1);
+                        endDate = new DateTime(endDate.Year, endDate.Month, 15);
+                    }
+
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Mensual:
                     if (DateTime.Now.Day >= (endDay - 2))
@@ -131,6 +143,10 @@ namespace PrestaQi.Service.ProcessServices
                         isMaxAmount = true;
                         advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary / 2);
                     }
+
+                    startDate = new DateTime(startDate.Year, startDate.Month, 1);
+                    endDate = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
+
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
                     var dayWeek = accredited.End_Day_Payment.DayOfWeek;
@@ -194,6 +210,7 @@ namespace PrestaQi.Service.ProcessServices
             advanceCalculated.Date_Advance = DateTime.Now;
             advanceCalculated.Interest_Rate = accredited.Interest_Rate;
             advanceCalculated.Maximum_Amount = isMaxAmount ? Math.Round(advanceCalculated.Maximum_Amount - subtotal - vatTotal) : 0;
+            advanceCalculated.Maximum_Amount = advanceCalculated.Maximum_Amount < 0 ? 0 : advanceCalculated.Maximum_Amount;
 
             return (advanceCalculated, isMaxAmount);
         }
@@ -621,14 +638,16 @@ namespace PrestaQi.Service.ProcessServices
                     throw new SystemValidationException("No se encontró el adelando");
 
                 advance.Promotional_Setting = calculatePromotional.Amount;
+
                 advance.Day_Moratorium = DateTime.Now.Date > advance.Limit_Date.Date ?
                     (DateTime.Now.Date - advance.Limit_Date.Date).Days : 0;
                 advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
                 Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
                 0;
-                advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
+
+                advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission;
                 advance.Vat = Math.Round(advance.Subtotal * vat, 2);
-                advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
+                advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat + advance.Promotional_Setting, 2);
 
                 return advance;
             }

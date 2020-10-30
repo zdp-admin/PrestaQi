@@ -52,7 +52,7 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpPost, Route("Contact")]
-        public IActionResult Contact(Contact contact)
+        public IActionResult Contact(ContactForm contact)
         {
             return Ok();
         }

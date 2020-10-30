@@ -52,12 +52,12 @@ namespace PrestaQi.Service.ProcessServices
                 }
             }
 
-            detail.Vat = Math.Round((detail.Interest_Payment + detail.Default_Interest + detail.Promotional_Setting) * ((double)vat / 100), 2);
+            detail.Vat = Math.Round((detail.Interest_Payment + detail.Default_Interest) * ((double)vat / 100), 2);
 
             if (!investor.Is_Moral_Person)
             {
                 detail.Vat_Retention = Math.Round((detail.Vat * 2) / 3, 2);
-                detail.Isr_Retention = Math.Round((detail.Interest_Payment + detail.Default_Interest + detail.Promotional_Setting) * ((double)isr / 100));
+                detail.Isr_Retention = Math.Round((detail.Interest_Payment + detail.Default_Interest) * ((double)isr / 100));
             }
 
             detail.Payment = (detail.Principal_Payment + detail.Interest_Payment + detail.Default_Interest + detail.Vat + detail.Promotional_Setting) - (detail.Vat_Retention + detail.Isr_Retention);
