@@ -4,7 +4,7 @@ using System.Text;
 
 namespace PrestaQi.Model.Dto.Input
 {
-    class Contact
+    public class ContactLanding
     {
         string name { get; set; }
         string email { get; set; }

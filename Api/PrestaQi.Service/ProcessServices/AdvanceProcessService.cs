@@ -59,10 +59,7 @@ namespace PrestaQi.Service.ProcessServices
                 return new List<Advance>() { result.Item1 };
 
             var advanceDetails = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
-            p.Limit_Date.Date >= result.Item1.Limit_Date.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).ToList();  /*(from a in this._AdvanceDetailRetrieveService.Where(p => true)
-                                  join b in this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id) on a.Advance_Id equals b.id
-                                  where a.Limit_Date.Date >= result.Item1.Limit_Date.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
-                                  select a).OrderBy(p => p.Advance_Id).ToList();*/
+            p.Limit_Date.Date >= result.Item1.Limit_Date.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).ToList();
 
 
             if ((result.Item1.Total_Withhold + advanceDetails.Sum(p => p.Total_Withhold)) <= maximumAmountDiscountByPeriod)
@@ -204,6 +201,182 @@ namespace PrestaQi.Service.ProcessServices
         private List<Advance> CalculateAdvanceList(CalculateAmount calculateAmount, Accredited accredited, Advance firtsAdvance,
             double periodPercentage, double maximumAmountDiscountByPeriod, List<AdvanceDetail> advanceDetails)
         {
+            double maxdiscount = maximumAmountDiscountByPeriod;
+            double totalDisponible = accredited.Gross_Monthly_Salary * periodPercentage;
+            double totalForPay = advanceDetails.Sum(advance => advance.Total_Withhold);
+            int numberOfPayments = Convert.ToInt32(Math.Round(totalForPay / maxdiscount, 2));
+            double residuo = totalForPay % maxdiscount;
+            double totalAdvances = advanceDetails.Sum(advance => advance.Amount);
+
+            List<Advance> detailsAdvances = new List<Advance>();
+            int index = 0;
+
+            if (numberOfPayments > 1)
+            {
+                while (totalAdvances > 0 || index < numberOfPayments)
+                {
+                    DateTime nextDayForPayment;
+
+                    if (index > advanceDetails.Count - 1)
+                    {
+                        if (detailsAdvances.Last().Date_Advance.Day == 15)
+                        {
+                            var lastDayInMonth = DateTime.DaysInMonth(detailsAdvances.Last().Date_Advance.Year, detailsAdvances.Last().Date_Advance.Month);
+                            nextDayForPayment = new DateTime(detailsAdvances.Last().Date_Advance.Year, detailsAdvances.Last().Date_Advance.Month, lastDayInMonth);
+                        } else
+                        {
+                            nextDayForPayment = detailsAdvances.Last().Date_Advance.AddDays(15);
+                        }
+                    } else
+                    {
+                        nextDayForPayment = advanceDetails[index].Limit_Date;
+                    }
+
+                    // verify days habiles
+                    if (nextDayForPayment.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        nextDayForPayment = nextDayForPayment.AddDays(-1);
+                    }
+
+                    if (nextDayForPayment.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        nextDayForPayment = nextDayForPayment.AddDays(-2);
+                    }
+
+                    var count = detailsAdvances.Count();
+
+                    if (count > 0 && detailsAdvances.FirstOrDefault(detail => detail.Date_Advance == nextDayForPayment) != null)
+                    {
+                        totalAdvances += detailsAdvances.First(detail => detail.Date_Advance == nextDayForPayment).Amount;
+
+                        detailsAdvances.RemoveAt(detailsAdvances.FindIndex(detail => detail.Date_Advance == nextDayForPayment));
+                    }
+
+                    //advances
+                    var deductionsForNextDayPayment = advanceDetails.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Comission + advance.Interest + advance.Vat);
+                    var totalForNextDayPayment = advanceDetails.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Total_Withhold);
+                    var amounForNextDayPayment = advanceDetails.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Amount);
+
+                    //detailsAdvance
+                    var detailsDeductionsTotal = detailsAdvances.Sum(da => da.Interest + da.Vat);
+                    var detailsTotalPayment = detailsAdvances.Sum(da => da.Total_Withhold);
+                    var detailsAmountPayment = detailsAdvances.Sum(da => da.Amount);
+
+                    var totalPrevAdvanceWithDeduccion = (amounForNextDayPayment + deductionsForNextDayPayment) + detailsDeductionsTotal;
+                    double[] listTotalsToDiscount =
+                    {
+                        totalDisponible,
+                        ((amounForNextDayPayment / 2) + (deductionsForNextDayPayment - detailsTotalPayment) + detailsAmountPayment),
+                        (amounForNextDayPayment - detailsAmountPayment) + (deductionsForNextDayPayment + detailsDeductionsTotal) - detailsTotalPayment + detailsAmountPayment,
+                        maxdiscount
+                    };
+
+                    var totalDiscountForPaymentDetails = 0.0;
+
+                    if ((totalPrevAdvanceWithDeduccion - detailsTotalPayment) < maxdiscount) 
+                    {
+                        totalDiscountForPaymentDetails = totalPrevAdvanceWithDeduccion - detailsTotalPayment;
+                    }
+                    else
+                    {
+                        totalDiscountForPaymentDetails = listTotalsToDiscount.Min();
+                    }
+
+                    var discountForPrincipalPayment = deductionsForNextDayPayment + detailsDeductionsTotal;
+                    var principalPayment = totalDiscountForPaymentDetails - (discountForPrincipalPayment - (detailsTotalPayment - detailsAmountPayment));
+                    var finalBalance = (amounForNextDayPayment - detailsAmountPayment) - principalPayment;
+
+
+                    var dayForPayment = 15;
+                    var nextDate = DateTime.Now;
+
+                    if (nextDayForPayment.Day >= 1 && nextDayForPayment.Day <= 15)
+                    {
+                        dayForPayment = DateTime.DaysInMonth(nextDayForPayment.Year, nextDayForPayment.Month);
+                        nextDate = new DateTime(nextDayForPayment.Year, nextDayForPayment.Month, dayForPayment);
+                    } else
+                    {
+                        nextDate = nextDayForPayment.AddMonths(1);
+                        nextDate = new DateTime(nextDate.Year, nextDate.Month, 15);
+                    }
+
+                    //verify days habiles
+                    if (nextDate.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        nextDate = nextDate.AddDays(-1);
+                    }
+
+                    if (nextDate.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        nextDate = nextDate.AddDays(-2);
+                    }
+
+                    dayForPayment = nextDate.Subtract(nextDayForPayment).Days;
+
+                    var interest = finalBalance * dayForPayment * Math.Round(.6 / 360, 6);
+                    var vat = interest * .16;
+
+                    interest = interest < 0 ? 0 : Math.Round(interest, 2);
+                    vat = vat < 0 ? 0 : Math.Round(vat, 2);
+
+                    if (principalPayment > 0)
+                    {
+                        detailsAdvances.Add(new Advance()
+                        {
+                            Accredited_Id = accredited.id,
+                            Amount = Math.Round(principalPayment, 2),
+                            Requested_Day = dayForPayment,
+                            Comission = 0,
+                            Total_Withhold = Math.Round(totalDiscountForPaymentDetails, 2),
+                            Day_For_Payment = dayForPayment,
+                            Interest = interest,
+                            Vat = vat,
+                            Subtotal = interest + vat,
+                            Limit_Date = nextDayForPayment.AddDays(dayForPayment),
+                            Date_Advance = nextDayForPayment,
+                            Interest_Rate = accredited.Interest_Rate,
+                            Initial = Math.Round(amounForNextDayPayment - detailsAmountPayment, 2),
+                            Final = Math.Round(finalBalance, MidpointRounding.AwayFromZero)
+                        });
+
+                        totalAdvances -= principalPayment;
+                    } else
+                    {
+                        totalAdvances = 0;
+                    }
+
+                    index++;
+                }
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             Advance principalAdvance = firtsAdvance.CloneJson<Advance>();
 
             if (advanceDetails.Count > 0)
