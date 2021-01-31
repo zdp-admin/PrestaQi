@@ -169,7 +169,9 @@ namespace PrestaQi.Api.Controllers
                                              [FromQuery] double amount, 
                                              [FromQuery] int days, 
                                              [FromQuery] int commision, 
-                                             [FromQuery] double totalAmount)
+                                             [FromQuery] double totalAmount,
+                                             [FromQuery] string dates = ""
+            )
         {
             string html = string.Empty;
 
@@ -211,7 +213,14 @@ namespace PrestaQi.Api.Controllers
             }
 
             if (type == (int)PrestaQiEnum.UserType.Acreditado) 
-                html = this._DocumentUserWriteService.ExecuteProcess<CartaMandato, string>(new CartaMandato { CheckedHide = true, accredited = accredited, advance = advance, acreditedCartaMandato = cartaMandato, contractMutuo = contractMutuo });
+                html = this._DocumentUserWriteService.ExecuteProcess<CartaMandato, string>(new CartaMandato {
+                    CheckedHide = true,
+                    accredited = accredited,
+                    advance = advance,
+                    acreditedCartaMandato = cartaMandato,
+                    contractMutuo = contractMutuo,
+                    dates = dates
+                });
 
             return new ContentResult
             {
@@ -241,7 +250,7 @@ namespace PrestaQi.Api.Controllers
 
             var accredited = data.User as Accredited;
             var calculateAmount = new CalculateAmount { Accredited_Id = accredited.id };
-            var advance = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, List<Advance>>(calculateAmount).FirstOrDefault();
+            var advance = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(calculateAmount).advance;
 
             var contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
 

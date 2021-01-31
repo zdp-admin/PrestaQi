@@ -58,6 +58,20 @@ namespace PrestaQi.Service.WriteServices
                     this._CompanyWriteService.Create(company);
                 }
 
+                if (entity.Outsourcing_Name != "")
+                {
+                    var outsorcing = this._CompanyRetrieveService.Where(p => p.Description.ToLower().Trim() ==
+                        entity.Outsourcing_Name.ToLower().Trim()).FirstOrDefault();
+
+                    if (outsorcing == null)
+                    {
+                        outsorcing = new Company() { Description = entity.Outsourcing_Name };
+                        this._CompanyWriteService.Create(outsorcing);
+                    }
+
+                    entity.Outsourcing_id = outsorcing.id;
+                }
+
                 entity.Enabled = true;
                 entity.Company_Id = company.id;
                 entity.First_Login = true;

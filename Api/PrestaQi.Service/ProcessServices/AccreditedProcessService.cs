@@ -19,6 +19,8 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<PaidAdvance> _PaidAdvanceRetrieveService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
+        IRetrieveService<DetailsAdvance> _DetailsAdvance;
+        IRetrieveService<DetailsByAdvance> _DetailsByAdvance;
 
         public AccreditedProcessService(
             IRetrieveService<Company> companyRetrieveService,
@@ -26,7 +28,9 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<PaidAdvance> paidAdvanceRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService
+            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
+            IRetrieveService<DetailsAdvance> detailsAdvance,
+            IRetrieveService<DetailsByAdvance> detailsByAvance
             )
         {
             this._CompanyRetrieveService = companyRetrieveService;
@@ -35,6 +39,8 @@ namespace PrestaQi.Service.ProcessServices
             this._PaidAdvanceRetrieveService = paidAdvanceRetrieveService;
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
+            this._DetailsAdvance = detailsAdvance;
+            this._DetailsByAdvance = detailsByAvance;
         }
 
         public List<AdvanceReceivable> ExecuteProcess(AdvancesReceivableByFilter filter)
@@ -70,7 +76,8 @@ namespace PrestaQi.Service.ProcessServices
                 Moratoruim_Interest_Rate = accredited.Moratoruim_Interest_Rate,
                 NameComplete = $"{accredited.First_Name} {accredited.Last_Name}",
                 Is_Blocked = accredited.Is_Blocked,
-                TypeContractId = (int)accredited.Type_Contract_Id
+                TypeContractId = (int)accredited.Type_Contract_Id,
+                Period_Id = accredited.Period_Id
             }).ToList();
 
             detail.ForEach(accredited =>
@@ -81,6 +88,7 @@ namespace PrestaQi.Service.ProcessServices
                     {
                         advance.Day_Moratorium = DateTime.Now.Date > advance.Limit_Date.Date ?
                             (DateTime.Now.Date - advance.Limit_Date).Days : 0;
+
                         advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
                         Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
                         0;
@@ -89,17 +97,81 @@ namespace PrestaQi.Service.ProcessServices
                         advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
                     });
 
-                    accredited.Payment = Math.Round(accredited.Advances.Sum(p => p.Total_Withhold), 2);
+                    accredited.Payment = Math.Round(accredited.Advances.Sum(p => (p == null ? 0 : p.Total_Withhold)), 2);
                 }
                 else
                 {
-                    accredited.Advances.Clear();
-                    var advanceDetails = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.Accredited_Id && p.Paid_Status == 2).ToList();
+                    //accredited.Advances.Clear();
+                    /*var advanceDetails = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.Accredited_Id && p.Paid_Status == 2).ToList();
                     advanceDetails.Add(this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.Accredited_Id && p.Paid_Status == 0).FirstOrDefault());
+                    accredited.AdvanceDetails = advanceDetails;*/
+                    var totalPayment = 0.0;
+                    var nextDate = DateTime.Now;
 
-                    accredited.AdvanceDetails = advanceDetails;
+                    if (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Semanal)
+                    {
+                        var day = nextDate.Day;
 
-                    accredited.Payment = Math.Round(accredited.AdvanceDetails.Sum(p => p.Total_Withhold), 2);
+                        if (day > 0)
+                        {
+                            nextDate = nextDate.AddDays(6 - day);
+                        }
+                    }
+
+                    if (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Mensual)
+                    {
+                        var dayInMonth = DateTime.DaysInMonth(nextDate.Year, nextDate.Month);
+                        nextDate = new DateTime(nextDate.Year, nextDate.Month, dayInMonth);
+                    }
+
+                    if (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal)
+                    {
+                        if (nextDate.Day >= 1 && nextDate.Day <= 15)
+                        {
+                            nextDate = new DateTime(nextDate.Year, nextDate.Month, 15);
+                        } else
+                        {
+                            var dayInMonth = DateTime.DaysInMonth(nextDate.Year, nextDate.Month);
+                            nextDate = new DateTime(nextDate.Year, nextDate.Month, dayInMonth);
+                        }
+                    }
+
+                    var detailsAdvanceAll = this._DetailsAdvance.Where(da => da.Accredited_Id == accredited.Accredited_Id).ToList();
+
+                    accredited.Advances.ForEach(advance =>
+                    {
+                        advance.details = this._DetailsByAdvance.Where(da => da.Advance_Id == advance.id).OrderBy(da => da.Detail_Id).ToList();
+
+                        if (advance.details.Count > 0)
+                        {
+                            advance.details.ForEach(d =>
+                            {
+                                d.Detail = detailsAdvanceAll.Where(da => da.id == d.Detail_Id).FirstOrDefault();
+                                if (d.Detail != null)
+                                {
+                                    d.Detail.Total_Payment += double.Parse((d.Detail.Promotional_Setting ?? 0).ToString());
+                                    if (d.Detail.Date_Payment <= nextDate && d.Detail.Paid_Status != (int)PrestaQiEnum.AdvanceStatus.Pagado)
+                                    {
+                                        totalPayment += d.Detail.Total_Payment;
+                                    }
+                                }
+                            });
+                        } else
+                        {
+                            advance.Day_Moratorium = DateTime.Now.Date > advance.Limit_Date.Date ?
+                            (DateTime.Now.Date - advance.Limit_Date).Days : 0;
+
+                            advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
+                            Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
+                            0;
+                            advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
+                            advance.Vat = Math.Round(advance.Subtotal * vat, 2);
+                            advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
+                            totalPayment += advance.Total_Withhold;
+                        }
+                    });
+
+                    accredited.Payment = Math.Round(totalPayment, 2);
                 }
             });
 

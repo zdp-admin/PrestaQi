@@ -22,6 +22,8 @@ namespace PrestaQi.Service.RetrieveServices
         IProcessService<Advance> _AdvanceProcessService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
+        IRetrieveService<DetailsAdvance> _DetailsAdvance;
+        IRetrieveService<DetailsByAdvance> _DetailsByAdvance;
 
         public AccreditedRetrieveService(
             IRetrieveRepository<Accredited> repository,
@@ -32,7 +34,9 @@ namespace PrestaQi.Service.RetrieveServices
             IRetrieveService<TypeContract> typeContractService,
             IProcessService<Advance> advanceProcessService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService
+            IRetrieveService<DetailsAdvance> detailsAdvance,
+            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
+            IRetrieveService<DetailsByAdvance> detailsByAvance
             ) : base(repository)
         {
             this._PeriodRetrieveService = periodRetrieveService;
@@ -43,6 +47,8 @@ namespace PrestaQi.Service.RetrieveServices
             this._AdvanceProcessService = advanceProcessService;
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
+            this._DetailsAdvance = detailsAdvance;
+            this._DetailsByAdvance = detailsByAvance;
         }
 
         public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
@@ -95,6 +101,22 @@ namespace PrestaQi.Service.RetrieveServices
                         .Take(accreditedByPagination.NumRecord).ToList();
             }
 
+            accrediteds.ForEach(a =>
+            {
+                var detailsAdvanceAll = this._DetailsAdvance.Where(da => da.Accredited_Id == a.id).ToList();
+                a.Advances.ForEach(advance =>
+                {
+                    advance.details = this._DetailsByAdvance.Where(da => da.Advance_Id == advance.id).OrderBy(da => da.Detail_Id).ToList();
+                    if (advance.details.Count > 0)
+                    {
+                        advance.details.ForEach(d =>
+                        {
+                            d.Detail = detailsAdvanceAll.Where(da => da.id == d.Detail_Id).FirstOrDefault();
+                        });
+                    }
+                });
+            });
+
             return new AccreditedPagination() { Accrediteds = accrediteds, TotalRecord = totalRecord };
         }  
 
@@ -114,14 +136,18 @@ namespace PrestaQi.Service.RetrieveServices
                 p.Institution_Name = institutions.FirstOrDefault(institution => institution.id == p.Institution_Id).Description;
                 p.Period_Name = periods.FirstOrDefault(period => period.id == p.Period_Id).Description;
                 p.Company_Name = companies.FirstOrDefault(company => company.id == p.Company_Id).Description;
+                if (p.Outsourcing_id != null)
+                {
+                    p.Outsourcing_Name = companies.FirstOrDefault(company => company.id == p.Outsourcing_id).Description;
+                }
                 p.Advances = this._AdvanceRetrieveService.Where(advace => advace.Accredited_Id == p.id && (advace.Paid_Status == 0 || advace.Paid_Status == 2)).ToList();
                 p.Type = (int)PrestaQiEnum.UserType.Acreditado;
                 p.TypeName = PrestaQiEnum.UserType.Acreditado.ToString();
                 p.TypeContract = typeContracts.FirstOrDefault(tc => tc.id == p.Type_Contract_Id);
-                p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, List<Advance>>(new CalculateAmount()
+                p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(new CalculateAmount()
                 {
                     Accredited_Id = p.id
-                }).FirstOrDefault().Maximum_Amount;
+                }).advance.Maximum_Amount;
 
                 if (p.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.WagesAndSalaries)
                 {

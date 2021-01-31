@@ -25,6 +25,10 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<Configuration> _ConfigutarionRetrieveService;
         IRetrieveService<PeriodCommission> _PeriodCommissionRetrieve;
         IRetrieveService<PeriodCommissionDetail> _PeriodCommissionDetailRetrieve;
+        IWriteService<DetailsAdvance> _DetailsAdvanceWriteService;
+        IRetrieveService<DetailsAdvance> _DetailsAdvanceRetrieve;
+        IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieve;
+        IWriteService<DetailsByAdvance> _DetailsByAdvanceWriteService;
 
         public AdvanceWriteService(
             IWriteRepository<Advance> repository,
@@ -37,7 +41,11 @@ namespace PrestaQi.Service.WriteServices
             IRetrieveService<Advance> advanceRepository,
             IRetrieveService<Configuration> configurationRetrieveService,
             IRetrieveService<PeriodCommission> periodCommissionRetrieve,
-            IRetrieveService<PeriodCommissionDetail> periodCommissionDetailRetrieve
+            IRetrieveService<PeriodCommissionDetail> periodCommissionDetailRetrieve,
+            IWriteService<DetailsAdvance> detailsAdvanceWriteService,
+            IRetrieveService<DetailsAdvance> detailsAdvanceRetrieve,
+            IRetrieveService<DetailsByAdvance> detailsByAdvanceRetrieve,
+            IWriteService<DetailsByAdvance> detailByAdvanceWriteService
             ) : base(repository)
         {
             this._AdvacenProcessService = advanceProcessService;
@@ -50,54 +58,77 @@ namespace PrestaQi.Service.WriteServices
             this._ConfigutarionRetrieveService = configurationRetrieveService;
             this._PeriodCommissionRetrieve = periodCommissionRetrieve;
             this._PeriodCommissionDetailRetrieve = periodCommissionDetailRetrieve;
+            this._DetailsAdvanceWriteService = detailsAdvanceWriteService;
+            this._DetailsAdvanceRetrieve = detailsAdvanceRetrieve;
+            this._DetailsByAdvanceRetrieve = detailsByAdvanceRetrieve;
+            this._DetailsByAdvanceWriteService = detailByAdvanceWriteService;
         }
 
-        public bool Create(CalculateAmount calculateAmount)
+        public Advance Create(CalculateAmount calculateAmount)
         {
-            List<Advance> advances = this._AdvacenProcessService.ExecuteProcess<CalculateAmount, List<Advance>>(calculateAmount);
             Accredited accredited = this._AccreditedRetrieveService.Find(calculateAmount.Accredited_Id);
-            Advance advance = null;
+            AdvanceAndDetails response = this._AdvacenProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(calculateAmount);
+            
 
-            advances.ForEach(advance =>
+            response.details.ForEach(advance =>
             {
                 advance.created_at = DateTime.Now;
                 advance.updated_at = DateTime.Now;
-                advance.Enabled = false;
                 advance.Paid_Status = (int)PrestaQiEnum.AdvanceStatus.NoPagado;
             });
 
-            advance = advances.FirstOrDefault();
-
-            /*var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
+            var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
             {
                 Accredited_Id = calculateAmount.Accredited_Id,
-                Advance = advance
-            });*/
+                Advance = response.advance
+            });
 
-            var spei = new ResponseSpei() { resultado = new resultado() { id = 4500, claveRastreo = "TESTFF12333", descripcionError = "" } } ;
+            //var spei = new ResponseSpei() { resultado = new resultado() { id = 4500, claveRastreo = "TESTFF12333", descripcionError = "" } } ;
 
             try
             {
+                
                 if (spei.resultado.id > 0)
                 {
-                    bool created = base.Create(advance);
+                    response.advance.created_at = DateTime.Now;
+                    response.advance.updated_at = DateTime.Now;
+
+                    //bool created = base.Create(response.advance);
+                    bool created =  this._Repository.Create(response.advance);
 
                     if (created)
                     {
-                        if (advances.Count > 1)
-                            SaveDetail(advance.id, accredited.id, advances);
+                        if (response.details.Count > 1)
+                        {
+                            var listDetails = SaveAdvanceDetails(response.advance, accredited.id, response.details);
+                            var detailsByAdvance = this.RelationDetailsToAdvance(listDetails, accredited).Where(detail => detail.Advance_Id == response.advance.id).ToList();
+
+                            foreach (DetailsByAdvance detail in detailsByAdvance)
+                            {
+                                detail.Detail = this._DetailsAdvanceRetrieve.Find(detail.Detail_Id);
+                            }
+
+                            response.advance.details = detailsByAdvance;
+                        }
 
                         this._SpeiWriteService.Create(new SpeiResponse()
                         {
                             created_at = DateTime.Now,
                             updated_at = DateTime.Now,
-                            advance_id = advance.id,
+                            advance_id = response.advance.id,
                             tracking_id = spei.resultado.id,
                             tracking_key = spei.resultado.claveRastreo
                         });
+
+                        this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
+                        {
+                            Amount = calculateAmount.Amount,
+                            Accredited_Id = response.advance.Accredited_Id,
+                            Advance = response.advance
+                        });
                     }
 
-                    return created;
+                    return response.advance;
                 }
                 else
                     throw new SystemValidationException(spei.resultado.descripcionError);
@@ -108,6 +139,34 @@ namespace PrestaQi.Service.WriteServices
                 throw new SystemValidationException($"Error creating Advance: {exception.Message}");
             }
 
+        }
+
+        private List<DetailsAdvance> SaveAdvanceDetails(Advance advance, int accreditedId, List<DetailsAdvance> details)
+        {
+
+            var advancesDetails = this._DetailsAdvanceRetrieve.Where(detail => detail.Accredited_Id == accreditedId &&
+                detail.Date_Payment >= advance.Date_Advance && (detail.Paid_Status == 0 || detail.Paid_Status == 2)).OrderBy(detail => detail.id).ToList();
+            
+            foreach(DetailsAdvance detail in advancesDetails)
+            {
+                var list = this._DetailsByAdvanceRetrieve.Where(da => da.Detail_Id == detail.id).ToList();
+                if (list.Count > 0)
+                {
+                    this._DetailsByAdvanceWriteService.Delete(list);
+                }
+            }
+
+            this._DetailsAdvanceWriteService.Delete(advancesDetails);
+
+            details.ForEach(detail =>
+            {
+                detail.Accredited_Id = accreditedId;
+                detail.Advance_Id = advance.id;
+
+                this._DetailsAdvanceWriteService.Create(detail);
+            });
+
+            return details;
         }
 
         private void SaveDetail(int advanceId, int accreditedId, List<Advance> advances)
@@ -209,5 +268,50 @@ namespace PrestaQi.Service.WriteServices
             return (intereset, intereset * vat);
         }
 
+        private List<DetailsByAdvance> RelationDetailsToAdvance(List<DetailsAdvance> detailsAdvances, Accredited accredited)
+        {
+            var advances = new List<Advance>();
+            detailsAdvances = detailsAdvances.OrderByDescending(da => da.Date_Payment).ToList();
+            var cloneDetailAdvance = new List<DetailsAdvance>(detailsAdvances);
+
+            var advanceOrderDesc = this._AdvanceRepository.Where(advance => advance.Accredited_Id == accredited.id).OrderByDescending(a => a.id).ToList();
+
+            List<DetailsByAdvance> detailsByAdvance = new List<DetailsByAdvance>();
+
+            int index = 0;
+            foreach (DetailsAdvance detail in cloneDetailAdvance)
+            {
+                while(detail.Principal_Payment > 0)
+                {
+                    if (detail.Principal_Payment > advanceOrderDesc[index].Amount)
+                    {
+                        detailsByAdvance.Add(new DetailsByAdvance()
+                        {
+                            Advance_Id = advanceOrderDesc[index].id,
+                            Detail_Id = detail.id,
+                            amount = advanceOrderDesc[index].Amount
+                        });
+
+                        detail.Principal_Payment -= advanceOrderDesc[index].Amount;
+                        index++;
+                    } else
+                    {
+                        detailsByAdvance.Add(new DetailsByAdvance()
+                        {
+                            Advance_Id = advanceOrderDesc[index].id,
+                            Detail_Id = detail.id,
+                            amount = detail.Principal_Payment
+                        });
+
+                        advanceOrderDesc[index].Amount -= detail.Principal_Payment;
+                        detail.Principal_Payment = 0;
+                    }
+                }
+            }
+
+            this._DetailsByAdvanceWriteService.Create(detailsByAdvance);
+
+            return detailsByAdvance;
+        }
     }
 }

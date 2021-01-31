@@ -36,6 +36,8 @@ namespace PrestaQi.DataAccess
         public DbSet<AccreditedContractMutuo> accreditedContractMutuos { get; set; }
         public DbSet<AcreditedCartaMandato> acreditedCartaMandatos { get; set; }
         public DbSet<AdvanceDetail> AdvanceDetails { get; set; }
+        public DbSet<DetailsAdvance> detailsAdvances { get; set; }
+        public DbSet<DetailsByAdvance> detailsByAdvances { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

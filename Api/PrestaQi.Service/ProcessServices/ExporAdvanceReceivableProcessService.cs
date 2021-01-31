@@ -85,11 +85,36 @@ namespace PrestaQi.Service.ProcessServices
                             workSheet.Cell(row, 10).Value = advance.Interest.ToString("C");
                             workSheet.Cell(row, 11).Value = advance.Interest_Moratorium.ToString("C");
                             workSheet.Cell(row, 12).Value = advance.Comission.ToString("C");
-                            workSheet.Cell(row, 13).Value = advance.Subtotal.ToString("C");
-                            workSheet.Cell(row, 14).Value = advance.Vat.ToString("C");
-                            workSheet.Cell(row, 15).Value = advance.Day_Moratorium;
-                            workSheet.Cell(row, 16).Value = advance.Total_Withhold.ToString("C");
+                            workSheet.Cell(row, 13).Value = advance.Promotional_Setting.ToString("C");
+                            workSheet.Cell(row, 14).Value = (advance.Subtotal + advance.Vat).ToString("C");
+                            workSheet.Cell(row, 15).Value = advance.Vat.ToString("C");
+                            workSheet.Cell(row, 16).Value = advance.Day_Moratorium;
+                            double total = advance.Total_Withhold;
+
+                            if (advance.details != null)
+                            {
+                                advance.details.ForEach(detail =>
+                                {
+                                    total += detail.Detail.Interest + detail.Detail.Vat;
+                                    total += detail.Detail.Promotional_Setting ?? 0;
+                                });
+                            }
+
+                            workSheet.Cell(row, 17).Value = total.ToString("C");
+
                             row += 1;
+
+                            if (advance.details != null) {
+                                advance.details.ForEach(detail =>
+                                {
+                                    workSheet.Cell(row, 8).Value = detail.Detail.Date_Payment.ToString("dd/MM/yyyy");
+                                    workSheet.Cell(row, 10).Value = detail.Detail.Interest.ToString("C");
+                                    workSheet.Cell(row, 13).Value = detail.Detail.Promotional_Setting?.ToString("C");
+                                    workSheet.Cell(row, 15).Value = detail.Detail.Vat.ToString("C");
+                                    workSheet.Cell(row, 17).Value = detail.Detail.Total_Payment.ToString("C");
+                                    row += 1;
+                                });
+                            }
                         });
                     });
 
@@ -154,7 +179,7 @@ namespace PrestaQi.Service.ProcessServices
                       .SetBold()
                       .Add(new Paragraph(item.Contract_Number)));
 
-                    Utilities.GenerateEmptyCell(14, cells);
+                    Utilities.GenerateEmptyCell(15, cells);
 
                     item.Accrediteds.ForEach((p, index) =>
                     {
@@ -175,15 +200,43 @@ namespace PrestaQi.Service.ProcessServices
                             Utilities.GenerateCell(advance.Interest.ToString("C"), cells, 8, TextAlignment.CENTER);
                             Utilities.GenerateCell(advance.Interest_Moratorium.ToString("C"), cells, 8, TextAlignment.CENTER);
                             Utilities.GenerateCell(advance.Comission.ToString("C"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.Promotional_Setting.ToString("C"), cells, 8, TextAlignment.CENTER);
                             Utilities.GenerateCell(advance.Subtotal.ToString("C"), cells, 8, TextAlignment.CENTER);
                             Utilities.GenerateCell(advance.Vat.ToString("C"), cells, 8, TextAlignment.CENTER);
                             Utilities.GenerateCell(advance.Day_Moratorium.ToString(), cells, 8, TextAlignment.CENTER);
-                            Utilities.GenerateCell(advance.Total_Withhold.ToString("C"), cells, 8, TextAlignment.CENTER);
+                            double total = advance.Total_Withhold;
+
+                            if (advance.details != null)
+                            {
+                                advance.details.ForEach(detail =>
+                                {
+                                    total += detail.Detail.Interest + detail.Detail.Vat;
+                                    total += detail.Detail.Promotional_Setting ?? 0;
+                                });
+                            }
+
+                            Utilities.GenerateCell(total.ToString("C"), cells, 8, TextAlignment.CENTER);
+
+                            if (advance.details != null) {
+                                advance.details.ForEach((detail) =>
+                                {
+                                    Utilities.GenerateEmptyCell(7, cells);
+                                    Utilities.GenerateCell(detail.Detail.Date_Payment.ToString("dd/MM/yyyy"), cells, 8, TextAlignment.CENTER);
+                                    Utilities.GenerateEmptyCell(1, cells);
+                                    Utilities.GenerateCell(detail.Detail.Interest.ToString("C"), cells, 8, TextAlignment.CENTER);
+                                    Utilities.GenerateEmptyCell(2, cells);
+                                    Utilities.GenerateCell(detail.Detail.Promotional_Setting?.ToString("C") ?? "", cells, 8, TextAlignment.CENTER);
+                                    Utilities.GenerateEmptyCell(1, cells);
+                                    Utilities.GenerateCell(detail.Detail.Vat.ToString("C"), cells, 8, TextAlignment.CENTER);
+                                    Utilities.GenerateEmptyCell(1, cells);
+                                    Utilities.GenerateCell(detail.Detail.Total_Payment.ToString("C"), cells, 8, TextAlignment.CENTER);
+                                });
+                            }
                         });
                       
                     });
 
-                    cells.Add(new Cell(1, 15)
+                    cells.Add(new Cell(1, 16)
                         .SetTextAlignment(TextAlignment.LEFT)
                         .SetFontSize(8)
                         .SetBold()

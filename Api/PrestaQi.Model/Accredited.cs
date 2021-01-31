@@ -114,6 +114,8 @@ namespace PrestaQi.Model
         public bool Is_Blocked { get; set; }
         [Column("end_day_payment")]
         public DateTime End_Day_Payment { get; set; }
+        [Column("outsourcing_id")]
+        public int? Outsourcing_id { get; set; }
         #endregion
     }
 }

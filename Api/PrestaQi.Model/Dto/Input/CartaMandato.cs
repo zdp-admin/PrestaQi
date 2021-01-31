@@ -11,5 +11,6 @@ namespace PrestaQi.Model.Dto.Input
         public AcreditedCartaMandato acreditedCartaMandato { get; set; }
         public AccreditedContractMutuo contractMutuo { get; set; }
         public bool CheckedHide { get; set; }
+        public String ?dates { get; set; }
     }
 }

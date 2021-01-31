@@ -32,6 +32,8 @@ namespace PrestaQi.Model
         public double Authorized_Advance_After_Obligations { get; set; }
         [NotMapped]
         public double Payroll_Advance_Authorized_After_Obligations { get; set; }
+        [NotMapped]
+        public string Outsourcing_Name { get; set; }
 
     }
 }

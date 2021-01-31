@@ -11,5 +11,7 @@ namespace PrestaQi.Model
         public double Initial { get; set; }
         [NotMapped]
         public double Final { get; set; }
+        [NotMapped]
+        public List<DetailsByAdvance> details { get; set; }
     }
 }

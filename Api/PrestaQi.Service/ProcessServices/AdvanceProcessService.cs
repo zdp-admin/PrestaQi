@@ -26,7 +26,12 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<PeriodCommission> _PeriodCommissionRetrieve;
         IRetrieveService<PeriodCommissionDetail> _PeriodCommissionDetailRetrieve;
         IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
-
+        IRetrieveService<DetailsAdvance> _DetailsAdvance;
+        IRetrieveRepository<DetailsAdvance> _DetailsAdvanceRetrieveService;
+        IRetrieveService<TypeContract> _TypeContractService;
+        IRetrieveService<Institution> _InsitutionRetrieveService;
+        IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieveService;
+        IRetrieveRepository<PaidAdvance> _PaidAdvanceRepository;
 
         public AdvanceProcessService(
             IRetrieveRepository<Accredited> acreditedRetrieveService,
@@ -35,7 +40,13 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<Period> periodRetrieveService,
             IRetrieveService<PeriodCommission> periodCommissionRetrieve,
             IRetrieveService<PeriodCommissionDetail> periodCommissionDetailRetrieve,
-            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService
+            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
+            IRetrieveService<DetailsAdvance> detailsAdvance,
+            IRetrieveRepository<DetailsAdvance> detailsAdvanceRetrieveService,
+            IRetrieveService<TypeContract> typeContractService,
+            IRetrieveService<Institution> insitutionRetrieveService,
+            IRetrieveService<DetailsByAdvance> detailsByAdvance,
+            IRetrieveRepository<PaidAdvance> paidAdvanceRepository
             )
         {
             this._AcreditedRetrieveService = acreditedRetrieveService;
@@ -45,30 +56,70 @@ namespace PrestaQi.Service.ProcessServices
             this._PeriodCommissionRetrieve = periodCommissionRetrieve;
             this._PeriodCommissionDetailRetrieve = periodCommissionDetailRetrieve;
             this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
+            this._DetailsAdvance = detailsAdvance;
+            this._DetailsAdvanceRetrieveService = detailsAdvanceRetrieveService;
+            this._TypeContractService = typeContractService;
+            this._InsitutionRetrieveService = insitutionRetrieveService;
+            this._DetailsByAdvanceRetrieveService = detailsByAdvance;
+            this._PaidAdvanceRepository = paidAdvanceRepository;
     }
 
-        public List<Advance> ExecuteProcess(CalculateAmount calculateAmount)
+        public AdvanceAndDetails ExecuteProcess(CalculateAmount calculateAmount)
         {
             var accredited = this._AcreditedRetrieveService.Find(calculateAmount.Accredited_Id);
+            accredited.Period_Name = this._PeriodRetrieveService.Where(periodo => periodo.id == accredited.Period_Id).First().Description;
             var result = CalculateAdvance(calculateAmount, accredited);
 
             double periodPercentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "PERIOD_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
             double maximumAmountDiscountByPeriod = Math.Round(accredited.Gross_Monthly_Salary * periodPercentage, 2);
 
             if (accredited.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.AssimilatedToSalary || result.Item2)
-                return new List<Advance>() { result.Item1 };
+                return new AdvanceAndDetails() { advance = result.Item1, details = new List<DetailsAdvance>() };
 
-            var advanceDetails = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
-            p.Limit_Date.Date >= result.Item1.Limit_Date.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).ToList();
+            var advances = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id &&
+                advance.Limit_Date >= result.Item1.Date_Advance && (advance.Paid_Status == 0 || advance.Paid_Status == 2)).OrderBy(advance => advance.id).ToList();
 
 
-            if ((result.Item1.Total_Withhold + advanceDetails.Sum(p => p.Total_Withhold)) <= maximumAmountDiscountByPeriod)
-                return new List<Advance>() { result.Item1 };
+            if ((result.Item1.Total_Withhold + advances.Sum(p => p.Total_Withhold)) <= maximumAmountDiscountByPeriod)
+                return new AdvanceAndDetails() { advance = result.Item1, details = new List<DetailsAdvance>() };
 
-            var resultList = CalculateAdvanceList(calculateAmount, accredited, result.Item1, periodPercentage, maximumAmountDiscountByPeriod,
-                advanceDetails);
+            advances = new List<Advance>();
+            var detailsAdvance = this._DetailsAdvance.Where(detail => detail.Accredited_Id == accredited.id &&
+                detail.Date_Payment >= result.Item1.Date_Advance && (detail.Paid_Status == 0 || detail.Paid_Status == 2)).OrderBy(detail => detail.id).ToList();
 
-            return resultList;
+            var advanceOrderDesc = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id).OrderByDescending(a => a.id).ToList();
+
+            foreach(Advance advance in advanceOrderDesc)
+            {
+                if (advances.Sum(a => a.Amount) < detailsAdvance.Sum(da => da.Principal_Payment))
+                {
+                    advances.Add(advance);
+                } else
+                {
+                    break;
+                }
+            }
+
+            if (advances.Count <= 0)
+            {
+                advances = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id &&
+                    advance.Limit_Date >= result.Item1.Limit_Date && (advance.Paid_Status == 0 || advance.Paid_Status == 2)).OrderByDescending(a => a.id).ToList();
+            }
+
+            int maxId = 1;
+
+            if (advances.Count > 0)
+            {
+                maxId = advances.Max(advance => advance.id);
+                result.Item1.id = maxId + 1;
+            }
+
+            advances.Add(result.Item1);
+
+            var resultList = CalculateAdvanceList(advances, accredited, periodPercentage, maximumAmountDiscountByPeriod);
+            result.Item1.id = 0;
+
+            return new AdvanceAndDetails() { advance = result.Item1, details = resultList };
         }
 
         private (Advance, bool) CalculateAdvance(CalculateAmount calculateAmount, Accredited accredited)
@@ -86,18 +137,62 @@ namespace PrestaQi.Service.ProcessServices
             if (accredited == null)
                 throw new SystemValidationException("Accredited not found");
 
-            DateTime startDate = DateTime.Now;
-            DateTime endDate = DateTime.Now;
-            DateTime limitDate = DateTime.Now;
-            int day = DateTime.Now.Day;
+            DateTime currentDate = DateTime.Now;
+            bool periodIsPaying = false;
+            DateTime datePeriodInitial = currentDate;
+            DateTime datePeriodFinish = currentDate;
+
+            switch (accredited.Period_Id)
+            {
+                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
+                    if (currentDate.Day <= 15)
+                    {
+                        datePeriodInitial = new DateTime(currentDate.Year, currentDate.Month, 1);
+                        datePeriodFinish = new DateTime(currentDate.Year, currentDate.Month, 15);
+                    } else
+                    {
+                        datePeriodInitial = new DateTime(currentDate.Year, currentDate.Month, 16);
+                        datePeriodFinish = new DateTime(currentDate.Year, currentDate.Month, DateTime.DaysInMonth(currentDate.Year, currentDate.Month));
+                    }
+                    break;
+                case (int)PrestaQiEnum.PerdioAccredited.Mensual:
+                        datePeriodInitial = new DateTime(currentDate.Year, currentDate.Month, 1);
+                        datePeriodFinish = new DateTime(currentDate.Year, currentDate.Month, DateTime.DaysInMonth(currentDate.Year, currentDate.Month));
+                    break;
+                default:
+                    if (currentDate.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        datePeriodInitial = currentDate.AddDays(-7);
+                        datePeriodFinish = currentDate;
+                    } else
+                    {
+                        datePeriodInitial = currentDate.AddDays(-((double)currentDate.DayOfWeek - 1));
+                        datePeriodFinish = currentDate.AddDays(7 - (double)currentDate.DayOfWeek);
+                    }
+                    break;
+            }
+
+            periodIsPaying = this._PaidAdvanceRepository
+                .Where(paidAdvance => paidAdvance.Company_Id == accredited.Company_Id)
+                .Where(paidAdvance => paidAdvance.created_at >= datePeriodInitial && paidAdvance.created_at <= datePeriodFinish).FirstOrDefault() != null;
+
+            if (periodIsPaying)
+            {
+                currentDate = datePeriodFinish.AddDays(1);
+            }
+
+            DateTime startDate = currentDate;
+            DateTime endDate = currentDate;
+            DateTime limitDate = currentDate;
+            int day = currentDate.Day;
             PeriodCommissionDetail commissionPerioDetail = new PeriodCommissionDetail();
 
-            int endDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+            int endDay = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
 
             if (accredited.Period_Id != (int)PrestaQiEnum.PerdioAccredited.Semanal)
             {
                 var commissionPeriodId = this._PeriodCommissionRetrieve.Where(p => p.Period_Id == accredited.Period_Id && p.Type_Month == endDay).FirstOrDefault().id;
-                commissionPerioDetail = this._PeriodCommissionDetailRetrieve.Where(p => p.Period_Commission_Id == commissionPeriodId && p.Day_Month == DateTime.Now.Day).FirstOrDefault();
+                commissionPerioDetail = this._PeriodCommissionDetailRetrieve.Where(p => p.Period_Commission_Id == commissionPeriodId && p.Day_Month == currentDate.Day).FirstOrDefault();
                 commission = Convert.ToInt32(commissionPerioDetail.Commission);
                 advanceCalculated.Day_For_Payment = commissionPerioDetail.Day_Payement;
             }
@@ -105,10 +200,22 @@ namespace PrestaQi.Service.ProcessServices
             switch (accredited.Period_Id)
             {
                 case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-                    if (commissionPerioDetail.Date_Payment == 15 && DateTime.Now.Day > 15)
+                    if (commissionPerioDetail.Date_Payment == 15 && currentDate.Day > 15)
                         limitDate = limitDate.AddMonths(1);
 
                     limitDate = new DateTime(limitDate.Year, limitDate.Month, commissionPerioDetail.Date_Payment);
+
+                    /*Check is available day*/
+                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        limitDate = limitDate.AddDays(-1);
+                    }
+
+                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        limitDate = limitDate.AddDays(-2);
+                    }
+                    /*Check is available day*/
 
                     if (calculateAmount.Amount == 0)
                     {
@@ -116,13 +223,13 @@ namespace PrestaQi.Service.ProcessServices
                         isMaxAmount = true;
                     }
 
-                    if (DateTime.Now.Day >= 15)
+                    if (currentDate.Day >= 15)
                     {
                         startDate = new DateTime(endDate.Year, endDate.Month, 15);
                         endDate = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
                     }
 
-                    if (DateTime.Now.Day < 15)
+                    if (currentDate.Day < 15)
                     {
                         startDate = new DateTime(startDate.Year, startDate.Month, 1);
                         endDate = new DateTime(endDate.Year, endDate.Month, 15);
@@ -130,13 +237,25 @@ namespace PrestaQi.Service.ProcessServices
 
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Mensual:
-                    if (DateTime.Now.Day >= (endDay - 2))
+                    if (currentDate.Day >= (endDay - 2))
                     {
                         limitDate = limitDate.AddMonths(1);
                         limitDate = new DateTime(limitDate.Year, limitDate.Month, DateTime.DaysInMonth(limitDate.Year, limitDate.Month));
                     }
                     else
                         limitDate = new DateTime(limitDate.Year, limitDate.Month, endDay);
+
+                    /*Check is available day*/
+                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        limitDate = limitDate.AddDays(-1);
+                    }
+
+                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        limitDate = limitDate.AddDays(-2);
+                    }
+                    /*Check is available day*/
 
                     if (calculateAmount.Amount == 0)
                     {
@@ -152,9 +271,9 @@ namespace PrestaQi.Service.ProcessServices
                     var dayWeek = accredited.End_Day_Payment.DayOfWeek;
 
                     if (DateTime.Now.DayOfWeek == dayWeek)
-                        startDate = DateTime.Now.StartOfWeek(dayWeek).AddDays(-6);
+                        startDate = currentDate.StartOfWeek(dayWeek).AddDays(-6);
                     else
-                        startDate = DateTime.Now.StartOfWeek(dayWeek).AddDays(1);
+                        startDate = currentDate.StartOfWeek(dayWeek).AddDays(1);
 
                     endDate = startDate.AddDays(6);
                     limitDate = endDate;
@@ -178,20 +297,43 @@ namespace PrestaQi.Service.ProcessServices
                         advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary / 4);
                     }
 
-                    advanceCalculated.Day_For_Payment = (limitDate.Date - DateTime.Now.Date).Days;
+                    advanceCalculated.Day_For_Payment = (limitDate.Date - currentDate.Date).Days;
                     break;
             }
 
+            /*var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
+            p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date && p.Paid_Status == 0).ToList();*/
+
             var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
-            p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date && p.Paid_Status == 0).ToList();
+            ((p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date && p.Paid_Status == 0) || (p.Date_Advance < endDate && p.Paid_Status == 0))).ToList();
+
+            var advancesIds = new List<int>();
+            var detailsAdvancesPaided = 0d;
+
+            if (advances.Count > 0)
+            {
+                advancesIds = advances.Select(a => a.id).ToList();
+
+                var detailsAdvances = this._DetailsAdvance.Where(da => advancesIds.Contains(da.Advance_Id)).Where(da => da.Paid_Status == (int)PrestaQiEnum.AdvanceStatus.Pagado).ToList();
+
+                if (detailsAdvances.Count > 0)
+                {
+                    detailsAdvancesPaided = detailsAdvances.Sum(da => da.Total_Payment + (da.Promotional_Setting ?? 0));
+                }
+            }
 
             advanceCalculated.Maximum_Amount = Math.Round(advances.Count > 0 ? advanceCalculated.Maximum_Amount - advances.Sum(p => p.Total_Withhold) : advanceCalculated.Maximum_Amount);
+            if (advances.Count > 0)
+            {
+                advanceCalculated.Maximum_Amount += detailsAdvancesPaided;
+            }
+
             if (isMaxAmount)
                 calculateAmount.Amount = advanceCalculated.Maximum_Amount;
 
             double intereset = (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Mensual) || (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal) ?
                 Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * commissionPerioDetail.Day_Payement), 2) :
-                Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * (limitDate.Date - DateTime.Now.Date).Days), 2);
+                Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * (limitDate.Date - currentDate.Date).Days), 2);
 
             double subtotal = intereset + commission;
             double vatTotal = Math.Round(subtotal * vat, 2);
@@ -207,7 +349,7 @@ namespace PrestaQi.Service.ProcessServices
             advanceCalculated.Vat = vatTotal;
             advanceCalculated.Subtotal = subtotal;
             advanceCalculated.Limit_Date = limitDate;
-            advanceCalculated.Date_Advance = DateTime.Now;
+            advanceCalculated.Date_Advance = currentDate;
             advanceCalculated.Interest_Rate = accredited.Interest_Rate;
             advanceCalculated.Maximum_Amount = isMaxAmount ? Math.Round(advanceCalculated.Maximum_Amount - subtotal - vatTotal) : 0;
             advanceCalculated.Maximum_Amount = advanceCalculated.Maximum_Amount < 0 ? 0 : advanceCalculated.Maximum_Amount;
@@ -215,38 +357,47 @@ namespace PrestaQi.Service.ProcessServices
             return (advanceCalculated, isMaxAmount);
         }
 
-        private List<Advance> CalculateAdvanceList(CalculateAmount calculateAmount, Accredited accredited, Advance firtsAdvance,
-            double periodPercentage, double maximumAmountDiscountByPeriod, List<AdvanceDetail> advanceDetails)
+        private List<DetailsAdvance> CalculateAdvanceList(List<Advance> advances, Accredited accredited,
+            double periodPercentage, double maximumAmountDiscountByPeriod)
         {
+            double gross_percentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "GROSS_MONTHLY_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
             double maxdiscount = maximumAmountDiscountByPeriod;
-            double totalDisponible = accredited.Gross_Monthly_Salary * periodPercentage;
-            double totalForPay = advanceDetails.Sum(advance => advance.Total_Withhold);
+            double totalDisponible = (accredited.Gross_Monthly_Salary * gross_percentage) - accredited.Other_Obligations;
+            double totalForPay = advances.Sum(advance => advance.Total_Withhold);
             int numberOfPayments = Convert.ToInt32(Math.Round(totalForPay / maxdiscount, 2));
             double residuo = totalForPay % maxdiscount;
-            double totalAdvances = advanceDetails.Sum(advance => advance.Amount);
+            double totalAdvances = advances.Sum(advance => advance.Amount);
 
-            List<Advance> detailsAdvances = new List<Advance>();
+            List<DetailsAdvance> detailsAdvances = new List<DetailsAdvance>();
             int index = 0;
 
-            if (numberOfPayments > 1)
+            DateTime nextDayForPayment = advances[0].Limit_Date;
+
+            if (numberOfPayments > 1 || residuo > 0)
             {
                 while (totalAdvances > 0 || index < numberOfPayments)
                 {
-                    DateTime nextDayForPayment;
 
-                    if (index > advanceDetails.Count - 1)
+                    if (index > 0)
                     {
-                        if (detailsAdvances.Last().Date_Advance.Day == 15)
+                        if (accredited.Period_Name == "Mensual")
                         {
-                            var lastDayInMonth = DateTime.DaysInMonth(detailsAdvances.Last().Date_Advance.Year, detailsAdvances.Last().Date_Advance.Month);
-                            nextDayForPayment = new DateTime(detailsAdvances.Last().Date_Advance.Year, detailsAdvances.Last().Date_Advance.Month, lastDayInMonth);
-                        } else
-                        {
-                            nextDayForPayment = detailsAdvances.Last().Date_Advance.AddDays(15);
+                            var lastDayInMonth = DateTime.DaysInMonth(nextDayForPayment.Year, nextDayForPayment.Month);
+                            nextDayForPayment = new DateTime(nextDayForPayment.Year, nextDayForPayment.Month, lastDayInMonth);
                         }
-                    } else
-                    {
-                        nextDayForPayment = advanceDetails[index].Limit_Date;
+                        else
+                        {
+                            if (nextDayForPayment.Day >= 1 && nextDayForPayment.Day <= 15)
+                            {
+                                var lastDayInMonth = DateTime.DaysInMonth(nextDayForPayment.Year, nextDayForPayment.Month);
+                                nextDayForPayment = new DateTime(nextDayForPayment.Year, nextDayForPayment.Month, lastDayInMonth);
+                            }
+                            else
+                            {
+                                var nextMonth = nextDayForPayment.AddMonths(1);
+                                nextDayForPayment = new DateTime(nextMonth.Year, nextMonth.Month, 15);
+                            }
+                        }
                     }
 
                     // verify days habiles
@@ -262,22 +413,23 @@ namespace PrestaQi.Service.ProcessServices
 
                     var count = detailsAdvances.Count();
 
-                    if (count > 0 && detailsAdvances.FirstOrDefault(detail => detail.Date_Advance == nextDayForPayment) != null)
+                    if (count > 0 && detailsAdvances.FirstOrDefault(detail => detail.Date_Payment == nextDayForPayment) != null
+                        && detailsAdvances.FirstOrDefault(detail => detail.Date_Payment == nextDayForPayment).Total_Payment < maxdiscount)
                     {
-                        totalAdvances += detailsAdvances.First(detail => detail.Date_Advance == nextDayForPayment).Amount;
+                        totalAdvances += detailsAdvances.First(detail => detail.Date_Payment == nextDayForPayment).Principal_Payment;
 
-                        detailsAdvances.RemoveAt(detailsAdvances.FindIndex(detail => detail.Date_Advance == nextDayForPayment));
+                        detailsAdvances.RemoveAt(detailsAdvances.FindIndex(detail => detail.Date_Payment == nextDayForPayment));
                     }
 
                     //advances
-                    var deductionsForNextDayPayment = advanceDetails.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Comission + advance.Interest + advance.Vat);
-                    var totalForNextDayPayment = advanceDetails.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Total_Withhold);
-                    var amounForNextDayPayment = advanceDetails.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Amount);
+                    var deductionsForNextDayPayment = advances.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Comission + advance.Interest + advance.Vat);
+                    var totalForNextDayPayment = advances.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Total_Withhold);
+                    var amounForNextDayPayment = advances.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Amount);
 
                     //detailsAdvance
                     var detailsDeductionsTotal = detailsAdvances.Sum(da => da.Interest + da.Vat);
-                    var detailsTotalPayment = detailsAdvances.Sum(da => da.Total_Withhold);
-                    var detailsAmountPayment = detailsAdvances.Sum(da => da.Amount);
+                    var detailsTotalPayment = detailsAdvances.Sum(da => da.Total_Payment);
+                    var detailsAmountPayment = detailsAdvances.Sum(da => da.Principal_Payment);
 
                     var totalPrevAdvanceWithDeduccion = (amounForNextDayPayment + deductionsForNextDayPayment) + detailsDeductionsTotal;
                     double[] listTotalsToDiscount =
@@ -307,14 +459,21 @@ namespace PrestaQi.Service.ProcessServices
                     var dayForPayment = 15;
                     var nextDate = DateTime.Now;
 
-                    if (nextDayForPayment.Day >= 1 && nextDayForPayment.Day <= 15)
-                    {
-                        dayForPayment = DateTime.DaysInMonth(nextDayForPayment.Year, nextDayForPayment.Month);
-                        nextDate = new DateTime(nextDayForPayment.Year, nextDayForPayment.Month, dayForPayment);
-                    } else
+                    if (accredited.Period_Name == "Mensual")
                     {
                         nextDate = nextDayForPayment.AddMonths(1);
-                        nextDate = new DateTime(nextDate.Year, nextDate.Month, 15);
+                    } else
+                    {
+                        if (nextDayForPayment.Day >= 1 && nextDayForPayment.Day <= 15)
+                        {
+                            dayForPayment = DateTime.DaysInMonth(nextDayForPayment.Year, nextDayForPayment.Month);
+                            nextDate = new DateTime(nextDayForPayment.Year, nextDayForPayment.Month, dayForPayment);
+                        }
+                        else
+                        {
+                            nextDate = nextDayForPayment.AddMonths(1);
+                            nextDate = new DateTime(nextDate.Year, nextDate.Month, 15);
+                        }
                     }
 
                     //verify days habiles
@@ -338,22 +497,17 @@ namespace PrestaQi.Service.ProcessServices
 
                     if (principalPayment > 0)
                     {
-                        detailsAdvances.Add(new Advance()
+                        detailsAdvances.Add(new DetailsAdvance()
                         {
                             Accredited_Id = accredited.id,
-                            Amount = Math.Round(principalPayment, 2),
-                            Requested_Day = dayForPayment,
-                            Comission = 0,
-                            Total_Withhold = Math.Round(totalDiscountForPaymentDetails, 2),
-                            Day_For_Payment = dayForPayment,
-                            Interest = interest,
-                            Vat = vat,
-                            Subtotal = interest + vat,
-                            Limit_Date = nextDayForPayment.AddDays(dayForPayment),
-                            Date_Advance = nextDayForPayment,
-                            Interest_Rate = accredited.Interest_Rate,
-                            Initial = Math.Round(amounForNextDayPayment - detailsAmountPayment, 2),
-                            Final = Math.Round(finalBalance, MidpointRounding.AwayFromZero)
+                            Principal_Payment = Math.Round(principalPayment, 2),
+                            Total_Payment = Math.Round(totalDiscountForPaymentDetails, 2),
+                            Interest = interest < 0 ? 0 : Math.Round(interest, 2),
+                            Vat = vat < 0 ? 0 : Math.Round(vat, 2),
+                            Date_Payment = nextDayForPayment,
+                            Initial_Balance = Math.Round(amounForNextDayPayment - detailsAmountPayment, 2),
+                            Final_Balance = Math.Round(finalBalance, 2),
+                            Days_For_Payments = dayForPayment
                         });
 
                         totalAdvances -= principalPayment;
@@ -366,143 +520,7 @@ namespace PrestaQi.Service.ProcessServices
                 }
             }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            Advance principalAdvance = firtsAdvance.CloneJson<Advance>();
-
-            if (advanceDetails.Count > 0)
-            {
-                var details = advanceDetails.Where(p => p.Limit_Date.Date == firtsAdvance.Limit_Date.Date);
-
-                firtsAdvance.Amount += details.Sum(p => p.Initial);
-                firtsAdvance.Comission += details.Sum(p => p.Comission);
-                firtsAdvance.Interest += details.Sum(p => p.Interest);
-                firtsAdvance.Vat += details.Sum(p => p.Vat);
-                firtsAdvance.Subtotal += details.Sum(p => p.Subtotal);
-                calculateAmount.Amount = firtsAdvance.Amount;
-                firtsAdvance.Total_Withhold = firtsAdvance.Amount + firtsAdvance.Subtotal + firtsAdvance.Vat;
-            }
-
-            double grossPercentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "GROSS_MONTHLY_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
-            double netPercentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "NET_MONTHLY_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
-            double maximumAmountDiscountByMonth = Math.Round((accredited.Gross_Monthly_Salary * grossPercentage) - accredited.Other_Obligations, 2);
-            
-            int numberPayments = Convert.ToInt32(Math.Round(firtsAdvance.Total_Withhold / maximumAmountDiscountByPeriod));
-
-            if (numberPayments < 2 && firtsAdvance.Total_Withhold > maximumAmountDiscountByPeriod)
-                numberPayments = 2;
-
-            int numberPaymentsTotal = Convert.ToInt32(Math.Round(firtsAdvance.Total_Withhold / maximumAmountDiscountByPeriod) + 1); // 2
-
-            double amountNumberPayment = firtsAdvance.Amount / numberPayments; // 800
-
-            if (amountNumberPayment + firtsAdvance.Subtotal + firtsAdvance.Vat < maximumAmountDiscountByPeriod) // 874.62
-            {
-                firtsAdvance.Total_Withhold = Math.Round(amountNumberPayment + firtsAdvance.Subtotal + firtsAdvance.Vat, 2); // 874.62
-                firtsAdvance.Amount = amountNumberPayment; // 800
-            }
-            else
-            {
-                firtsAdvance.Total_Withhold = maximumAmountDiscountByPeriod;
-                firtsAdvance.Amount = Math.Round(firtsAdvance.Total_Withhold - firtsAdvance.Subtotal - firtsAdvance.Vat, 2);
-            }
-
-            firtsAdvance.Initial = calculateAmount.Amount; //1600
-            firtsAdvance.Final = Math.Round(firtsAdvance.Initial - firtsAdvance.Amount, MidpointRounding.AwayFromZero); // 800
-
-
-            List<Advance> advances = new List<Advance>();
-            firtsAdvance.Date_Advance = DateTime.Now;
-
-            advances.Add(firtsAdvance);
-
-            int endDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-
-            for (int i = 1; i < numberPaymentsTotal; i++)
-            {
-
-                if (i + 1 == numberPaymentsTotal)
-                    amountNumberPayment = Math.Round(calculateAmount.Amount - advances.Sum(p => p.Amount), 2);
-
-                Advance advanceAux = advances[i - 1];
-
-                DateTime dateNextPayment = advanceAux.Limit_Date;
-                int dayForPayment = 0;
-                var nextCommission = 0;
-                double vat = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value) / 100;
-                double amount = 0;
-                double total = 0;
-                var commissionPeriodId = this._PeriodCommissionRetrieve.Where(p => p.Period_Id == accredited.Period_Id && p.Type_Month == endDay).FirstOrDefault().id;
-                var commissionPerioDetail = this._PeriodCommissionDetailRetrieve.Where(p => p.Period_Commission_Id == commissionPeriodId && p.Day_Month == dateNextPayment.Day).FirstOrDefault();
-                dayForPayment = commissionPerioDetail.Day_Payement;
-
-                double interestAux = (advanceAux.Initial > advanceAux.Amount && advanceAux.Total_Withhold > 0) ? advanceAux.Final * dayForPayment * 0.0017 : 0;
-                double interestAux2 = ((accredited.Net_Monthly_Salary / 2) > 0 && advanceAux.Total_Withhold == 0) ? advanceAux.Final * dayForPayment * 0.0017 : 0;
-                var nextInterest = Math.Round(nextCommission * dayForPayment * 0.0017 + interestAux + interestAux2, 2);
-
-                var nextVat = Math.Round((advanceAux.Comission + nextInterest) * vat, 2);
-
-                if (amountNumberPayment + nextInterest + nextVat < maximumAmountDiscountByPeriod)
-                {
-                    total = Math.Round(amountNumberPayment + nextInterest + nextVat, 2);
-                    amount = amountNumberPayment;
-                }
-                else
-                {
-                    total = maximumAmountDiscountByPeriod;
-                    amount = Math.Round(total - nextInterest - nextVat, 2);
-                }
-
-                Advance advance = new Advance()
-                {
-                    Accredited_Id = accredited.id,
-                    Amount = amount,
-                    Requested_Day = dateNextPayment.Day,
-                    Comission = nextCommission,
-                    Total_Withhold = total,
-                    Day_For_Payment = dayForPayment,
-                    Interest = nextInterest,
-                    Vat = nextVat,
-                    Subtotal = nextInterest + nextVat,
-                    Limit_Date = advanceAux.Limit_Date.AddDays(dayForPayment),
-                    Date_Advance = advanceAux.Limit_Date,
-                    Interest_Rate = accredited.Interest_Rate,
-                    Initial = advanceAux.Final,
-                    Final = Math.Round(advanceAux.Final - amount, MidpointRounding.AwayFromZero)
-                };
-
-                advances.Add(advance);
-            }
-
-            advances.Insert(0, principalAdvance);
-
-            return advances;
+            return detailsAdvances;
         }
 
         public CommisionAndInterestMaster ExecuteProcess(GetCommisionAndIntereset getCommisionAndIntereset)
@@ -613,9 +631,9 @@ namespace PrestaQi.Service.ProcessServices
                 advance.Interest_Moratorium = DateTimeOffset.Now.Date > advance.Limit_Date.Date ?
                 Math.Round(advance.Amount * (((double)accredited.Moratoruim_Interest_Rate / 100) / finantialDay) * advance.Day_Moratorium, 2) :
                 0;
-                advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission + advance.Promotional_Setting;
+                advance.Subtotal = advance.Interest + advance.Interest_Moratorium + advance.Comission;
                 advance.Vat = Math.Round(advance.Subtotal * vat, 2);
-                advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat, 2);
+                advance.Total_Withhold = Math.Round(advance.Amount + advance.Subtotal + advance.Vat + advance.Promotional_Setting, 2);
 
                 return advance;
             }
@@ -655,6 +673,126 @@ namespace PrestaQi.Service.ProcessServices
             {
                 throw new SystemValidationException($"Error al calcular el Ajuste: {exception.Message}");
             }
+        }
+    
+        public MyAdvances ExecuteProcess(int id)
+        {
+            MyAdvances myAdvances = new MyAdvances();
+            myAdvances.Befores = new List<Advance>();
+            myAdvances.Currents = new List<Advance>();
+            var date = DateTime.Now;
+            var nextDayForPay = 15;
+
+            if (date.Day > 15)
+            {
+                nextDayForPay = DateTime.DaysInMonth(date.Year, date.Month);
+            }
+
+            var acredited = this._AcreditedRetrieveService.Where(acredit => acredit.id == id).First();
+            TypeContract typeContract = this._TypeContractService.Where(type => type.id == acredited.Type_Contract_Id).First();
+            Period period = this._PeriodRetrieveService.Where(period => period.id == acredited.Period_Id).First();
+            Institution institution = this._InsitutionRetrieveService.Where(institution => institution.id == acredited.Institution_Id).First();
+            var advances = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == id).ToList();
+
+            if (typeContract.Code == "sueldoysalario")
+            {
+                if (period.Description == "Mensual")
+                {
+                    var forPayment = this._DetailsAdvanceRetrieveService.Where(d => advances.Where(a => a.id == d.Advance_Id).FirstOrDefault() != null).Where(detail => detail.Date_Payment.Year == date.Year && detail.Date_Payment.Month == date.Month).FirstOrDefault();
+
+                    if (forPayment != null)
+                    {
+                        myAdvances.For_Payment = forPayment;
+                        myAdvances.For_Payment.Bank_Name = institution.Description;
+                        myAdvances.For_Payment.Account_Number = acredited.Account_Number;
+                    }
+
+                } else if (period.Description == "Quincenal")
+                {
+                    date = new DateTime(date.Year, date.Month, nextDayForPay);
+
+                    if (date.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        date = date.AddDays(-1);
+                    }
+
+                    if (date.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        date = date.AddDays(-2);
+                    }
+
+                    var forPayment = this._DetailsAdvanceRetrieveService.Where(d => advances.Where(a => a.id == d.Advance_Id).FirstOrDefault() != null).Where(detail => detail.Date_Payment == date).FirstOrDefault();
+
+                    if (forPayment != null) {
+                        myAdvances.For_Payment = forPayment;
+                        myAdvances.For_Payment.Bank_Name = institution.Description;
+                        myAdvances.For_Payment.Account_Number = acredited.Account_Number;
+                    }
+                }
+            }
+
+            
+
+            foreach(Advance advance in advances)
+            {
+                advance.details = this._DetailsByAdvanceRetrieveService.Where(da => da.Advance_Id == advance.id).OrderBy(da => da.Detail_Id).ToList();
+
+                advance.details.ForEach(d =>
+                {
+                    d.Detail = this._DetailsAdvanceRetrieveService.Where(da => da.id == d.Detail_Id).FirstOrDefault();
+                });
+
+                if (period.Description == "Mensual")
+                {
+                    var lastDay = DateTime.DaysInMonth(date.Year, date.Month);
+                    DateTime datePayment = new DateTime(date.Year, date.Month, lastDay);
+                    DateTime dateBefore = new DateTime(date.Year, date.Month, 1);
+
+                    if (advance.Date_Advance >= dateBefore && advance.Date_Advance <= datePayment)
+                    {
+                        myAdvances.Currents.Add(advance);
+                    } else
+                    {
+                        myAdvances.Befores.Add(advance);
+                    }
+
+                }
+                else if (period.Description == "Semanal")
+                {
+                    DayOfWeek daynumber = date.DayOfWeek;
+                    var nextSunday = 7 - daynumber;
+                    DateTime datePayment = date.AddDays((int) nextSunday);
+
+                    if (advance.Date_Advance >= datePayment.AddDays(-6) && advance.Date_Advance <= datePayment)
+                    {
+                        myAdvances.Currents.Add(advance);
+                    } else
+                    {
+                        myAdvances.Befores.Add(advance);
+                    }
+                }
+                else
+                {
+                    if (advance.Date_Advance.Month == date.Month)
+                    {
+                        if (nextDayForPay == 15 && (advance.Date_Advance.Day >= 1 && advance.Date_Advance.Day <= 15))
+                        {
+                            myAdvances.Currents.Add(advance);
+                        } else if (nextDayForPay != 15 && (advance.Date_Advance.Day >= 16 && advance.Date_Advance.Day <= nextDayForPay))
+                        {
+                            myAdvances.Currents.Add(advance);
+                        } else
+                        {
+                            myAdvances.Befores.Add(advance);
+                        }
+                    } else
+                    {
+                        myAdvances.Befores.Add(advance);
+                    }
+                }
+            }
+
+            return myAdvances;
         }
     }
 }
