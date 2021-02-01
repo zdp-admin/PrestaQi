@@ -93,7 +93,6 @@ namespace PrestaQi.Service.WriteServices
                     response.advance.created_at = DateTime.Now;
                     response.advance.updated_at = DateTime.Now;
 
-                    //bool created = base.Create(response.advance);
                     bool created =  this._Repository.Create(response.advance);
 
                     if (created)

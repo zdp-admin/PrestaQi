@@ -119,6 +119,26 @@ namespace PrestaQi.Service.ProcessServices
             var resultList = CalculateAdvanceList(advances, accredited, periodPercentage, maximumAmountDiscountByPeriod);
             result.Item1.id = 0;
 
+            var sumAditionalVat = 0.0;
+
+            if (resultList.Count > 0)
+            {
+                foreach(DetailsAdvance detail in resultList)
+                {
+                    if (detail.Interest > 0)
+                    {
+                        sumAditionalVat += detail.Interest / advances.Count;
+                    }
+
+                    if (detail.Vat > 0)
+                    {
+                        sumAditionalVat += detail.Vat / advances.Count;
+                    }
+                }
+
+                result.Item1.Total_Withhold += Math.Round(sumAditionalVat, 2);
+            }
+
             return new AdvanceAndDetails() { advance = result.Item1, details = resultList };
         }
 
