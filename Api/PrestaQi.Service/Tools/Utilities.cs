@@ -12,6 +12,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using PrestaQi.Model.Enum;
 
 namespace PrestaQi.Service.Tools
 {
@@ -223,6 +224,113 @@ namespace PrestaQi.Service.Tools
                 result += Math.Pow(10, -decimalpoint);
             }
             return result;
+        }
+    
+        public static (DateTime initial, DateTime finish) getPeriodoByAccredited(Accredited accredited, DateTime currentDate)
+        {
+            switch (accredited.Period_Id)
+            {
+                case (int)PrestaQiEnum.PerdioAccredited.Semanal:
+                    break;
+                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
+                    break;
+                default:
+                    break;
+            }
+
+            return ( DateTime.Now, DateTime.Now );
+        }
+
+        private static List<int> semanal(int initial)
+        {
+            List<int> result = new List<int>();
+            int plus = 0;
+
+            for (int i = 0; i < 7; i++)
+            {
+                int newPosition = initial + plus;
+                if (newPosition == 7)
+                {
+                    result.Add(0);
+                    initial = 0;
+                    plus = 0;
+                }
+                else
+                {
+                    result.Add(newPosition);
+                }
+
+                plus++;
+            }
+
+            return result;
+        }
+
+        private static (DateTime, DateTime) quincenal(int initial, int finish, DateTime currenDate)
+        {
+            var initialDate = new DateTime(currenDate.Year, currenDate.Month, initial);
+            var finishDate = new DateTime(currenDate.Year, currenDate.Month, finish);
+
+            if (!(initialDate <= currenDate && finishDate >= currenDate))
+            {
+
+                if (currenDate.Day < initial)
+                {
+                    initialDate = new DateTime(currenDate.Year, currenDate.Month, finish);
+                    initialDate = initialDate.AddMonths(-1);
+                }
+
+                if (currenDate.Day > finish)
+                {
+                    initialDate = new DateTime(currenDate.Year, currenDate.Month, finish + 1);
+                }
+
+                finishDate = initialDate.AddDays(15);
+
+                if (initialDate.Day > finish)
+                {
+                    finishDate = new DateTime(finishDate.Year, finishDate.Month, (initial - 1) == 0 ? DateTime.DaysInMonth(finishDate.Year, finishDate.Month) : initial - 1);
+                }
+            }
+
+            return (initialDate, finishDate);
+        }
+
+        private static (DateTime, DateTime) mensual(int initial, int finish, DateTime currentDate)
+        {
+            DateTime dateInitial;
+            DateTime dateFinish;
+
+            if (currentDate.Day <= finish)
+            {
+                var dayInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                if (finish > dayInMonth)
+                {
+                    dateFinish = new DateTime(currentDate.Year, currentDate.Month, dayInMonth);
+                }
+                else
+                {
+                    dateFinish = new DateTime(currentDate.Year, currentDate.Month, finish);
+                }
+                var dateFinishAfterMonth = dateFinish.AddDays(-31);
+
+                if (finish >= dayInMonth)
+                {
+                    dateInitial = new DateTime(currentDate.Year, currentDate.Month, initial);
+                }
+                else
+                {
+                    dateInitial = new DateTime(dateFinishAfterMonth.Year, dateFinishAfterMonth.Month, initial);
+                }
+            }
+            else
+            {
+                dateInitial = new DateTime(currentDate.Year, currentDate.Month, initial);
+                var dateFinishAfterMonth = dateInitial.AddDays(31);
+                dateFinish = new DateTime(dateFinishAfterMonth.Year, dateFinishAfterMonth.Month, finish);
+            }
+
+            return (dateInitial, dateFinish);
         }
     }
 }
