@@ -101,10 +101,6 @@ namespace PrestaQi.Service.ProcessServices
                 }
                 else
                 {
-                    //accredited.Advances.Clear();
-                    /*var advanceDetails = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.Accredited_Id && p.Paid_Status == 2).ToList();
-                    advanceDetails.Add(this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accredited.Accredited_Id && p.Paid_Status == 0).FirstOrDefault());
-                    accredited.AdvanceDetails = advanceDetails;*/
                     var totalPayment = 0.0;
                     var nextDate = DateTime.Now;
 
