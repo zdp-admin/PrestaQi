@@ -80,7 +80,7 @@ namespace PrestaQi.Service.ProcessServices
                         p.Advances.ForEach(advance =>
                         {
                             workSheet.Cell(row, 7).Value = advance.Amount.ToString("C");
-                            workSheet.Cell(row, 8).Value = advance.Date_Advance.ToString("dd/MM/yyyy");
+                            workSheet.Cell(row, 8).Value = advance.created_at != null ? advance.created_at.ToString("dd/MM/yyyy") : "";
                             workSheet.Cell(row, 9).Value = advance.Requested_Day;
                             workSheet.Cell(row, 10).Value = advance.Interest.ToString("C");
                             workSheet.Cell(row, 11).Value = advance.Interest_Moratorium.ToString("C");
@@ -195,7 +195,7 @@ namespace PrestaQi.Service.ProcessServices
                                 Utilities.GenerateEmptyCell(6, cells);
 
                             Utilities.GenerateCell(advance.Amount.ToString("C"), cells, 8, TextAlignment.CENTER);
-                            Utilities.GenerateCell(advance.Date_Advance.ToString("dd/MM/yyyy"), cells, 8, TextAlignment.CENTER);
+                            Utilities.GenerateCell(advance.created_at != null ? advance.created_at.ToString("dd/MM/yyyy") : "", cells, 8, TextAlignment.CENTER);
                             Utilities.GenerateCell(advance.Requested_Day.ToString(), cells, 8, TextAlignment.CENTER);
                             Utilities.GenerateCell(advance.Interest.ToString("C"), cells, 8, TextAlignment.CENTER);
                             Utilities.GenerateCell(advance.Interest_Moratorium.ToString("C"), cells, 8, TextAlignment.CENTER);
