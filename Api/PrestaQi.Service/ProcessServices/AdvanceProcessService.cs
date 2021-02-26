@@ -1,9 +1,6 @@
-﻿using DocumentFormat.OpenXml.Math;
-using DocumentFormat.OpenXml.Spreadsheet;
-using InsiscoCore.Base.Data;
+﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
-using OpenXmlPowerTools;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
@@ -13,7 +10,6 @@ using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace PrestaQi.Service.ProcessServices
 {
@@ -162,35 +158,9 @@ namespace PrestaQi.Service.ProcessServices
             DateTime datePeriodInitial = currentDate;
             DateTime datePeriodFinish = currentDate;
 
-            switch (accredited.Period_Id)
-            {
-                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-                    if (currentDate.Day <= 15)
-                    {
-                        datePeriodInitial = new DateTime(currentDate.Year, currentDate.Month, 1);
-                        datePeriodFinish = new DateTime(currentDate.Year, currentDate.Month, 15);
-                    } else
-                    {
-                        datePeriodInitial = new DateTime(currentDate.Year, currentDate.Month, 16);
-                        datePeriodFinish = new DateTime(currentDate.Year, currentDate.Month, DateTime.DaysInMonth(currentDate.Year, currentDate.Month));
-                    }
-                    break;
-                case (int)PrestaQiEnum.PerdioAccredited.Mensual:
-                        datePeriodInitial = new DateTime(currentDate.Year, currentDate.Month, 1);
-                        datePeriodFinish = new DateTime(currentDate.Year, currentDate.Month, DateTime.DaysInMonth(currentDate.Year, currentDate.Month));
-                    break;
-                default:
-                    if (currentDate.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        datePeriodInitial = currentDate.AddDays(-7);
-                        datePeriodFinish = currentDate;
-                    } else
-                    {
-                        datePeriodInitial = currentDate.AddDays(-((double)currentDate.DayOfWeek - 1));
-                        datePeriodFinish = currentDate.AddDays(7 - (double)currentDate.DayOfWeek);
-                    }
-                    break;
-            }
+            var currentPeriod = Utilities.getPeriodoByAccredited(accredited, currentDate);
+            datePeriodInitial = currentPeriod.initial;
+            datePeriodFinish = currentPeriod.finish;
 
             periodIsPaying = this._PaidAdvanceRepository
                 .Where(paidAdvance => paidAdvance.Company_Id == accredited.Company_Id)
@@ -220,10 +190,8 @@ namespace PrestaQi.Service.ProcessServices
             switch (accredited.Period_Id)
             {
                 case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-                    if (commissionPerioDetail.Date_Payment == 15 && currentDate.Day > 15)
-                        limitDate = limitDate.AddMonths(1);
 
-                    limitDate = new DateTime(limitDate.Year, limitDate.Month, commissionPerioDetail.Date_Payment);
+                    limitDate = datePeriodFinish;
 
                     /*Check is available day*/
                     if (limitDate.DayOfWeek == DayOfWeek.Saturday)
@@ -243,27 +211,13 @@ namespace PrestaQi.Service.ProcessServices
                         isMaxAmount = true;
                     }
 
-                    if (currentDate.Day >= 15)
-                    {
-                        startDate = new DateTime(endDate.Year, endDate.Month, 15);
-                        endDate = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
-                    }
-
-                    if (currentDate.Day < 15)
-                    {
-                        startDate = new DateTime(startDate.Year, startDate.Month, 1);
-                        endDate = new DateTime(endDate.Year, endDate.Month, 15);
-                    }
+                    startDate = datePeriodInitial;
+                    endDate = datePeriodFinish;
 
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Mensual:
-                    if (currentDate.Day >= (endDay - 2))
-                    {
-                        limitDate = limitDate.AddMonths(1);
-                        limitDate = new DateTime(limitDate.Year, limitDate.Month, DateTime.DaysInMonth(limitDate.Year, limitDate.Month));
-                    }
-                    else
-                        limitDate = new DateTime(limitDate.Year, limitDate.Month, endDay);
+                    
+                    limitDate = datePeriodFinish;
 
                     /*Check is available day*/
                     if (limitDate.DayOfWeek == DayOfWeek.Saturday)
@@ -283,33 +237,21 @@ namespace PrestaQi.Service.ProcessServices
                         advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary / 2);
                     }
 
-                    startDate = new DateTime(startDate.Year, startDate.Month, 1);
-                    endDate = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
+                    startDate = datePeriodInitial;
+                    endDate = datePeriodFinish;
 
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
                     var dayWeek = accredited.End_Day_Payment.DayOfWeek;
 
-                    if (DateTime.Now.DayOfWeek == dayWeek)
-                        startDate = currentDate.StartOfWeek(dayWeek).AddDays(-6);
-                    else
-                        startDate = currentDate.StartOfWeek(dayWeek).AddDays(1);
-
-                    endDate = startDate.AddDays(6);
+                    startDate = datePeriodInitial;
+                    endDate = datePeriodFinish;
                     limitDate = endDate;
 
-                    if (DateTime.Now.Date >= endDate.AddDays(-2).Date)
+                    if (!(DateTime.Now.Date >= endDate.AddDays(-2).Date))
                     {
-                        DateTime today = DateTime.Today;
-                        int daysUntilMonday = ((int)dayWeek - (int)today.DayOfWeek + 7) % 7;
-                        if (daysUntilMonday == 0)
-                            daysUntilMonday = 1;
-
-                        DateTime nextWeekMonday = ((int)dayWeek - (int)today.DayOfWeek + 7) % 7 == 0 ? today.AddDays(daysUntilMonday) : today.AddDays(daysUntilMonday).AddDays(1);
-                        limitDate = nextWeekMonday.AddDays(6);
-                    }
-                    else
                         commission = commission + ((DateTime.Now.Date - startDate.Date).Days);
+                    }
 
                     if (calculateAmount.Amount == 0)
                     {
@@ -320,9 +262,6 @@ namespace PrestaQi.Service.ProcessServices
                     advanceCalculated.Day_For_Payment = (limitDate.Date - currentDate.Date).Days;
                     break;
             }
-
-            /*var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
-            p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date && p.Paid_Status == 0).ToList();*/
 
             var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
             ((p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date && p.Paid_Status == 0) || (p.Date_Advance < endDate && p.Paid_Status == 0))).ToList();
@@ -400,24 +339,8 @@ namespace PrestaQi.Service.ProcessServices
 
                     if (index > 0)
                     {
-                        if (accredited.Period_Name == "Mensual")
-                        {
-                            var lastDayInMonth = DateTime.DaysInMonth(nextDayForPayment.Year, nextDayForPayment.Month);
-                            nextDayForPayment = new DateTime(nextDayForPayment.Year, nextDayForPayment.Month, lastDayInMonth);
-                        }
-                        else
-                        {
-                            if (nextDayForPayment.Day >= 1 && nextDayForPayment.Day <= 15)
-                            {
-                                var lastDayInMonth = DateTime.DaysInMonth(nextDayForPayment.Year, nextDayForPayment.Month);
-                                nextDayForPayment = new DateTime(nextDayForPayment.Year, nextDayForPayment.Month, lastDayInMonth);
-                            }
-                            else
-                            {
-                                var nextMonth = nextDayForPayment.AddMonths(1);
-                                nextDayForPayment = new DateTime(nextMonth.Year, nextMonth.Month, 15);
-                            }
-                        }
+                        var currentPeriodDetails = Utilities.getPeriodoByAccredited(accredited, nextDayForPayment.AddDays(4));
+                        nextDayForPayment = currentPeriodDetails.finish;
                     }
 
                     // verify days habiles
@@ -476,25 +399,11 @@ namespace PrestaQi.Service.ProcessServices
                     var finalBalance = (amounForNextDayPayment - detailsAmountPayment) - principalPayment;
 
 
-                    var dayForPayment = 15;
+                    var dayForPayment = accredited.Period_End_Date ?? 15;
                     var nextDate = DateTime.Now;
 
-                    if (accredited.Period_Name == "Mensual")
-                    {
-                        nextDate = nextDayForPayment.AddMonths(1);
-                    } else
-                    {
-                        if (nextDayForPayment.Day >= 1 && nextDayForPayment.Day <= 15)
-                        {
-                            dayForPayment = DateTime.DaysInMonth(nextDayForPayment.Year, nextDayForPayment.Month);
-                            nextDate = new DateTime(nextDayForPayment.Year, nextDayForPayment.Month, dayForPayment);
-                        }
-                        else
-                        {
-                            nextDate = nextDayForPayment.AddMonths(1);
-                            nextDate = new DateTime(nextDate.Year, nextDate.Month, 15);
-                        }
-                    }
+                    var currentPeriod = Utilities.getPeriodoByAccredited(accredited, nextDayForPayment);
+                    nextDate = currentPeriod.finish;
 
                     //verify days habiles
                     if (nextDate.DayOfWeek == DayOfWeek.Saturday)

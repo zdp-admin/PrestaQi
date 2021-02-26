@@ -228,17 +228,29 @@ namespace PrestaQi.Service.Tools
     
         public static (DateTime initial, DateTime finish) getPeriodoByAccredited(Accredited accredited, DateTime currentDate)
         {
+            DateTime initial;
+            DateTime finish;
+
             switch (accredited.Period_Id)
             {
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
+                    int indexDay = semanal(accredited.Period_Start_Date ?? 1).IndexOf((int)currentDate.DayOfWeek);
+                    initial = currentDate.AddDays(-indexDay);
+                    finish = currentDate.AddDays(6 - indexDay);
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
+                    var result = quincenal(accredited.Period_Start_Date ?? 1, accredited.Period_End_Date ?? 15, currentDate);
+                    initial = result.Item1;
+                    finish = result.Item2;
                     break;
                 default:
+                    var month = mensual(accredited.Period_Start_Date ?? 1, accredited.Period_End_Date ?? 31, currentDate);
+                    initial = month.Item1;
+                    finish = month.Item2;
                     break;
             }
 
-            return ( DateTime.Now, DateTime.Now );
+            return ( initial, finish );
         }
 
         private static List<int> semanal(int initial)

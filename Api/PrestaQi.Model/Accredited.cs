@@ -116,6 +116,10 @@ namespace PrestaQi.Model
         public DateTime End_Day_Payment { get; set; }
         [Column("outsourcing_id")]
         public int? Outsourcing_id { get; set; }
+        [Column("period_start_date")]
+        public int? Period_Start_Date { get; set; }
+        [Column("period_end_date")]
+        public int? Period_End_Date { get; set; }
         #endregion
     }
 }

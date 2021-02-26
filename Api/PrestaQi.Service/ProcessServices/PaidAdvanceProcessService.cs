@@ -75,9 +75,12 @@ namespace PrestaQi.Service.ProcessServices
 
                     if (p.details.Count <= 0)
                     {
-                        p.Enabled = data.IsPartial ? true : false;
-                        p.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
-                            (int)PrestaQiEnum.AdvanceStatus.Pagado;
+                        if (p.Limit_Date <= nextDayForPayment)
+                        {
+                            p.Enabled = data.IsPartial ? true : false;
+                            p.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
+                                (int)PrestaQiEnum.AdvanceStatus.Pagado;
+                        }
                     } else
                     {
                         p.details.ForEach(d =>
@@ -109,13 +112,21 @@ namespace PrestaQi.Service.ProcessServices
                 
                 advanceIds = data.AdvanceIds.Where(p => p.Contract_Type_Id == 2).Select(p => p.Advance_Id);
                 advances = this._AdvanceRetrieveService.Where(p => advanceIds.Contains(p.id)).ToList();
+
                 advances.ForEach(p =>
                 {
-                    p.updated_at = DateTime.Now;
-                    p.Enabled = data.IsPartial ? true : false;
-                    p.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
-                        (int)PrestaQiEnum.AdvanceStatus.Pagado;
+                    var nextDayForPayment = nextDatePayment(p.Accredited_Id);
+
+                    if (p.Limit_Date <= nextDayForPayment)
+                    {
+                        p.updated_at = DateTime.Now;
+                        p.Enabled = data.IsPartial ? true : false;
+                        p.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
+                            (int)PrestaQiEnum.AdvanceStatus.Pagado;
+                    }
+
                 });
+
                 this._AdvanceWriteService.Update(advances);
 
 
@@ -152,34 +163,9 @@ namespace PrestaQi.Service.ProcessServices
                 return date;
             }
 
-            switch (accredited.Period_Id)
-            {
-                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-                    
-                    if (now.Day > 15)
-                    {
-                        date = new DateTime(now.Year, now.Month, DateTime.DaysInMonth(now.Year, now.Month));
-                    } else
-                    {
-                        date = new DateTime(now.Year, now.Month, 15);
-                    }
+            var periods = Utilities.getPeriodoByAccredited(accredited, date);
 
-                    break;
-                case (int)PrestaQiEnum.PerdioAccredited.Mensual:
-                        date = new DateTime(now.Year, now.Month, DateTime.DaysInMonth(now.Year, now.Month));
-                    break;
-                case (int)PrestaQiEnum.PerdioAccredited.Semanal:
-                    var dayWeek = accredited.End_Day_Payment.DayOfWeek;
-
-                    if (DateTime.Now.DayOfWeek == dayWeek)
-                        date = DateTime.Now.StartOfWeek(dayWeek).AddDays(-6);
-                    else
-                        date = DateTime.Now.StartOfWeek(dayWeek).AddDays(1);
-
-                    break;
-            }
-
-            return date;
+            return periods.finish;
         }
     }
 }

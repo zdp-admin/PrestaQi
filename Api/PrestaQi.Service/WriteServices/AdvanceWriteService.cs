@@ -1,6 +1,7 @@
 ﻿using InsiscoCore.Base.Data;
 using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using Microsoft.Extensions.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
@@ -29,6 +30,7 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<DetailsAdvance> _DetailsAdvanceRetrieve;
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieve;
         IWriteService<DetailsByAdvance> _DetailsByAdvanceWriteService;
+        public IConfiguration Configuration { get; }
 
         public AdvanceWriteService(
             IWriteRepository<Advance> repository,
@@ -45,7 +47,8 @@ namespace PrestaQi.Service.WriteServices
             IWriteService<DetailsAdvance> detailsAdvanceWriteService,
             IRetrieveService<DetailsAdvance> detailsAdvanceRetrieve,
             IRetrieveService<DetailsByAdvance> detailsByAdvanceRetrieve,
-            IWriteService<DetailsByAdvance> detailByAdvanceWriteService
+            IWriteService<DetailsByAdvance> detailByAdvanceWriteService,
+            IConfiguration configuration
             ) : base(repository)
         {
             this._AdvacenProcessService = advanceProcessService;
@@ -62,6 +65,7 @@ namespace PrestaQi.Service.WriteServices
             this._DetailsAdvanceRetrieve = detailsAdvanceRetrieve;
             this._DetailsByAdvanceRetrieve = detailsByAdvanceRetrieve;
             this._DetailsByAdvanceWriteService = detailByAdvanceWriteService;
+            Configuration = configuration;
         }
 
         public Advance Create(CalculateAmount calculateAmount)
@@ -69,7 +73,6 @@ namespace PrestaQi.Service.WriteServices
             Accredited accredited = this._AccreditedRetrieveService.Find(calculateAmount.Accredited_Id);
             AdvanceAndDetails response = this._AdvacenProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(calculateAmount);
             
-
             response.details.ForEach(advance =>
             {
                 advance.created_at = DateTime.Now;
@@ -77,13 +80,19 @@ namespace PrestaQi.Service.WriteServices
                 advance.Paid_Status = (int)PrestaQiEnum.AdvanceStatus.NoPagado;
             });
 
-            var spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
-            {
-                Accredited_Id = calculateAmount.Accredited_Id,
-                Advance = response.advance
-            });
+            ResponseSpei spei;
 
-            //var spei = new ResponseSpei() { resultado = new resultado() { id = 4500, claveRastreo = "TESTFF12333", descripcionError = "" } } ;
+            if (Configuration["environment"] == "prod")
+            {
+                spei = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
+                {
+                    Accredited_Id = calculateAmount.Accredited_Id,
+                    Advance = response.advance
+                });
+            } else
+            {
+                spei = new ResponseSpei() { resultado = new resultado() { id = 4500, claveRastreo = "TESTFF12333", descripcionError = "" } };
+            }
 
             try
             {
@@ -223,10 +232,6 @@ namespace PrestaQi.Service.WriteServices
 
             var detail = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accreditedId &&
             p.Limit_Date.Date == DateTime.Now.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).FirstOrDefault();
-                    /*(from a in this._AdvanceDetailRetrieveService.Where(p => true)
-                          join b in this._AdvanceRepository.Where(p => p.Accredited_Id == accreditedId) on a.Advance_Id equals b.id
-                          where a.Limit_Date.Date == DateTime.Now.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
-                          select a).OrderBy(p => p.Advance_Id).FirstOrDefault();*/
 
             if (detail != null)
             {

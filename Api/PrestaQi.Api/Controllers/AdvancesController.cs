@@ -102,7 +102,6 @@ namespace PrestaQi.Api.Controllers
         public IActionResult GetByAccredited(int id)
         {
             return Ok(this._AdvanceProcessService.ExecuteProcess<int, MyAdvances>(id));
-            return Ok(this._AdvanceRetrieveService.Where(p => p.Accredited_Id == id));
         }
 
         [HttpPost, Route("SetPaidAdvance")]
@@ -110,7 +109,7 @@ namespace PrestaQi.Api.Controllers
         {
             var result = this._PaidAdvanceProcessService.ExecuteProcess<SetPayAdvance, bool>(setPayAdvance);
 
-            if (result)
+            if (result && Configuration["environment"] == "prod")
                SendNotifiationSetPaidAdvance(setPayAdvance.AdvanceIds);
 
             return Ok(result);
