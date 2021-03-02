@@ -9,6 +9,7 @@ using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
+using PrestaQi.Service.Tools;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -136,6 +137,14 @@ namespace PrestaQi.Api.Controllers
         public IActionResult BlockedService(BlockedAccredited blockedAccredited)
         {
             return Ok(this._AccreditedWriteService.Update<BlockedAccredited, bool>(blockedAccredited));
+        }
+
+        [HttpGet, Route("GetCurrentPeriod")]
+        public IActionResult GetCurrentPeriod()
+        {
+            int accreditedId = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+            var accredited = this._AccreditedRetrieveService.Find(accreditedId);
+            return Ok(Utilities.getPeriodoByAccredited(accredited, DateTime.Now));
         }
     }
 }

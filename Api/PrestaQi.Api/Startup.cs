@@ -90,7 +90,7 @@ namespace PrestaQi.Api
             var serviceScopeFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
             var serviceProvider = serviceScopeFactory.CreateScope().ServiceProvider;
 
-            if (env.IsDevelopment())
+            if (Configuration["environment"] == "dev")
             {
                 app.UseDeveloperExceptionPage();
             }

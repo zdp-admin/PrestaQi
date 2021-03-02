@@ -234,7 +234,7 @@ namespace PrestaQi.Service.ProcessServices
                     if (calculateAmount.Amount == 0)
                     {
                         isMaxAmount = true;
-                        advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary / 2);
+                        advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary);
                     }
 
                     startDate = datePeriodInitial;
@@ -326,6 +326,17 @@ namespace PrestaQi.Service.ProcessServices
             int numberOfPayments = Convert.ToInt32(Math.Round(totalForPay / maxdiscount, 2));
             double residuo = totalForPay % maxdiscount;
             double totalAdvances = advances.Sum(advance => advance.Amount);
+
+
+            switch(accredited.Period_Id)
+            {
+                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
+                    totalDisponible = totalDisponible / 2;
+                    break;
+                case (int)PrestaQiEnum.PerdioAccredited.Semanal:
+                    totalDisponible = totalDisponible / 4;
+                    break;
+            }
 
             List<DetailsAdvance> detailsAdvances = new List<DetailsAdvance>();
             int index = 0;
@@ -622,45 +633,19 @@ namespace PrestaQi.Service.ProcessServices
             Period period = this._PeriodRetrieveService.Where(period => period.id == acredited.Period_Id).First();
             Institution institution = this._InsitutionRetrieveService.Where(institution => institution.id == acredited.Institution_Id).First();
             var advances = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == id).ToList();
+            var datesPeriod = Utilities.getPeriodoByAccredited(acredited, DateTime.Now); 
 
             if (typeContract.Code == "sueldoysalario")
             {
-                if (period.Description == "Mensual")
+                var forPayment = this._DetailsAdvanceRetrieveService.Where(d => advances.Where(a => a.id == d.Advance_Id).FirstOrDefault() != null).Where(detail => detail.Date_Payment == datesPeriod.finish).FirstOrDefault();
+
+                if (forPayment != null)
                 {
-                    var forPayment = this._DetailsAdvanceRetrieveService.Where(d => advances.Where(a => a.id == d.Advance_Id).FirstOrDefault() != null).Where(detail => detail.Date_Payment.Year == date.Year && detail.Date_Payment.Month == date.Month).FirstOrDefault();
-
-                    if (forPayment != null)
-                    {
-                        myAdvances.For_Payment = forPayment;
-                        myAdvances.For_Payment.Bank_Name = institution.Description;
-                        myAdvances.For_Payment.Account_Number = acredited.Account_Number;
-                    }
-
-                } else if (period.Description == "Quincenal")
-                {
-                    date = new DateTime(date.Year, date.Month, nextDayForPay);
-
-                    if (date.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        date = date.AddDays(-1);
-                    }
-
-                    if (date.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        date = date.AddDays(-2);
-                    }
-
-                    var forPayment = this._DetailsAdvanceRetrieveService.Where(d => advances.Where(a => a.id == d.Advance_Id).FirstOrDefault() != null).Where(detail => detail.Date_Payment == date).FirstOrDefault();
-
-                    if (forPayment != null) {
-                        myAdvances.For_Payment = forPayment;
-                        myAdvances.For_Payment.Bank_Name = institution.Description;
-                        myAdvances.For_Payment.Account_Number = acredited.Account_Number;
-                    }
+                    myAdvances.For_Payment = forPayment;
+                    myAdvances.For_Payment.Bank_Name = institution.Description;
+                    myAdvances.For_Payment.Account_Number = acredited.Account_Number;
                 }
             }
-
-            
 
             foreach(Advance advance in advances)
             {
@@ -671,53 +656,13 @@ namespace PrestaQi.Service.ProcessServices
                     d.Detail = this._DetailsAdvanceRetrieveService.Where(da => da.id == d.Detail_Id).FirstOrDefault();
                 });
 
-                if (period.Description == "Mensual")
+                if (advance.Date_Advance >= datesPeriod.initial && advance.Date_Advance <= datesPeriod.finish)
                 {
-                    var lastDay = DateTime.DaysInMonth(date.Year, date.Month);
-                    DateTime datePayment = new DateTime(date.Year, date.Month, lastDay);
-                    DateTime dateBefore = new DateTime(date.Year, date.Month, 1);
-
-                    if (advance.Date_Advance >= dateBefore && advance.Date_Advance <= datePayment)
-                    {
-                        myAdvances.Currents.Add(advance);
-                    } else
-                    {
-                        myAdvances.Befores.Add(advance);
-                    }
-
-                }
-                else if (period.Description == "Semanal")
-                {
-                    DayOfWeek daynumber = date.DayOfWeek;
-                    var nextSunday = 7 - daynumber;
-                    DateTime datePayment = date.AddDays((int) nextSunday);
-
-                    if (advance.Date_Advance >= datePayment.AddDays(-6) && advance.Date_Advance <= datePayment)
-                    {
-                        myAdvances.Currents.Add(advance);
-                    } else
-                    {
-                        myAdvances.Befores.Add(advance);
-                    }
+                    myAdvances.Currents.Add(advance);
                 }
                 else
                 {
-                    if (advance.Date_Advance.Month == date.Month)
-                    {
-                        if (nextDayForPay == 15 && (advance.Date_Advance.Day >= 1 && advance.Date_Advance.Day <= 15))
-                        {
-                            myAdvances.Currents.Add(advance);
-                        } else if (nextDayForPay != 15 && (advance.Date_Advance.Day >= 16 && advance.Date_Advance.Day <= nextDayForPay))
-                        {
-                            myAdvances.Currents.Add(advance);
-                        } else
-                        {
-                            myAdvances.Befores.Add(advance);
-                        }
-                    } else
-                    {
-                        myAdvances.Befores.Add(advance);
-                    }
+                    myAdvances.Befores.Add(advance);
                 }
             }
 

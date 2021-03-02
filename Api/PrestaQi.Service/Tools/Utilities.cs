@@ -234,9 +234,18 @@ namespace PrestaQi.Service.Tools
             switch (accredited.Period_Id)
             {
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
-                    int indexDay = semanal(accredited.Period_Start_Date ?? 1).IndexOf((int)currentDate.DayOfWeek);
-                    initial = currentDate.AddDays(-indexDay);
-                    finish = currentDate.AddDays(6 - indexDay);
+                    int periodStart = accredited.Period_Start_Date ?? 1;
+                    int indexDay = semanal(periodStart).IndexOf((int)currentDate.DayOfWeek);
+                    
+                    initial = currentDate.AddDays(-(indexDay - 1));
+                    finish = currentDate.AddDays(7 - indexDay);
+
+                    if (periodStart == 0)
+                    {
+                        initial = currentDate.AddDays(-(6 - indexDay));
+                        finish = currentDate.AddDays(-indexDay);
+                    }
+
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
                     var result = quincenal(accredited.Period_Start_Date ?? 1, accredited.Period_End_Date ?? 15, currentDate);
@@ -244,7 +253,7 @@ namespace PrestaQi.Service.Tools
                     finish = result.Item2;
                     break;
                 default:
-                    var month = mensual(accredited.Period_Start_Date ?? 1, accredited.Period_End_Date ?? 31, currentDate);
+                    var month = mensual(accredited.Period_Start_Date ?? 1, currentDate);
                     initial = month.Item1;
                     finish = month.Item2;
                     break;
@@ -308,41 +317,44 @@ namespace PrestaQi.Service.Tools
             return (initialDate, finishDate);
         }
 
-        private static (DateTime, DateTime) mensual(int initial, int finish, DateTime currentDate)
+        private static (DateTime, DateTime) mensual(int initial, DateTime currentDate)
         {
-            DateTime dateInitial;
             DateTime dateFinish;
+            DateTime dateInitial;
+            DateTime temp;
 
-            if (currentDate.Day <= finish)
+            if (currentDate.Day >= initial)
             {
-                var dayInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-                if (finish > dayInMonth)
-                {
-                    dateFinish = new DateTime(currentDate.Year, currentDate.Month, dayInMonth);
-                }
-                else
-                {
-                    dateFinish = new DateTime(currentDate.Year, currentDate.Month, finish);
-                }
-                var dateFinishAfterMonth = dateFinish.AddDays(-31);
+                temp = processParseDate(currentDate.Year, currentDate.Month, initial);
+                temp = temp.AddDays(1);
+                dateInitial = temp;
+                temp = temp.AddMonths(1);
+                dateFinish = processParseDate(temp.Year, temp.Month, initial);
 
-                if (finish >= dayInMonth)
-                {
-                    dateInitial = new DateTime(currentDate.Year, currentDate.Month, initial);
-                }
-                else
-                {
-                    dateInitial = new DateTime(dateFinishAfterMonth.Year, dateFinishAfterMonth.Month, initial);
-                }
             }
             else
             {
-                dateInitial = new DateTime(currentDate.Year, currentDate.Month, initial);
-                var dateFinishAfterMonth = dateInitial.AddDays(31);
-                dateFinish = new DateTime(dateFinishAfterMonth.Year, dateFinishAfterMonth.Month, finish);
+                temp = processParseDate(currentDate.Year, currentDate.Month, initial);
+                temp = temp.AddMonths(-1);
+                dateInitial = DateTime.DaysInMonth(temp.Year, temp.Month) >= initial ? new DateTime(temp.Year, temp.Month, initial) : temp;
+                dateInitial = dateInitial.AddDays(1);
+                dateFinish = processParseDate(currentDate.Year, currentDate.Month, initial);
             }
 
             return (dateInitial, dateFinish);
+        }
+
+        private static DateTime processParseDate(int year, int month, int day)
+        {
+            DateTime result;
+            var valid = DateTime.TryParse($"{year}/{month}/{day}", out result);
+
+            if (!valid)
+            {
+                result = processParseDate(year, month, day - 1);
+            }
+
+            return result;
         }
     }
 }
