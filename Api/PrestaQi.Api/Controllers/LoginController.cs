@@ -62,6 +62,39 @@ namespace PrestaQi.Api.Controllers
             return Success("User not found");
         }
 
+        [HttpPost, AllowAnonymous]
+        [Route("LoginDocumentation")]
+        public IActionResult LoginDocumentation(Login login)
+        {
+            if (!(login.Mail == "gte.desarrollo@singh.com.mx" && login.Password == "Singh2021*"))
+            {
+                return NotFound("User not found");
+            }
+
+            var user = new User()
+            {
+                First_Name = "gte",
+                Last_Name = "desarrollo",
+                Mail = "gte.desarrollo@singh.com.mx",
+                id = 1,
+                Modules = new System.Collections.Generic.List<UserModule>()
+            };
+
+            var tokenString = GenerateJSONWebToken(new UserLogin()
+            {
+                Type = 1,
+                User = user
+            });
+
+            return Ok(new
+            {
+                Token = tokenString,
+                User = user,
+                Type = 1,
+                TypeName = "Administrador"
+            });
+        }
+
         private string GenerateJSONWebToken(UserLogin user)
         {
             string nameComplete = string.Empty;
