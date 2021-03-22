@@ -242,7 +242,6 @@ namespace PrestaQi.Service.ProcessServices
 
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Semanal:
-                    var dayWeek = accredited.End_Day_Payment.DayOfWeek;
 
                     startDate = datePeriodInitial;
                     endDate = datePeriodFinish;
