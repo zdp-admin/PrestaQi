@@ -1,5 +1,6 @@
 ﻿using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using Microsoft.Extensions.Configuration;
 using OpenXmlPowerTools;
 using PrestaQi.Model;
 using PrestaQi.Model.Configurations;
@@ -19,22 +20,31 @@ namespace PrestaQi.Service.ProcessServices
     {
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<Device> _DeviceRetrieveService;
+        public IConfiguration Configuration { get; }
 
         public NotificationProcessService(
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<Device> deviceRetrieveService
+            IRetrieveService<Device> deviceRetrieveService,
+            IConfiguration configuration
             )
         {
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._DeviceRetrieveService = deviceRetrieveService;
+            this.Configuration = configuration;
         }
 
         public bool ExecuteProcess(Notification notification)
         {
 			try
 			{
+
+                if (Configuration["environment"] == "dev")
+                {
+                    return true;
+                }
+
                 var devices = this._DeviceRetrieveService.Where(p => p.User_Id == notification.User_Id && p.User_Type == notification.User_Type)
-                    .Select(p => p.Device_Id).ToList();
+                .Select(p => p.Device_Id).ToList();
 
                 if (devices.Count > 0) {
                     var url = this._ConfigurationRetrieveService.Where(p => p.Configuration_Name == "FIREBASE_URL_SEND").FirstOrDefault().Configuration_Value;

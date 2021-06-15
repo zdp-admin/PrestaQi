@@ -20,6 +20,10 @@ namespace PrestaQi.Service.RetrieveServices
         IRetrieveService<Institution> _InsitutionRetrieveService;
         IRetrieveService<TypeContract> _TypeContractService;
         IProcessService<Advance> _AdvanceProcessService;
+        IRetrieveService<Configuration> _ConfigurationRetrieveService;
+        IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
+        IRetrieveService<DetailsAdvance> _DetailsAdvance;
+        IRetrieveService<DetailsByAdvance> _DetailsByAdvance;
 
         public AccreditedRetrieveService(
             IRetrieveRepository<Accredited> repository,
@@ -28,7 +32,11 @@ namespace PrestaQi.Service.RetrieveServices
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<Institution> insitutionRetrieveService,
             IRetrieveService<TypeContract> typeContractService,
-            IProcessService<Advance> advanceProcessService
+            IProcessService<Advance> advanceProcessService,
+            IRetrieveService<Configuration> configurationRetrieveService,
+            IRetrieveService<DetailsAdvance> detailsAdvance,
+            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
+            IRetrieveService<DetailsByAdvance> detailsByAvance
             ) : base(repository)
         {
             this._PeriodRetrieveService = periodRetrieveService;
@@ -37,6 +45,10 @@ namespace PrestaQi.Service.RetrieveServices
             this._InsitutionRetrieveService = insitutionRetrieveService;
             this._TypeContractService = typeContractService;
             this._AdvanceProcessService = advanceProcessService;
+            this._ConfigurationRetrieveService = configurationRetrieveService;
+            this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
+            this._DetailsAdvance = detailsAdvance;
+            this._DetailsByAdvance = detailsByAvance;
         }
 
         public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
@@ -89,30 +101,62 @@ namespace PrestaQi.Service.RetrieveServices
                         .Take(accreditedByPagination.NumRecord).ToList();
             }
 
+            accrediteds.ForEach(a =>
+            {
+                var detailsAdvanceAll = this._DetailsAdvance.Where(da => da.Accredited_Id == a.id).ToList();
+                a.Advances.ForEach(advance =>
+                {
+                    advance.details = this._DetailsByAdvance.Where(da => da.Advance_Id == advance.id).OrderBy(da => da.Detail_Id).ToList();
+                    if (advance.details.Count > 0)
+                    {
+                        advance.details.ForEach(d =>
+                        {
+                            d.Detail = detailsAdvanceAll.Where(da => da.id == d.Detail_Id).FirstOrDefault();
+                        });
+                    }
+                });
+            });
+
             return new AccreditedPagination() { Accrediteds = accrediteds, TotalRecord = totalRecord };
         }  
 
         IEnumerable<Accredited> GetList(List<Accredited> list)
         {
-            
+            var configurations = this._ConfigurationRetrieveService.Where(p => true).ToList();
             var periods = this._PeriodRetrieveService.Where(p => p.User_Type == 2).ToList();
             var companies = this._CompanyRetrieveService.Where(p => true).ToList();
             var institutions = this._InsitutionRetrieveService.Where(p => true).ToList();
             var typeContracts = this._TypeContractService.Where(p => true).ToList();
 
+            double gross_percentage = Convert.ToDouble(configurations.Find(p => p.Configuration_Name == "GROSS_MONTHLY_SALARY_PERCENTAGE").Configuration_Value) / 100;
+            double net_percentage = Convert.ToDouble(configurations.Find(p => p.Configuration_Name == "NET_MONTHLY_SALARY_PERCENTAGE").Configuration_Value) / 100;
+            
             list.ForEach(p =>
             {
                 p.Institution_Name = institutions.FirstOrDefault(institution => institution.id == p.Institution_Id).Description;
                 p.Period_Name = periods.FirstOrDefault(period => period.id == p.Period_Id).Description;
                 p.Company_Name = companies.FirstOrDefault(company => company.id == p.Company_Id).Description;
+                if (p.Outsourcing_id != null)
+                {
+                    p.Outsourcing_Name = companies.FirstOrDefault(company => company.id == p.Outsourcing_id).Description;
+                }
                 p.Advances = this._AdvanceRetrieveService.Where(advace => advace.Accredited_Id == p.id && (advace.Paid_Status == 0 || advace.Paid_Status == 2)).ToList();
                 p.Type = (int)PrestaQiEnum.UserType.Acreditado;
                 p.TypeName = PrestaQiEnum.UserType.Acreditado.ToString();
                 p.TypeContract = typeContracts.FirstOrDefault(tc => tc.id == p.Type_Contract_Id);
-                p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, Advance>(new CalculateAmount()
+                p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(new CalculateAmount()
                 {
                     Accredited_Id = p.id
-                }).Maximum_Amount;
+                }).advance.Maximum_Amount;
+
+                if (p.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.WagesAndSalaries)
+                {                    
+                    p.AdvanceDetails = this._AdvanceDetailRetrieveService.Where(detail => detail.Accredited_Id == p.id && (detail.Paid_Status == 0 || detail.Paid_Status == 2)).ToList();
+                    p.Advance_Autorhized_Amount = Math.Round(p.Gross_Monthly_Salary * gross_percentage, 2);
+                    p.Advance_Via_Payroll = Math.Round(p.Net_Monthly_Salary * net_percentage, 2);
+                    p.Authorized_Advance_After_Obligations = Math.Round(p.Advance_Autorhized_Amount - p.Other_Obligations, 2);
+                    p.Payroll_Advance_Authorized_After_Obligations = Math.Round(p.Advance_Via_Payroll - p.Other_Obligations, 2);
+                }
             });
 
             return list;

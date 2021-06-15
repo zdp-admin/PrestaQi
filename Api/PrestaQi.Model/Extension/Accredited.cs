@@ -13,6 +13,8 @@ namespace PrestaQi.Model
         [NotMapped]
         public List<Advance> Advances { get; set; }
         [NotMapped]
+        public List<AdvanceDetail> AdvanceDetails { get; set; }
+        [NotMapped]
         public string Institution_Name { get; set; }
         [NotMapped]
         public int Type { get; set; }
@@ -22,6 +24,16 @@ namespace PrestaQi.Model
         public TypeContract TypeContract { get; set; }
         [NotMapped]
         public double Credit_Limit { get; set; }
+        [NotMapped]
+        public double Advance_Autorhized_Amount { get; set; }
+        [NotMapped]
+        public double Advance_Via_Payroll { get; set; }
+        [NotMapped]
+        public double Authorized_Advance_After_Obligations { get; set; }
+        [NotMapped]
+        public double Payroll_Advance_Authorized_After_Obligations { get; set; }
+        [NotMapped]
+        public string Outsourcing_Name { get; set; }
 
     }
 }

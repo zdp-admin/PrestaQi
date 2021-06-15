@@ -10,10 +10,13 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using PrestaQi.Model.Enum;
 
 namespace PrestaQi.Service.Tools
 {
-    public class Utilities
+    public static class Utilities
     {
         public static string GetPasswordRandom()
         {
@@ -173,6 +176,211 @@ namespace PrestaQi.Service.Tools
         }
 
 
+        public static T Clone<T>(T source)
+        {
+            if (!typeof(T).IsSerializable)
+            {
+                throw new ArgumentException("The type must be serializable.", nameof(source));
+            }
 
+            // Don't serialize a null object, simply return the default for that object
+            if (Object.ReferenceEquals(source, null))
+            {
+                return default(T);
+            }
+
+            IFormatter formatter = new BinaryFormatter();
+            Stream stream = new MemoryStream();
+            using (stream)
+            {
+                formatter.Serialize(stream, source);
+                stream.Seek(0, SeekOrigin.Begin);
+                return (T)formatter.Deserialize(stream);
+            }
+        }
+
+        public static T CloneJson<T>(this T source)
+        {
+            // Don't serialize a null object, simply return the default for that object
+            if (Object.ReferenceEquals(source, null))
+            {
+                return default(T);
+            }
+
+            // initialize inner objects individually
+            // for example in default constructor some list property initialized with some values,
+            // but in 'source' these items are cleaned -
+            // without ObjectCreationHandling.Replace default constructor values will be added to result
+            var deserializeSettings = new JsonSerializerSettings { ObjectCreationHandling = ObjectCreationHandling.Replace };
+
+            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source), deserializeSettings);
+        }
+
+        public static double RoundUpValue(double value, int decimalpoint)
+        {
+            var result = Math.Round(value, decimalpoint);
+            if (result < value)
+            {
+                result += Math.Pow(10, -decimalpoint);
+            }
+            return result;
+        }
+    
+        public static (DateTime initial, DateTime finish) getPeriodoByAccredited(Accredited accredited, DateTime currentDate)
+        {
+            DateTime initial;
+            DateTime finish;
+
+            switch (accredited.Period_Id)
+            {
+                case (int)PrestaQiEnum.PerdioAccredited.Semanal:
+                    int periodStart = accredited.Period_Start_Date ?? 1;
+                    int indexDay = semanal(periodStart).IndexOf((int)currentDate.DayOfWeek);
+                    
+                    initial = currentDate.AddDays(-(indexDay - 1));
+                    finish = currentDate.AddDays(7 - indexDay);
+
+                    /*if (periodStart == 0)
+                    {
+                        initial = currentDate.AddDays(-(6 - indexDay));
+                        finish = currentDate.AddDays(-indexDay);
+                    }*/
+
+                    break;
+                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
+                    var result = quincenal(accredited.Period_Start_Date ?? 0, accredited.Period_End_Date ?? 15, currentDate);
+                    initial = result.Item1;
+                    finish = result.Item2;
+                    break;
+                default:
+                    var month = mensual(accredited.Period_Start_Date ?? 1, currentDate);
+                    initial = month.Item1;
+                    finish = month.Item2;
+                    break;
+            }
+
+            return ( initial, finish );
+        }
+
+        private static List<int> semanal(int initial)
+        {
+            List<int> result = new List<int>();
+            int plus = 0;
+
+            for (int i = 0; i < 7; i++)
+            {
+                int newPosition = initial + plus;
+                if (newPosition == 7)
+                {
+                    result.Add(0);
+                    initial = 0;
+                    plus = 0;
+                }
+                else
+                {
+                    result.Add(newPosition);
+                }
+
+                plus++;
+            }
+
+            return result;
+        }
+
+        private static (DateTime, DateTime) quincenal(int initial, int finish, DateTime currenDate)
+        {
+            var initialDate = parseDateTime(currenDate.Year, currenDate.Month, initial);
+
+            DateTime finishDate;
+
+            if (finish > 28)
+            {
+                finishDate = new DateTime(currenDate.Year, currenDate.Month, DateTime.DaysInMonth(currenDate.Year, currenDate.Month));
+            } else
+            {
+                finishDate = new DateTime(currenDate.Year, currenDate.Month, finish);
+            }
+
+            if (!(initialDate <= currenDate && finishDate >= currenDate))
+            {
+
+                if (currenDate.Day < initial)
+                {
+                    initialDate = parseDateTime(currenDate.Year, currenDate.Month, finish);
+                    initialDate = initialDate.AddMonths(-1);
+                }
+
+                if (currenDate.Day > finish)
+                {
+                    initialDate = parseDateTime(currenDate.Year, currenDate.Month, finish + 1);
+                }
+
+                finishDate = initialDate.AddDays(15);
+                finishDate = parseDateTime(finishDate.Year, finishDate.Month, initial);
+
+                if (initialDate.Day > finish)
+                {
+                    finishDate = new DateTime(finishDate.Year, finishDate.Month, (initial - 1) == 0 ? DateTime.DaysInMonth(finishDate.Year, finishDate.Month) : initial - 1);
+                }
+            }
+
+            return (initialDate, finishDate);
+        }
+
+        private static (DateTime, DateTime) mensual(int initial, DateTime currentDate)
+        {
+            DateTime dateFinish;
+            DateTime dateInitial;
+            DateTime temp;
+
+            if (currentDate.Day >= initial)
+            {
+                temp = processParseDate(currentDate.Year, currentDate.Month, initial);
+                temp = temp.AddDays(1);
+                dateInitial = temp;
+                temp = temp.AddMonths(1);
+                dateFinish = processParseDate(temp.Year, temp.Month, initial);
+
+            }
+            else
+            {
+                temp = processParseDate(currentDate.Year, currentDate.Month, initial);
+                temp = temp.AddMonths(-1);
+                dateInitial = DateTime.DaysInMonth(temp.Year, temp.Month) >= initial ? new DateTime(temp.Year, temp.Month, initial) : temp;
+                dateInitial = dateInitial.AddDays(1);
+                dateFinish = processParseDate(currentDate.Year, currentDate.Month, initial);
+            }
+
+            return (dateInitial, dateFinish);
+        }
+
+        private static DateTime processParseDate(int year, int month, int day)
+        {
+            DateTime result;
+            var valid = DateTime.TryParse($"{year}/{month}/{day}", out result);
+
+            if (!valid)
+            {
+                result = processParseDate(year, month, day - 1);
+            }
+
+            return result;
+        }
+
+        public static DateTime parseDateTime(int year, int month, int day)
+        {
+            int daysinmonth = DateTime.DaysInMonth(year, month);
+            DateTime date;
+
+            if (day > daysinmonth)
+            {
+                date = new DateTime(year, month, daysinmonth);
+            } else
+            {
+                date = new DateTime(year, month, day);
+            }
+
+            return date;
+        }
     }
 }

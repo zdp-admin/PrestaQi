@@ -88,10 +88,15 @@ namespace PrestaQi.Api
 
             list = list.OrderBy(p => p.Pay_Day_Limit).ToList();
 
-            int days = (DateTime.Now.Date - list.FirstOrDefault().Pay_Day_Limit.Date).Days;
+            var first = list.FirstOrDefault();
 
-            if (days == 10 || days == 5 || days == 3 || days == 0)
-                SendNotificationInterestPayment(days);
+            if (first != null)
+            {
+                int days = (DateTime.Now.Date - list.FirstOrDefault().Pay_Day_Limit.Date).Days;
+
+                if (days == 10 || days == 5 || days == 3 || days == 0)
+                    SendNotificationInterestPayment(days);
+            }
         }
 
         static void SendNotificationInterestPayment(int days)

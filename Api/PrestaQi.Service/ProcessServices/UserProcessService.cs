@@ -360,39 +360,41 @@ namespace PrestaQi.Service.ProcessServices
                                 Municipality = fields[4],
                                 Zip_Code = fields[5],
                                 State = fields[6],
-                                Identify = fields[9],
-                                Contract_number = fields[10],
-                                Position = fields[11],
-                                Net_Monthly_Salary = Convert.ToDouble(fields[12]),
-                                Rfc = fields[13],
-                                Interest_Rate = Convert.ToInt32(fields[14]),
-                                Seniority_Company = fields[15],
-                                Birth_Date = Convert.ToDateTime(fields[16]),
+                                Identify = fields[10],
+                                Contract_number = fields[11],
+                                Position = fields[12],
+                                Net_Monthly_Salary = Convert.ToDouble(fields[13]),
+                                Gross_Monthly_Salary = Convert.ToDouble(fields[14]),
+                                Other_Obligations = Convert.ToDouble(fields[15]),
+                                Rfc = fields[16],
+                                Interest_Rate = Convert.ToInt32(fields[17]),
+                                Seniority_Company = fields[18],
+                                Birth_Date = Convert.ToDateTime(fields[19]),
                                 Age = 0,
-                                Account_Number = fields[20],
-                                Clabe = fields[21],
-                                Moratoruim_Interest_Rate = Convert.ToInt32(fields[22]),
-                                Mail = fields[23],
-                                Mail_Mandate_Latter = fields[24],
-                                End_Day_Payment = Convert.ToDateTime(fields[25])
+                                Account_Number = fields[24],
+                                Clabe = fields[22],
+                                Moratoruim_Interest_Rate = Convert.ToInt32(fields[25]),
+                                Mail = fields[26],
+                                Mail_Mandate_Latter = fields[27],
+                                End_Day_Payment = Convert.ToDateTime(fields[28])
                             };
 
 
 
-                            var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[19])).FirstOrDefault();
+                            var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[22])).FirstOrDefault();
                             if (institution == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Código de Banco [{fields[19]}] no encontrado. Línea: {row}");
+                                messages.Append($"{Environment.NewLine} - Código de Banco [{fields[22]}] no encontrado. Línea: {row}");
                             }
                             else
                                 accredited.Institution_Id = institution.id;
 
-                            var gender = this._GenderRetrieveService.Where(p => p.Description == fields[17]).FirstOrDefault();
+                            var gender = this._GenderRetrieveService.Where(p => p.Description == fields[20]).FirstOrDefault();
                             if (gender == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Género [{fields[17]}] no encontrado. Línea: {row}");
+                                messages.Append($"{Environment.NewLine} - Género [{fields[20]}] no encontrado. Línea: {row}");
                             }
                             else
                                 accredited.Gender_Id = gender.id;
@@ -402,10 +404,20 @@ namespace PrestaQi.Service.ProcessServices
                             {
                                 save = false;
                                 messages.Append($"{Environment.NewLine} - Empresa [{fields[7]}] no encontrada. Línea: {row}");
-                                accredited.Company_Name = fields[2];
+                                accredited.Company_Name = fields[7];
                             }
                             else
                                 accredited.Company_Id = company.id;
+
+                            var outsourcing = this._CompanyRetrieveService.Where(p => p.Description == fields[8]).FirstOrDefault();
+                            if (outsourcing == null)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - Empresa Outsourcing [{fields[8]}] no encontrada. Línea: {row}");
+                                accredited.Outsourcing_Name = fields[8];
+                            }
+                            else
+                                accredited.Outsourcing_id = outsourcing.id;
 
                             if (accredited.Zip_Code.Length != 5)
                             {
@@ -458,11 +470,11 @@ namespace PrestaQi.Service.ProcessServices
                                 }
                             }
 
-                            var period = this._PeriodRetrieveService.Where(p => p.Description == fields[18] && p.User_Type == 2).FirstOrDefault();
+                            var period = this._PeriodRetrieveService.Where(p => p.Description == fields[21] && p.User_Type == 2).FirstOrDefault();
                             if (period == null)
                             {
                                 save = false;
-                                messages.Append($"{Environment.NewLine} - Perdiodo [{fields[18]}] no encontrado. Línea: {row}");
+                                messages.Append($"{Environment.NewLine} - Perdiodo [{fields[21]}] no encontrado. Línea: {row}");
                             }
                             else
                                 accredited.Period_Id = period.id;

@@ -49,6 +49,10 @@ namespace PrestaQi.Model
         public string Position { get => _position.Decrypt(); set => _position = value.Encrypt(); }
         [Column("net_monthly_salary")]
         public double Net_Monthly_Salary { get; set; }
+        [Column("gross_monthly_salary")]
+        public double Gross_Monthly_Salary { get; set; }
+        [Column("other_obligations")]
+        public double Other_Obligations { get; set; }
         [Column("rfc")]
         [Encrypted(nameof(_rfc))]
         public string Rfc { get => _rfc.Decrypt(); set => _rfc = value.Encrypt(); }
@@ -109,7 +113,13 @@ namespace PrestaQi.Model
         [Column("is_blocked")]
         public bool Is_Blocked { get; set; }
         [Column("end_day_payment")]
-        public DateTime End_Day_Payment { get; set; }
+        public DateTime? End_Day_Payment { get; set; }
+        [Column("outsourcing_id")]
+        public int? Outsourcing_id { get; set; }
+        [Column("period_start_date")]
+        public int? Period_Start_Date { get; set; }
+        [Column("period_end_date")]
+        public int? Period_End_Date { get; set; }
         #endregion
     }
 }

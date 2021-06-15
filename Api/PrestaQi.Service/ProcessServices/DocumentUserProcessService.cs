@@ -81,7 +81,7 @@ namespace PrestaQi.Service.ProcessServices
                 {
                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{CONTRACT_NUMBER}", replace: accredited.Contract_number, matchCase: false);
                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{ACCREDITED_NAME}", replace: $"{accredited.First_Name} {accredited.Last_Name}", matchCase: false);
-                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{COMPANY_NAME}", replace: accredited.Company_Name, matchCase: false);
+                    TextReplacer.SearchAndReplace(wordDoc: doc, search: "{COMPANY_NAME}", replace: accredited.Outsourcing_id == null ? accredited.Company_Name : accredited.Outsourcing_Name, matchCase: false);
                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{RFC}", replace: accredited.Rfc, matchCase: false);
                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{INSTITUTION_NAME}", replace: accredited.Institution_Name, matchCase: false);
                     TextReplacer.SearchAndReplace(wordDoc: doc, search: "{CLABE}", replace: accredited.Clabe, matchCase: false);
@@ -115,7 +115,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 textHtml = textHtml.Replace("{CONTRACT_NUMBER}", accredited.Contract_number);
                 textHtml = textHtml.Replace("{ACCREDITED_NAME}", $"{accredited.First_Name} {accredited.Last_Name}");
-                textHtml = textHtml.Replace("{COMPANY_NAME}", accredited.Company_Name);
+                textHtml = textHtml.Replace("{COMPANY_NAME}", accredited.Outsourcing_id == null ? accredited.Company_Name : accredited.Outsourcing_Name);
                 textHtml = textHtml.Replace("{RFC}", accredited.Rfc);
                 textHtml = textHtml.Replace("{INSTITUTION_NAME}", accredited.Institution_Name);
                 textHtml = textHtml.Replace("{CLABE}", accredited.Clabe);
@@ -151,7 +151,7 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT}", cartaAvisoGeneral.contractMutuo.id.ToString());
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT_USER}", cartaAvisoGeneral.accredited.Contract_number);
                 textHtml = textHtml.Replace("{NAME_ACREDITED}", $"{cartaAvisoGeneral.accredited.First_Name} {cartaAvisoGeneral.accredited.Last_Name}");
-                textHtml = textHtml.Replace("{NAME_COMPANY}", cartaAvisoGeneral.accredited.Company_Name);
+                textHtml = textHtml.Replace("{NAME_COMPANY}", cartaAvisoGeneral.accredited.Outsourcing_id == null ? cartaAvisoGeneral.accredited.Company_Name : cartaAvisoGeneral.accredited.Outsourcing_Name);
                 textHtml = textHtml.Replace("{RFC}", cartaAvisoGeneral.accredited.Rfc);
                 textHtml = textHtml.Replace("{ADDRESS}", cartaAvisoGeneral.accredited.Address);
                 textHtml = textHtml.Replace("{COLONY}", cartaAvisoGeneral.accredited.Colony);
@@ -205,6 +205,20 @@ namespace PrestaQi.Service.ProcessServices
                 textHtml = textHtml.Replace("{TOTAL_AMOUNT}", cartaMandato.advance.Total_Withhold.ToString("C2"));
                 textHtml = textHtml.Replace("{INTEREST_RATE}", cartaMandato.accredited.Interest_Rate.ToString());
 
+                var ulDates = "<ul>";
+
+                if (cartaMandato.dates != String.Empty && cartaMandato.dates != null)
+                {
+                    var splitDates = cartaMandato.dates.Split(',');
+                    foreach(String dateSplit in splitDates)
+                    {
+                        ulDates += $"<li>{dateSplit}</li>";
+                    }
+                }
+
+                ulDates += "</ul>";
+
+                textHtml = textHtml.Replace("{LIST_DATES}", ulDates);
 
                 if (cartaMandato.CheckedHide)
                 {
@@ -244,7 +258,7 @@ namespace PrestaQi.Service.ProcessServices
 
                 textHtml = textHtml.Replace("{NUMBER_CONTRACT}", contratoMutuo.contractMutuo.id.ToString());
                 textHtml = textHtml.Replace("{NAME_ACREDITED}", $"{contratoMutuo.accredited.First_Name.ToUpper()}  {contratoMutuo.accredited.Last_Name.ToUpper()}");
-                textHtml = textHtml.Replace("{COMPANY_NAME}", contratoMutuo.accredited.Company_Name);
+                textHtml = textHtml.Replace("{COMPANY_NAME}", contratoMutuo.accredited.Outsourcing_id == null ? contratoMutuo.accredited.Company_Name : contratoMutuo.accredited.Outsourcing_Name);
                 textHtml = textHtml.Replace("{AMOUNT_MAX}", contratoMutuo.advance.Maximum_Amount.ToString("C2"));
                 textHtml = textHtml.Replace("{AMOUNT_MAX_LETTER}", new Moneda().Convertir(contratoMutuo.advance.Maximum_Amount.ToString(), true, "PESOS"));
                 textHtml = textHtml.Replace("{INTERES_RATE}", contratoMutuo.accredited.Interest_Rate.ToString());
@@ -281,7 +295,7 @@ namespace PrestaQi.Service.ProcessServices
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
                 string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value));
 
-                textHtml = textHtml.Replace("{COMPANY}", transferenciaDatosPersonales.accredited.Company_Name);
+                textHtml = textHtml.Replace("{COMPANY}", transferenciaDatosPersonales.accredited.Outsourcing_id == null ? transferenciaDatosPersonales.accredited.Company_Name : transferenciaDatosPersonales.accredited.Outsourcing_Name);
                 textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
                 textHtml = textHtml.Replace("{MONTH}", date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
                 textHtml = textHtml.Replace("{YEAR}", date.Year.ToString());
