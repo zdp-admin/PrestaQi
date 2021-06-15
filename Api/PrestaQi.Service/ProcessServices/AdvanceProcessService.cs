@@ -66,7 +66,16 @@ namespace PrestaQi.Service.ProcessServices
             accredited.Period_Name = this._PeriodRetrieveService.Where(periodo => periodo.id == accredited.Period_Id).First().Description;
             var result = CalculateAdvance(calculateAmount, accredited);
 
-            double periodPercentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "PERIOD_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
+            double periodPercentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "GROSS_MONTHLY_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
+
+            if (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal) {
+                periodPercentage = periodPercentage / 2;
+            }
+
+            if (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Semanal) {
+                periodPercentage = periodPercentage / 4;
+            }
+
             double maximumAmountDiscountByPeriod = Math.Round(accredited.Gross_Monthly_Salary * periodPercentage, 2);
 
             if (accredited.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.AssimilatedToSalary || result.Item2)
@@ -113,6 +122,7 @@ namespace PrestaQi.Service.ProcessServices
             advances.Add(result.Item1);
 
             var resultList = CalculateAdvanceList(advances, accredited, periodPercentage, maximumAmountDiscountByPeriod);
+
             result.Item1.id = 0;
 
             var sumAditionalVat = 0.0;
@@ -169,6 +179,10 @@ namespace PrestaQi.Service.ProcessServices
             if (periodIsPaying)
             {
                 currentDate = datePeriodFinish.AddDays(1);
+
+                currentPeriod = Utilities.getPeriodoByAccredited(accredited, currentDate);
+                datePeriodInitial = currentPeriod.initial;
+                datePeriodFinish = currentPeriod.finish;
             }
 
             DateTime startDate = currentDate;
@@ -318,24 +332,14 @@ namespace PrestaQi.Service.ProcessServices
         private List<DetailsAdvance> CalculateAdvanceList(List<Advance> advances, Accredited accredited,
             double periodPercentage, double maximumAmountDiscountByPeriod)
         {
-            double gross_percentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "GROSS_MONTHLY_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
+            double gross_percentage = periodPercentage;
+
             double maxdiscount = maximumAmountDiscountByPeriod;
             double totalDisponible = (accredited.Gross_Monthly_Salary * gross_percentage) - accredited.Other_Obligations;
             double totalForPay = advances.Sum(advance => advance.Total_Withhold);
             int numberOfPayments = Convert.ToInt32(Math.Round(totalForPay / maxdiscount, 2));
             double residuo = totalForPay % maxdiscount;
             double totalAdvances = advances.Sum(advance => advance.Amount);
-
-
-            switch(accredited.Period_Id)
-            {
-                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-                    totalDisponible = totalDisponible / 2;
-                    break;
-                case (int)PrestaQiEnum.PerdioAccredited.Semanal:
-                    totalDisponible = totalDisponible / 4;
-                    break;
-            }
 
             List<DetailsAdvance> detailsAdvances = new List<DetailsAdvance>();
             int index = 0;
@@ -412,7 +416,7 @@ namespace PrestaQi.Service.ProcessServices
                     var dayForPayment = accredited.Period_End_Date ?? 15;
                     var nextDate = DateTime.Now;
 
-                    var currentPeriod = Utilities.getPeriodoByAccredited(accredited, nextDayForPayment);
+                    var currentPeriod = Utilities.getPeriodoByAccredited(accredited, nextDayForPayment.AddDays(4));
                     nextDate = currentPeriod.finish;
 
                     //verify days habiles
@@ -436,7 +440,7 @@ namespace PrestaQi.Service.ProcessServices
 
                     if (principalPayment > 0)
                     {
-                        detailsAdvances.Add(new DetailsAdvance()
+                        DetailsAdvance detailsAdvanceNew = new DetailsAdvance()
                         {
                             Accredited_Id = accredited.id,
                             Principal_Payment = Math.Round(principalPayment, 2),
@@ -447,9 +451,26 @@ namespace PrestaQi.Service.ProcessServices
                             Initial_Balance = Math.Round(amounForNextDayPayment - detailsAmountPayment, 2),
                             Final_Balance = Math.Round(finalBalance, 2),
                             Days_For_Payments = dayForPayment
-                        });
+                        };
+
+                        if ((detailsAdvanceNew.Principal_Payment + detailsAdvanceNew.Total_Payment + detailsAdvanceNew.Interest + detailsAdvanceNew.Vat) > 0 )
+                        {
+                            detailsAdvances.Add(new DetailsAdvance()
+                            {
+                                Accredited_Id = accredited.id,
+                                Principal_Payment = Math.Round(principalPayment, 2),
+                                Total_Payment = Math.Round(totalDiscountForPaymentDetails, 2),
+                                Interest = interest < 0 ? 0 : Math.Round(interest, 2),
+                                Vat = vat < 0 ? 0 : Math.Round(vat, 2),
+                                Date_Payment = nextDayForPayment,
+                                Initial_Balance = Math.Round(amounForNextDayPayment - detailsAmountPayment, 2),
+                                Final_Balance = Math.Round(finalBalance, 2),
+                                Days_For_Payments = dayForPayment
+                            });
+                        }
 
                         totalAdvances -= principalPayment;
+                        totalAdvances = Math.Round(totalAdvances, 2);
                     } else
                     {
                         totalAdvances = 0;
@@ -632,7 +653,7 @@ namespace PrestaQi.Service.ProcessServices
             Period period = this._PeriodRetrieveService.Where(period => period.id == acredited.Period_Id).First();
             Institution institution = this._InsitutionRetrieveService.Where(institution => institution.id == acredited.Institution_Id).First();
             var advances = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == id).ToList();
-            var datesPeriod = Utilities.getPeriodoByAccredited(acredited, DateTime.Now); 
+            var datesPeriod = Utilities.getPeriodoByAccredited(acredited, DateTime.Now);
 
             if (typeContract.Code == "sueldoysalario")
             {

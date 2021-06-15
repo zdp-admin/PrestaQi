@@ -83,7 +83,10 @@ namespace PrestaQi.Api.Controllers
         [HttpPost]
         public IActionResult Post(CalculateAmount calculateAmount)
         {
-            calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+            if (calculateAmount.Accredited_Id <= 0)
+            {
+                calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+            }
 
             var limitCredit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(new CalculateAmount()
             {

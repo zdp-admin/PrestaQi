@@ -150,8 +150,7 @@ namespace PrestaQi.Service.RetrieveServices
                 }).advance.Maximum_Amount;
 
                 if (p.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.WagesAndSalaries)
-                {
-                    // p.Advances.Clear();
+                {                    
                     p.AdvanceDetails = this._AdvanceDetailRetrieveService.Where(detail => detail.Accredited_Id == p.id && (detail.Paid_Status == 0 || detail.Paid_Status == 2)).ToList();
                     p.Advance_Autorhized_Amount = Math.Round(p.Gross_Monthly_Salary * gross_percentage, 2);
                     p.Advance_Via_Payroll = Math.Round(p.Net_Monthly_Salary * net_percentage, 2);

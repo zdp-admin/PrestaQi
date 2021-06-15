@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace PrestaQi.Api.Controllers
 {
     [ApiController]
-    [Route("[controller]"), Authorize]
+    [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
         private static readonly string[] Summaries = new[]

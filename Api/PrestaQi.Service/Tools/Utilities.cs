@@ -240,15 +240,15 @@ namespace PrestaQi.Service.Tools
                     initial = currentDate.AddDays(-(indexDay - 1));
                     finish = currentDate.AddDays(7 - indexDay);
 
-                    if (periodStart == 0)
+                    /*if (periodStart == 0)
                     {
                         initial = currentDate.AddDays(-(6 - indexDay));
                         finish = currentDate.AddDays(-indexDay);
-                    }
+                    }*/
 
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-                    var result = quincenal(accredited.Period_Start_Date ?? 1, accredited.Period_End_Date ?? 15, currentDate);
+                    var result = quincenal(accredited.Period_Start_Date ?? 0, accredited.Period_End_Date ?? 15, currentDate);
                     initial = result.Item1;
                     finish = result.Item2;
                     break;
@@ -289,24 +289,34 @@ namespace PrestaQi.Service.Tools
 
         private static (DateTime, DateTime) quincenal(int initial, int finish, DateTime currenDate)
         {
-            var initialDate = new DateTime(currenDate.Year, currenDate.Month, initial);
-            var finishDate = new DateTime(currenDate.Year, currenDate.Month, finish);
+            var initialDate = parseDateTime(currenDate.Year, currenDate.Month, initial);
+
+            DateTime finishDate;
+
+            if (finish > 28)
+            {
+                finishDate = new DateTime(currenDate.Year, currenDate.Month, DateTime.DaysInMonth(currenDate.Year, currenDate.Month));
+            } else
+            {
+                finishDate = new DateTime(currenDate.Year, currenDate.Month, finish);
+            }
 
             if (!(initialDate <= currenDate && finishDate >= currenDate))
             {
 
                 if (currenDate.Day < initial)
                 {
-                    initialDate = new DateTime(currenDate.Year, currenDate.Month, finish);
+                    initialDate = parseDateTime(currenDate.Year, currenDate.Month, finish);
                     initialDate = initialDate.AddMonths(-1);
                 }
 
                 if (currenDate.Day > finish)
                 {
-                    initialDate = new DateTime(currenDate.Year, currenDate.Month, finish + 1);
+                    initialDate = parseDateTime(currenDate.Year, currenDate.Month, finish + 1);
                 }
 
                 finishDate = initialDate.AddDays(15);
+                finishDate = parseDateTime(finishDate.Year, finishDate.Month, initial);
 
                 if (initialDate.Day > finish)
                 {
@@ -355,6 +365,22 @@ namespace PrestaQi.Service.Tools
             }
 
             return result;
+        }
+
+        public static DateTime parseDateTime(int year, int month, int day)
+        {
+            int daysinmonth = DateTime.DaysInMonth(year, month);
+            DateTime date;
+
+            if (day > daysinmonth)
+            {
+                date = new DateTime(year, month, daysinmonth);
+            } else
+            {
+                date = new DateTime(year, month, day);
+            }
+
+            return date;
         }
     }
 }

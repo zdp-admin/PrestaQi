@@ -56,7 +56,7 @@ namespace PrestaQi.Service.ProcessServices
                 updated_at = DateTime.Now
             };
 
-            bool createPay = this._PaidAdvanceWriteService.Create(paidAdvance);
+            bool createPay = true; // this._PaidAdvanceWriteService.Create(paidAdvance);
 
             if (createPay)
             {
@@ -163,7 +163,7 @@ namespace PrestaQi.Service.ProcessServices
                 return date;
             }
 
-            var periods = Utilities.getPeriodoByAccredited(accredited, date);
+            var periods = Utilities.getPeriodoByAccredited(accredited, new DateTime(2021, 05, 28));
 
             return periods.finish;
         }

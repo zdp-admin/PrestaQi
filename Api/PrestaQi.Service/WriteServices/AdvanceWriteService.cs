@@ -128,12 +128,15 @@ namespace PrestaQi.Service.WriteServices
                             tracking_key = spei.resultado.claveRastreo
                         });
 
-                        this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
+                        if (Configuration["environment"] == "prod")
                         {
-                            Amount = calculateAmount.Amount,
-                            Accredited_Id = response.advance.Accredited_Id,
-                            Advance = response.advance
-                        });
+                            this._OrdenPagoProcessService.ExecuteProcess<SendSpeiMail, bool>(new SendSpeiMail()
+                            {
+                                Amount = calculateAmount.Amount,
+                                Accredited_Id = response.advance.Accredited_Id,
+                                Advance = response.advance
+                            });
+                        }
                     }
 
                     return response.advance;
@@ -285,18 +288,20 @@ namespace PrestaQi.Service.WriteServices
             int index = 0;
             foreach (DetailsAdvance detail in cloneDetailAdvance)
             {
-                while(detail.Principal_Payment > 0)
+                while(detail.Principal_Payment > 0 && advanceOrderDesc.Count > index)
                 {
-                    if (detail.Principal_Payment > advanceOrderDesc[index].Amount)
+                    if (detail.Principal_Payment > Math.Round(advanceOrderDesc[index].Amount, 2))
                     {
                         detailsByAdvance.Add(new DetailsByAdvance()
                         {
                             Advance_Id = advanceOrderDesc[index].id,
                             Detail_Id = detail.id,
-                            amount = advanceOrderDesc[index].Amount
+                            amount = Math.Round(advanceOrderDesc[index].Amount, 2),
+                            created_at = DateTime.Now,
+                            updated_at = DateTime.Now
                         });
 
-                        detail.Principal_Payment -= advanceOrderDesc[index].Amount;
+                        detail.Principal_Payment -= Math.Round(advanceOrderDesc[index].Amount, 2);
                         index++;
                     } else
                     {
@@ -304,7 +309,9 @@ namespace PrestaQi.Service.WriteServices
                         {
                             Advance_Id = advanceOrderDesc[index].id,
                             Detail_Id = detail.id,
-                            amount = detail.Principal_Payment
+                            amount = detail.Principal_Payment,
+                            created_at = DateTime.Now,
+                            updated_at = DateTime.Now
                         });
 
                         advanceOrderDesc[index].Amount -= detail.Principal_Payment;
