@@ -1,0 +1,2 @@
+﻿ALTER TABLE public.accrediteds
+    ADD COLUMN external boolean DEFAULT False;

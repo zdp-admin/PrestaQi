@@ -1,0 +1,24 @@
+﻿ALTER TABLE public.ine_account
+    ADD COLUMN approved boolean DEFAULT NULL;
+
+ALTER TABLE public.ine_account
+    ADD COLUMN comment_approved character varying;
+
+
+ALTER TABLE public.selfie_user
+    ADD COLUMN approved boolean DEFAULT NULL;
+
+ALTER TABLE public.selfie_user
+    ADD COLUMN comment_approved character varying;
+
+ALTER TABLE public.status_account
+    ADD COLUMN approved boolean DEFAULT NULL;
+
+ALTER TABLE public.status_account
+    ADD COLUMN comment_approved character varying;
+
+ALTER TABLE public.paysheet_user
+    ADD COLUMN approved boolean DEFAULT NULL;
+
+ALTER TABLE public.paysheet_user
+    ADD COLUMN comment_approved character varying;

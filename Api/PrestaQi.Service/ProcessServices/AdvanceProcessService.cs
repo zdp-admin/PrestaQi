@@ -28,6 +28,7 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Institution> _InsitutionRetrieveService;
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieveService;
         IRetrieveRepository<PaidAdvance> _PaidAdvanceRepository;
+        IRetrieveRepository<License> _licenseRespository;
 
         public AdvanceProcessService(
             IRetrieveRepository<Accredited> acreditedRetrieveService,
@@ -42,7 +43,8 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<TypeContract> typeContractService,
             IRetrieveService<Institution> insitutionRetrieveService,
             IRetrieveService<DetailsByAdvance> detailsByAdvance,
-            IRetrieveRepository<PaidAdvance> paidAdvanceRepository
+            IRetrieveRepository<PaidAdvance> paidAdvanceRepository,
+            IRetrieveRepository<License> licenseRepository
             )
         {
             this._AcreditedRetrieveService = acreditedRetrieveService;
@@ -58,12 +60,19 @@ namespace PrestaQi.Service.ProcessServices
             this._InsitutionRetrieveService = insitutionRetrieveService;
             this._DetailsByAdvanceRetrieveService = detailsByAdvance;
             this._PaidAdvanceRepository = paidAdvanceRepository;
+            this._licenseRespository = licenseRepository;
     }
 
         public AdvanceAndDetails ExecuteProcess(CalculateAmount calculateAmount)
         {
             var accredited = this._AcreditedRetrieveService.Find(calculateAmount.Accredited_Id);
             accredited.Period_Name = this._PeriodRetrieveService.Where(periodo => periodo.id == accredited.Period_Id).First().Description;
+            
+            if (accredited.License_Id != null || accredited.External)
+            {
+                return this.CalculateSnac(accredited, calculateAmount.Amount);
+            }
+            
             var result = CalculateAdvance(calculateAmount, accredited);
 
             double periodPercentage = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "GROSS_MONTHLY_SALARY_PERCENTAGE").FirstOrDefault().Configuration_Value) / 100;
@@ -634,7 +643,6 @@ namespace PrestaQi.Service.ProcessServices
                 throw new SystemValidationException($"Error al calcular el Ajuste: {exception.Message}");
             }
         }
-    
         public MyAdvances ExecuteProcess(int id)
         {
             MyAdvances myAdvances = new MyAdvances();
@@ -687,6 +695,179 @@ namespace PrestaQi.Service.ProcessServices
             }
 
             return myAdvances;
+        }
+
+        private AdvanceAndDetails CalculateSnac(Accredited accredited, double amount)
+        {
+            AdvanceAndDetails advanceAndDetails = new AdvanceAndDetails();
+
+            License license = this._licenseRespository.Where(license => license.id == accredited.License_Id).First();
+
+            List<Advance> advances = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id).ToList();
+
+            DateTime intialYear = new DateTime(DateTime.Now.Year, 1, 1);
+            DateTime finalYear = new DateTime(DateTime.Now.Year, 12, DateTime.DaysInMonth(DateTime.Now.Year, 12));
+
+            var totalinyear = advances.Where(advance => advance.created_at >= intialYear).ToList();
+            int totaloftwo = totalinyear.Where(advance => advance.Amount == 2000).ToList().Count;
+            int totalofone = totalinyear.Where(advance => advance.Amount == 1000).ToList().Count;
+            int totalofthree = totalinyear.Where(advance => advance.Amount == 3000).ToList().Count;
+
+
+            int countAdvanceActiveTwo = advances.Where(advance => advance.Amount == 2000 && (advance.Paid_Status == 0 || advance.Paid_Status == 2)).ToList().Count;
+            int countAdvanceActiveOne = advances.Where(advance => advance.Amount == 1000 && (advance.Paid_Status == 0 || advance.Paid_Status == 2)).ToList().Count;
+            int countAdvanceActiveThree = advances.Where(advance => advance.Amount == 3000 && (advance.Paid_Status == 0 || advance.Paid_Status == 2)).ToList().Count;
+
+            advanceAndDetails.advance = new Advance();
+
+            advanceAndDetails.advance.Accredited_Id = accredited.id;
+            advanceAndDetails.advance.Date_Advance = DateTime.Now;
+            advanceAndDetails.advance.Requested_Day = DateTime.Now.Day;
+            advanceAndDetails.advance.Enabled = false;
+            advanceAndDetails.advance.Limit_Date = DateTime.Now.AddDays(7);
+
+            int dividerWeek = 6;
+
+            if ((totalofone == 6 && amount == 1000) || (totaloftwo == 5 && amount == 2000) || (totalofthree == 5 && amount == 3000) || countAdvanceActiveThree > 0)
+            {
+
+                advanceAndDetails.advance.Amount = 0;
+                advanceAndDetails.advance.Maximum_Amount = 0;
+                advanceAndDetails.advance.Total_Withhold = 0;
+                advanceAndDetails.advance.Comission = 0;
+                advanceAndDetails.advance.Vat = 0;
+                dividerWeek = 0;
+
+            } else
+            {
+
+                if (amount <= 0)
+                {
+
+                    if ((countAdvanceActiveOne + countAdvanceActiveTwo + countAdvanceActiveThree) >= 2)
+                    {
+                        advanceAndDetails.advance.Amount = 0;
+                        advanceAndDetails.advance.Maximum_Amount = 0;
+                        advanceAndDetails.advance.Total_Withhold = 0;
+                        advanceAndDetails.advance.Comission = 0;
+                        advanceAndDetails.advance.Vat = 0;
+                        dividerWeek = 0;
+                    } else
+                    {
+                        if ((countAdvanceActiveOne + countAdvanceActiveTwo + countAdvanceActiveThree) == 0)
+                        {
+                            advanceAndDetails.advance.Amount = 3000;
+                            advanceAndDetails.advance.Maximum_Amount = 3000;
+                            advanceAndDetails.advance.Total_Withhold = 3240;
+                            advanceAndDetails.advance.Comission = 240;
+                            advanceAndDetails.advance.Vat = 0;
+
+                            dividerWeek = 12;
+                        }
+                        else if (countAdvanceActiveOne < 2 && countAdvanceActiveTwo == 0 && countAdvanceActiveThree == 0)
+                        {
+                            advanceAndDetails.advance.Amount = 2000;
+                            advanceAndDetails.advance.Maximum_Amount = 2000;
+                            advanceAndDetails.advance.Total_Withhold = 2160;
+                            advanceAndDetails.advance.Comission = 160;
+                            advanceAndDetails.advance.Vat = 0;
+
+                            dividerWeek = 12;
+                        }
+                        else if (countAdvanceActiveThree == 0 && countAdvanceActiveOne < 2 && countAdvanceActiveTwo == 0)
+                        {
+                            advanceAndDetails.advance.Amount = 1000;
+                            advanceAndDetails.advance.Maximum_Amount = 1000;
+                            advanceAndDetails.advance.Total_Withhold = 1080;
+                            advanceAndDetails.advance.Comission = 80;
+                            advanceAndDetails.advance.Vat = 0;
+
+                            dividerWeek = 6;
+                        }
+                    }
+
+                }
+                else
+                {
+                    if (amount == 1000 && (countAdvanceActiveOne + countAdvanceActiveTwo) <= 1 && countAdvanceActiveThree == 0)
+                    {
+                        advanceAndDetails.advance.Amount = 1000;
+                        advanceAndDetails.advance.Maximum_Amount = 1000;
+                        advanceAndDetails.advance.Total_Withhold = 1092.80;
+                        advanceAndDetails.advance.Comission = 80;
+                        advanceAndDetails.advance.Vat = 0;
+
+                        dividerWeek = 6;
+                    }
+                    else if (amount == 2000 && countAdvanceActiveThree == 0 && countAdvanceActiveTwo == 0 && countAdvanceActiveOne < 2)
+                    {
+                        advanceAndDetails.advance.Amount = 2000;
+                        advanceAndDetails.advance.Maximum_Amount = 2000;
+                        advanceAndDetails.advance.Total_Withhold = 2160;
+                        advanceAndDetails.advance.Comission = 160;
+                        advanceAndDetails.advance.Vat = 0;
+
+                        dividerWeek = 12;
+
+                        dividerWeek = 12;
+                    }
+                    else if (amount == 3000 && (countAdvanceActiveOne + countAdvanceActiveTwo + countAdvanceActiveThree) == 0)
+                    {
+                        advanceAndDetails.advance.Amount = 3000;
+                        advanceAndDetails.advance.Maximum_Amount = 3000;
+                        advanceAndDetails.advance.Total_Withhold = 3240;
+                        advanceAndDetails.advance.Comission = 240;
+                        advanceAndDetails.advance.Vat = 0;
+
+                        dividerWeek = 12;
+                    }
+                }
+            }
+
+            if (dividerWeek > 0)
+            {
+                advanceAndDetails.details = new List<DetailsAdvance>();
+
+                DateTime date = DateTime.Now;
+
+                for (int index = 0; index < dividerWeek; index++)
+                {
+                    date = date.AddDays(7);
+
+                    if (advanceAndDetails.advance.Amount == 1000)
+                    {
+                        advanceAndDetails.details.Add(new DetailsAdvance()
+                        {
+                            Principal_Payment = 166.67,
+                            Total_Payment = 180,
+                            Vat = 0,
+                            Date_Payment = date,
+                        });
+                    }
+                    else if (advanceAndDetails.advance.Amount == 2000)
+                    {
+                        advanceAndDetails.details.Add(new DetailsAdvance()
+                        {
+                            Principal_Payment = 166.67,
+                            Total_Payment = 180,
+                            Vat = 0,
+                            Date_Payment = date,
+                        });
+                    }
+                    else if (advanceAndDetails.advance.Amount == 3000)
+                    {
+                        advanceAndDetails.details.Add(new DetailsAdvance()
+                        {
+                            Principal_Payment = 250,
+                            Total_Payment = 270,
+                            Vat = 0,
+                            Date_Payment = date,
+                        });
+                    }
+                }
+            }
+
+            return advanceAndDetails;
         }
     }
 }

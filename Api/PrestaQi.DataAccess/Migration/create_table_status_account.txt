@@ -1,0 +1,40 @@
+﻿CREATE SEQUENCE statusaccount_seq_id
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+CREATE TABLE public.status_account
+(
+    id integer NOT NULL DEFAULT nextval('statusaccount_seq_id'::regclass),
+    key_account character varying,
+    address character varying,
+    name character varying,
+    periodo character varying,
+    rfc character varying,
+    name_bank character varying,
+    business_name_bank character varying,
+    number_account character varying,
+    path_file character varying,
+    meta character varying,
+    accredited_id integer,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT status_account_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.status_account
+    OWNER to "PrestaQi";
+
+ALTER TABLE public.status_account
+    ADD CONSTRAINT accredited_id_foreign FOREIGN KEY (accredited_id)
+    REFERENCES public.accrediteds (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX fki_status_account_accredited_id_foreign
+    ON public.status_account(accredited_id);

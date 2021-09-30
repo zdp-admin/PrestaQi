@@ -38,7 +38,13 @@ namespace PrestaQi.DataAccess
         public DbSet<AdvanceDetail> AdvanceDetails { get; set; }
         public DbSet<DetailsAdvance> detailsAdvances { get; set; }
         public DbSet<DetailsByAdvance> detailsByAdvances { get; set; }
-
+        public DbSet<License> licenses { get; set; }
+        public DbSet<LicensePriceRange> licensePriceRanges { get; set; }
+        public DbSet<SelfieUser> selfieUsers { get; set; }
+        public DbSet<PaySheetUser> paySheetUsers { get; set; }
+        public DbSet<StatusAccount> statusAccounts { get; set; }
+        public DbSet<IneAccount> ineAccounts { get; set; }
+        public DbSet<LicenseDeposits> licenseDeposits { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

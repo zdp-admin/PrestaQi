@@ -1,0 +1,33 @@
+﻿CREATE SEQUENCE face_seq_id
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+CREATE TABLE public.selfie_user
+(
+    id integer NOT NULL DEFAULT nextval('face_seq_id'::regclass),
+    face_id character varying,
+    meta character varying,
+    accredited_id integer,
+    path_file character varying,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT face_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.selfie_user
+    OWNER to "PrestaQi";
+
+ALTER TABLE public.selfie_user
+    ADD CONSTRAINT accredited_id_foreign FOREIGN KEY (accredited_id)
+    REFERENCES public.accrediteds (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX fki_accredited_id_foreign
+    ON public.selfie_user(accredited_id);

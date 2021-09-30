@@ -120,6 +120,12 @@ namespace PrestaQi.Model
         public int? Period_Start_Date { get; set; }
         [Column("period_end_date")]
         public int? Period_End_Date { get; set; }
+        [Column("license_id")]
+        public int? License_Id { get; set; }
+        [Column("external")]
+        public bool External { get; set; }
+        [Column("approved_documents")]
+        public bool ApprovedDocuments { get; set; }
         #endregion
     }
 }

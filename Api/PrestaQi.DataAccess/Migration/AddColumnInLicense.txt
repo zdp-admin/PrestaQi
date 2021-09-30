@@ -1,0 +1,11 @@
+﻿ALTER TABLE public.license
+    ADD COLUMN email character varying;
+
+ALTER TABLE public.license
+    ADD COLUMN password character varying;
+
+ALTER TABLE public.license
+    ADD COLUMN enabled boolean NOT NULL DEFAULT True;
+
+ALTER TABLE public.license
+    ADD COLUMN first_login boolean NOT NULL DEFAULT True;

@@ -13,5 +13,9 @@ namespace PrestaQi.Model
         public double Final { get; set; }
         [NotMapped]
         public List<DetailsByAdvance> details { get; set; }
+        [NotMapped]
+        public Accredited accredited { get; set; }
+        [NotMapped]
+        public SpeiResponse speiResponse { get; set; }
     }
 }

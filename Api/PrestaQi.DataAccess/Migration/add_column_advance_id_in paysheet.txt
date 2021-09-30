@@ -1,0 +1,11 @@
+﻿ALTER TABLE public.paysheet_user
+    ADD COLUMN advance_id integer;
+
+ALTER TABLE public.paysheet_user
+    ADD CONSTRAINT advance_id_paysheet_foreign FOREIGN KEY (advance_id)
+    REFERENCES public.advances (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE CASCADE
+    NOT VALID;
+CREATE INDEX fki_advance_id_paysheet_foreign
+    ON public.paysheet_user(advance_id);

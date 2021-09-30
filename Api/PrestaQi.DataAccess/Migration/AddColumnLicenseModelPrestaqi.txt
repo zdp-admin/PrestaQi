@@ -1,0 +1,2 @@
+﻿ALTER TABLE public.license
+    ADD COLUMN model_prestaqi boolean NOT NULL DEFAULT False;

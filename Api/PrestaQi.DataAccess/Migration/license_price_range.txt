@@ -1,0 +1,27 @@
+﻿CREATE SEQUENCE license_price_range_seq_id
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE license_price_range_seq_id
+    OWNER TO "PrestaQi";
+
+CREATE TABLE public.license_price_range
+(
+    id integer NOT NULL DEFAULT nextval('license_price_range_seq_id'::regclass),
+    initial_quantity integer,
+    final_quantity integer,
+    cost double precision,
+    license_id integer,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT license_price_range_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.license_price_range
+    OWNER to "PrestaQi";

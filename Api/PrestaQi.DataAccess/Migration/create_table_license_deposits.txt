@@ -1,0 +1,65 @@
+﻿CREATE SEQUENCE lic_deposit_seq_id
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+CREATE TABLE public.license_deposits
+(
+    id integer NOT NULL DEFAULT nextval('lic_deposit_seq_id'::regclass),
+    payment_key character varying,
+    tracking_key character varying,
+    payment_concept character varying,
+    payment_concept2 character varying,
+    beneficiary_account character varying,
+    beneficiary_account2 character varying,
+    originator_account character varying,
+    company character varying,
+    status character varying,
+    date_transaction timestamp without time zone,
+    id_ef integer,
+    counterpart_institution integer,
+    operating_institution integer,
+    half_delivery integer,
+    amount double precision,
+    beneficiary_name character varying,
+    beneficiary_name2 character varying,
+    cep_name character varying,
+    ordering_name character varying,
+    priority integer,
+    collection_reference character varying,
+    numerical_reference integer,
+    cep_rfc character varying,
+    rfc_curp_beneficiary character varying,
+    rfc_curp_beneficiary2 character varying,
+    rfc_curp_originator character varying,
+    sello character varying,
+    type_account_beneficiary integer,
+    type_account_originator integer,
+    type_payment integer,
+    topology character varying,
+    ts_capture bigint,
+    ts_return bigint,
+    ts_delivery bigint,
+    ts_liquidation bigint,
+    license_id integer,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT license_deposits_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.license_deposits
+    OWNER to "PrestaQi";
+
+ALTER TABLE public.license_deposits
+    ADD CONSTRAINT license_id_foreign FOREIGN KEY (license_id)
+    REFERENCES public.license (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX fki_license_deposits_license_id_foreign
+    ON public.license_deposits(license_id);

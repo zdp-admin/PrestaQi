@@ -23,30 +23,44 @@ namespace PrestaQi.Api.Controllers
     {
         IRetrieveService<User> _UserRetrieveService;
         IConfiguration _Configuration;
-        IWriteService<Investor> _InvestorWriteService;
+        IWriteService<Accredited> _AccreditedWriteService;
+
         
 
         public LoginController(
             IConfiguration configuration,
             IRetrieveService<User> userRetrieveService,
-            IWriteService<Investor> investorWriteService
+            IWriteService<Accredited> accreditedWriteService
             )
         {
             this._UserRetrieveService = userRetrieveService;
             this._Configuration = configuration;
-            this._InvestorWriteService = investorWriteService;
+            this._AccreditedWriteService = accreditedWriteService;
         }
 
         [HttpPost, AllowAnonymous]
         public IActionResult Login(Login login)
         {
             IActionResult response = Unauthorized();
+            if (Request.Headers.ContainsKey("LicenseName"))
+            {
+                Request.Headers.TryGetValue("LicenseName", out var LicenseName);
+                login.LicenceName = LicenseName;
+            }
 
             var user = this._UserRetrieveService.RetrieveResult<Login, UserLogin>(login);
             string contract = string.Empty;
 
             if (user != null)
             {
+                if (user.Type == 3)
+                {
+                    if (((Accredited)user.User).id <= 0)
+                    {
+                        this._AccreditedWriteService.Create((Accredited)user.User);
+                    }
+                }
+
                 var tokenString = GenerateJSONWebToken(user);
 
                     return Ok(new
@@ -100,6 +114,7 @@ namespace PrestaQi.Api.Controllers
             string nameComplete = string.Empty;
             string mail = string.Empty;
             int id = 0;
+            int? licenseId = 0;
 
             switch (user.Type)
             {
@@ -117,6 +132,12 @@ namespace PrestaQi.Api.Controllers
                     nameComplete = $"{((Accredited)user.User).First_Name.TrimStart().TrimEnd()} {((Accredited)user.User).Last_Name.TrimStart().TrimEnd()}";
                     mail = ((Accredited)user.User).Mail;
                     id = ((Accredited)user.User).id;
+                    licenseId = ((Accredited)user.User).License_Id;
+                    break;
+                case 4:
+                    nameComplete = ((License)user.User).NamePersonCharge;
+                    mail = ((License)user.User).Mail;
+                    id = ((License)user.User).id;
                     break;
             }
 
@@ -130,6 +151,7 @@ namespace PrestaQi.Api.Controllers
                 new Claim("Type", user.Type.ToString()),
                 new Claim("TypeName", ((PrestaQiEnum.UserType)user.Type).ToString()),
                 new Claim("UserId", id.ToString()),
+                new Claim("LicenseId", licenseId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             }.ToList();
 

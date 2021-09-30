@@ -1,0 +1,10 @@
+﻿ALTER TABLE public.accrediteds
+    ADD COLUMN license_id integer;
+
+ALTER TABLE public.accrediteds
+    ADD CONSTRAINT accredited_license_id_fkey FOREIGN KEY (license_id)
+    REFERENCES public.license (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+CREATE INDEX fki_accredited_license_id_fkey
+    ON public.accrediteds(license_id);

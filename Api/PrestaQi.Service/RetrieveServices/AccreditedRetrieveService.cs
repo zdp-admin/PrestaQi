@@ -24,6 +24,10 @@ namespace PrestaQi.Service.RetrieveServices
         IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
         IRetrieveService<DetailsAdvance> _DetailsAdvance;
         IRetrieveService<DetailsByAdvance> _DetailsByAdvance;
+        IRetrieveService<SelfieUser> _SelfieUser;
+        IRetrieveService<PaySheetUser> _PaySheetUser;
+        IRetrieveService<StatusAccount> _StatusAccount;
+        IRetrieveService<IneAccount> _IneAccount;
 
         public AccreditedRetrieveService(
             IRetrieveRepository<Accredited> repository,
@@ -36,7 +40,11 @@ namespace PrestaQi.Service.RetrieveServices
             IRetrieveService<Configuration> configurationRetrieveService,
             IRetrieveService<DetailsAdvance> detailsAdvance,
             IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
-            IRetrieveService<DetailsByAdvance> detailsByAvance
+            IRetrieveService<DetailsByAdvance> detailsByAvance,
+            IRetrieveService<SelfieUser> selfieUser,
+            IRetrieveService<PaySheetUser> paySheetUser,
+            IRetrieveService<StatusAccount> statusAccount,
+            IRetrieveService<IneAccount> ineAccount
             ) : base(repository)
         {
             this._PeriodRetrieveService = periodRetrieveService;
@@ -49,12 +57,66 @@ namespace PrestaQi.Service.RetrieveServices
             this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
             this._DetailsAdvance = detailsAdvance;
             this._DetailsByAdvance = detailsByAvance;
+            this._SelfieUser = selfieUser;
+            this._PaySheetUser = paySheetUser;
+            this._StatusAccount = statusAccount;
+            this._IneAccount = ineAccount;
         }
 
         public override IEnumerable<Accredited> Where(Func<Accredited, bool> predicate)
         {
             var list = this._Repository.Where(predicate).ToList();
             return GetList(list);
+        }
+
+        public AccreditedPagination RetrieveResult(LicenseByFilter licenseByFilter)
+        {
+            int totalRecord = 0;
+            if (licenseByFilter.Page == 0 || licenseByFilter.NumRecord == 0)
+            {
+                licenseByFilter.Page = 1;
+                licenseByFilter.NumRecord = 20;
+            }
+
+            List<Accredited> accrediteds = new List<Accredited>();
+
+            accrediteds = this._Repository.Where(p => p.Deleted_At == null && p.License_Id == licenseByFilter.Id).OrderBy(p => p.id).ToList();
+
+            accrediteds = GetList(accrediteds).ToList();
+
+            if (licenseByFilter.Filter != null && licenseByFilter.Filter.Length > 0)
+            {
+                var stringProperties = typeof(Accredited).GetProperties().Where(prop =>
+                    prop.PropertyType == licenseByFilter.Filter.GetType());
+
+                totalRecord = accrediteds
+                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(licenseByFilter.Filter.ToLower())))
+                        .OrderBy(p => p.id).ToList().Count;
+
+                accrediteds = accrediteds
+                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(licenseByFilter.Filter.ToLower())))
+                        .OrderBy(p => p.id)
+                        .Skip((licenseByFilter.Page - 1) * licenseByFilter.NumRecord)
+                        .Take(licenseByFilter.NumRecord).ToList();
+            }
+
+            accrediteds.ForEach(a =>
+            {
+                var detailsAdvanceAll = this._DetailsAdvance.Where(da => da.Accredited_Id == a.id).ToList();
+                a.Advances.ForEach(advance =>
+                {
+                    advance.details = this._DetailsByAdvance.Where(da => da.Advance_Id == advance.id).OrderBy(da => da.Detail_Id).ToList();
+                    if (advance.details.Count > 0)
+                    {
+                        advance.details.ForEach(d =>
+                        {
+                            d.Detail = detailsAdvanceAll.Where(da => da.id == d.Detail_Id).FirstOrDefault();
+                        });
+                    }
+                });
+            });
+
+            return new AccreditedPagination() { Accrediteds = accrediteds, TotalRecord = totalRecord };
         }
 
         public AccreditedPagination RetrieveResult(AccreditedByPagination accreditedByPagination)
@@ -119,6 +181,51 @@ namespace PrestaQi.Service.RetrieveServices
 
             return new AccreditedPagination() { Accrediteds = accrediteds, TotalRecord = totalRecord };
         }  
+
+        public AccreditedPagination RetrieveResult(AccreditedExternalByPagination accreditedByPagination)
+        {
+            int totalRecord = 0;
+            if (accreditedByPagination.Page == 0 || accreditedByPagination.NumRecord == 0)
+            {
+                accreditedByPagination.Page = 1;
+                accreditedByPagination.NumRecord = 20;
+            }
+
+            List<Accredited> accrediteds = new List<Accredited>();
+
+            if (accreditedByPagination.Filter.Length > 0)
+            {
+                var stringProperties = typeof(Accredited).GetProperties().Where(prop =>
+                    prop.PropertyType == accreditedByPagination.Filter.GetType());
+
+                totalRecord = accrediteds
+                        .Where(p => !p.ApprovedDocuments && p.External && stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(accreditedByPagination.Filter.ToLower())))
+                        .OrderBy(p => p.id).ToList().Count;
+
+                accrediteds = accrediteds
+                        .Where(p => !p.ApprovedDocuments && p.External && stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(accreditedByPagination.Filter.ToLower())))
+                        .OrderBy(p => p.id)
+                        .Skip((accreditedByPagination.Page - 1) * accreditedByPagination.NumRecord)
+                        .Take(accreditedByPagination.NumRecord).ToList();
+            } else
+            {
+                totalRecord = this._Repository.Where(p => p.External && p.Deleted_At == null && !p.ApprovedDocuments).OrderBy(p => p.id).ToList().Count;
+                accrediteds = this._Repository.Where(p => p.External && p.Deleted_At == null && !p.ApprovedDocuments).OrderBy(p => p.id).Skip((accreditedByPagination.Page - 1) * accreditedByPagination.NumRecord).Take(accreditedByPagination.NumRecord).ToList();
+            }
+
+            var s = this._PaySheetUser.Where((paysheet) => paysheet.AccreditedId == 210).FirstOrDefault();
+
+            accrediteds.ForEach(a =>
+            {
+                a.Selfie = this._SelfieUser.Where((selfie) => selfie.AccreditedId == a.id).OrderBy(selfie => selfie.created_at).FirstOrDefault();
+                a.PaySheet = this._PaySheetUser.Where((paysheet) => paysheet.AccreditedId == a.id).OrderBy(selfie => selfie.created_at).FirstOrDefault();
+                a.StatusAccount = this._StatusAccount.Where((statusAccount) => statusAccount.AccreditedId == a.id).OrderBy(selfie => selfie.created_at).FirstOrDefault();
+                a.IneAccount = this._IneAccount.Where((ine) => ine.AccreditedId == a.id).OrderBy(selfie => selfie.created_at).FirstOrDefault();
+            });
+
+            return new AccreditedPagination() { Accrediteds = accrediteds, TotalRecord = totalRecord };
+
+        }
 
         IEnumerable<Accredited> GetList(List<Accredited> list)
         {

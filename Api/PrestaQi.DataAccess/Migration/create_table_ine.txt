@@ -1,0 +1,40 @@
+﻿CREATE SEQUENCE ine_account_seq_id
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+CREATE TABLE public.ine_account
+(
+    id integer NOT NULL DEFAULT nextval('ine_account_seq_id'::regclass),
+    name character varying,
+    last_name character varying,
+    curp character varying,
+    birth_date character varying,
+    address character varying,
+    clave_elector character varying,
+    path_file_front character varying,
+    clave_elector_back character varying,
+    path_file_back character varying,
+    meta character varying,
+    accredited_id integer,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT ine_account_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.ine_account
+    OWNER to "PrestaQi";
+
+ALTER TABLE public.ine_account
+    ADD CONSTRAINT accredited_id_foreign FOREIGN KEY (accredited_id)
+    REFERENCES public.accrediteds (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX fki_ine_account_accredited_id_foreign
+    ON public.ine_account(accredited_id);

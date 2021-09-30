@@ -1,0 +1,34 @@
+﻿CREATE SEQUENCE recurring_payment_seq_id
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE recurring_payment_seq_id
+    OWNER TO "PrestaQi";
+
+CREATE TABLE public.recurring_payments
+(
+    id integer NOT NULL DEFAULT nextval('recurring_payment_seq_id'::regclass),
+    license_id integer,
+    amount double precision,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT recurring_payments_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.recurring_payments
+    OWNER to "PrestaQi";
+
+ALTER TABLE public.recurring_payments
+    ADD CONSTRAINT license_id_foreign FOREIGN KEY (license_id)
+    REFERENCES public.license (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX fki_license_id_foreign
+    ON public.recurring_payments(license_id);

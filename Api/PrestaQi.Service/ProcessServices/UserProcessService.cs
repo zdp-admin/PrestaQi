@@ -28,6 +28,7 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Company> _CompanyRetrieveService;
         IRetrieveService<Period> _PeriodRetrieveService;
         IRetrieveService<TypeContract> _TypeContract;
+        IRetrieveService<License> _LicenseRetrieveService;
 
         public UserProcessService(
             IRetrieveService<User> userRetrieveService,
@@ -38,7 +39,8 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<Gender> genderRetrieveService,
             IRetrieveService<Company> companyRetrieveService,
             IRetrieveService<Period> periodRetrieveService,
-            IRetrieveService<TypeContract> typeContract
+            IRetrieveService<TypeContract> typeContract,
+            IRetrieveService<License> licenseRetrieveService
             )
         {
             this._UserRetrieveService = userRetrieveService;
@@ -50,6 +52,7 @@ namespace PrestaQi.Service.ProcessServices
             this._CompanyRetrieveService = companyRetrieveService;
             this._PeriodRetrieveService = periodRetrieveService;
             this._TypeContract = typeContract;
+            this._LicenseRetrieveService = licenseRetrieveService;
         }
 
         public bool ExecuteProcess(string mail)
@@ -372,16 +375,16 @@ namespace PrestaQi.Service.ProcessServices
                                 Birth_Date = Convert.ToDateTime(fields[19]),
                                 Age = 0,
                                 Account_Number = fields[24],
-                                Clabe = fields[22],
-                                Moratoruim_Interest_Rate = Convert.ToInt32(fields[25]),
-                                Mail = fields[26],
-                                Mail_Mandate_Latter = fields[27],
-                                End_Day_Payment = Convert.ToDateTime(fields[28])
+                                Clabe = fields[25],
+                                Moratoruim_Interest_Rate = Convert.ToInt32(fields[26]),
+                                Mail = fields[27],
+                                Mail_Mandate_Latter = fields[28],
+                                End_Day_Payment = Convert.ToDateTime(fields[29]),
+                                Period_Start_Date = Convert.ToInt32(fields[30]),
+                                Period_End_Date = Convert.ToInt32(fields[31])
                             };
 
-
-
-                            var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[22])).FirstOrDefault();
+                            var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[23])).FirstOrDefault();
                             if (institution == null)
                             {
                                 save = false;
@@ -390,7 +393,7 @@ namespace PrestaQi.Service.ProcessServices
                             else
                                 accredited.Institution_Id = institution.id;
 
-                            var gender = this._GenderRetrieveService.Where(p => p.Description == fields[20]).FirstOrDefault();
+                            var gender = this._GenderRetrieveService.Where(p => p.Description.ToLower() == fields[20].ToLower()).FirstOrDefault();
                             if (gender == null)
                             {
                                 save = false;
@@ -399,7 +402,7 @@ namespace PrestaQi.Service.ProcessServices
                             else
                                 accredited.Gender_Id = gender.id;
 
-                            var company = this._CompanyRetrieveService.Where(p => p.Description == fields[7]).FirstOrDefault();
+                            var company = this._CompanyRetrieveService.Where(p => p.Description.ToLower() == fields[7].ToLower()).FirstOrDefault();
                             if (company == null)
                             {
                                 save = false;
@@ -436,7 +439,7 @@ namespace PrestaQi.Service.ProcessServices
                                 }
                             }
 
-                            if (accredited.Account_Number.Length > 1 && accredited.Account_Number.Length <= 11 )
+                            if (accredited.Account_Number.Length > 1 && accredited.Account_Number.Length <= 15 )
                             {
                                 long accountNumber = 0;
                                 long.TryParse(accredited.Account_Number, out accountNumber);
@@ -453,7 +456,7 @@ namespace PrestaQi.Service.ProcessServices
                                 messages.Append($"{Environment.NewLine} - El Número de cuenta [{accredited.Account_Number}] debe estar formado por 10 dígitos. Línea: {row}");
                             }
 
-                            if (accredited.Clabe.Length != 18)
+                            if (accredited.Clabe.Length > 18)
                             {
                                 save = false;
                                 messages.Append($"{Environment.NewLine} - La Clabe [{accredited.Clabe}] debe estar formado por 18 dígitos. Línea: {row}");
@@ -479,7 +482,7 @@ namespace PrestaQi.Service.ProcessServices
                             else
                                 accredited.Period_Id = period.id;
 
-                            var typeContract = this._TypeContract.Where(t => t.Description.ToLower() == fields[8].ToLower()).FirstOrDefault();
+                            var typeContract = this._TypeContract.Where(t => t.Description.ToLower() == fields[9].ToLower()).FirstOrDefault();
                             if (typeContract == null)
                             {
                                 var typeContractDefault = this._TypeContract.Where(t => true).FirstOrDefault();
@@ -517,7 +520,8 @@ namespace PrestaQi.Service.ProcessServices
             var userCount = this._UserRetrieveService.Where(p => p.Mail.ToLower() == mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
             var accreditedCount = this._AccreditedRetrieveService.Where(p => p.Mail.ToLower() == mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
             var investorCount = this._InvestorRetrieveService.Where(p => p.Mail.ToLower() == mail.ToLower() && p.Deleted_At == null).FirstOrDefault();
-            if (userCount != null || accreditedCount != null || investorCount != null)
+            var license = this._LicenseRetrieveService.Where(l => l.Mail != null && l.Mail.ToLower().Equals(mail.ToLower()) && l.Enabled).FirstOrDefault();
+            if (userCount != null || accreditedCount != null || investorCount != null || license != null)
                 return false;
 
             return true;

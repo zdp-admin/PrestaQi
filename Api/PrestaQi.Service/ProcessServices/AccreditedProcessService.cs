@@ -18,9 +18,20 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Advance> _AdvanceRetrieveService;
         IRetrieveService<PaidAdvance> _PaidAdvanceRetrieveService;
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
-        IRetrieveService<AdvanceDetail> _AdvanceDetailRetrieveService;
         IRetrieveService<DetailsAdvance> _DetailsAdvance;
         IRetrieveService<DetailsByAdvance> _DetailsByAdvance;
+        IWriteService<Accredited> _accreditedWriteService;
+        IWriteService<IneAccount> _IneAccountWriteService;
+        IWriteService<SelfieUser> _SelfieUserWriteService;
+        IWriteService<StatusAccount> _StatusAccountWriteService;
+        IWriteService<PaySheetUser> _PaySheetUserWriteService;
+        IWriteService<Notification> _NotificationWriteService;
+        IRetrieveService<IneAccount> _IneAccountRetrieveService;
+        IRetrieveService<SelfieUser> _SelfieUserRetrieveService;
+        IRetrieveService<StatusAccount> _StatusAccountRetrieveService;
+        IRetrieveService<PaySheetUser> _PaySheetUserRetrieveService;
+        IProcessService<Notification> _NotificationProcessService;
+
 
         public AccreditedProcessService(
             IRetrieveService<Company> companyRetrieveService,
@@ -28,9 +39,19 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<Advance> advanceRetrieveService,
             IRetrieveService<PaidAdvance> paidAdvanceRetrieveService,
             IRetrieveService<Configuration> configurationRetrieveService,
-            IRetrieveService<AdvanceDetail> advanceDetailRetrieveService,
             IRetrieveService<DetailsAdvance> detailsAdvance,
-            IRetrieveService<DetailsByAdvance> detailsByAvance
+            IRetrieveService<DetailsByAdvance> detailsByAvance,
+            IWriteService<Accredited> accreditedWriteService,
+            IWriteService<IneAccount> ineAccountWriteService,
+            IWriteService<SelfieUser> selfieUserWriteService,
+            IWriteService<StatusAccount> statusAccountWriteService,
+            IWriteService<PaySheetUser> paySheetUserWriteService,
+            IRetrieveService<IneAccount> ineAccountRetrieveService,
+            IRetrieveService<SelfieUser> selfieUserRetrieveService,
+            IRetrieveService<StatusAccount> statusAccountRetrieveService,
+            IRetrieveService<PaySheetUser> paySheetUserRetrieveService,
+            IProcessService<Notification> notificationProcessService,
+            IWriteService<Notification> notificationWriteService
             )
         {
             this._CompanyRetrieveService = companyRetrieveService;
@@ -38,9 +59,19 @@ namespace PrestaQi.Service.ProcessServices
             this._AdvanceRetrieveService = advanceRetrieveService;
             this._PaidAdvanceRetrieveService = paidAdvanceRetrieveService;
             this._ConfigurationRetrieveService = configurationRetrieveService;
-            this._AdvanceDetailRetrieveService = advanceDetailRetrieveService;
             this._DetailsAdvance = detailsAdvance;
             this._DetailsByAdvance = detailsByAvance;
+            this._accreditedWriteService = accreditedWriteService;
+            this._IneAccountWriteService = ineAccountWriteService;
+            this._SelfieUserWriteService = selfieUserWriteService;
+            this._StatusAccountWriteService = statusAccountWriteService;
+            this._PaySheetUserWriteService = paySheetUserWriteService;
+            this._IneAccountRetrieveService = ineAccountRetrieveService;
+            this._SelfieUserRetrieveService = selfieUserRetrieveService;
+            this._StatusAccountRetrieveService = statusAccountRetrieveService;
+            this._PaySheetUserRetrieveService = paySheetUserRetrieveService;
+            this._NotificationProcessService = notificationProcessService;
+            this._NotificationWriteService = notificationWriteService;
         }
 
         public List<AdvanceReceivable> ExecuteProcess(AdvancesReceivableByFilter filter)
@@ -53,7 +84,14 @@ namespace PrestaQi.Service.ProcessServices
             var advances = this._AdvanceRetrieveService.Where(p => p.Paid_Status == 0 || p.Paid_Status == 2).ToList();
             var accreditIds = advances.Select(p => p.Accredited_Id).Distinct();
 
-            accrediteds = this._AccreditedRetrieveService.Where(p => accreditIds.Contains(p.id) && p.Deleted_At == null).ToList();
+            if (filter.LicenseId > 0)
+            {
+                accrediteds = this._AccreditedRetrieveService.Where(p => accreditIds.Contains(p.id) && p.Deleted_At == null && p.License_Id == filter.LicenseId).ToList();
+            } else
+            {
+                accrediteds = this._AccreditedRetrieveService.Where(p => accreditIds.Contains(p.id) && p.Deleted_At == null && p.License_Id is null).ToList();
+            }
+
 
             if (!string.IsNullOrEmpty(filter.Filter))
             {
@@ -186,6 +224,94 @@ namespace PrestaQi.Service.ProcessServices
             }).ToList();
 
             return result;
+        }
+    
+        public bool ExecuteProcess(int id)
+        {
+            Accredited user = this._AccreditedRetrieveService.Where(accredited => accredited.id == id).FirstOrDefault();
+
+            user.Is_Blocked = true;
+            user.First_Login = false;
+            this._accreditedWriteService.Update(user);
+
+            return true;
+        }
+
+        public Accredited ExecuteProcess(Accredited accredited)
+        {
+            Accredited user = this._AccreditedRetrieveService.Where(accreditedfilter => accreditedfilter.id == accredited.id).FirstOrDefault();
+
+            user.ApprovedDocuments = true;
+            user.Is_Blocked = false;
+            user.First_Login = false;
+            this._accreditedWriteService.Update(user);
+
+            Notification notification = new Notification();
+            notification.User_Id = accredited.id;
+            notification.User_Type = (int)PrestaQiEnum.UserType.Acreditado;
+            notification.Title = "Actualizacion Documentación";
+            notification.Message = $"Sus documentos fueron aprovados";
+            notification.Icon = "done";
+            notification.created_at = DateTime.Now;
+            this._NotificationWriteService.Create(notification);
+
+            this._NotificationProcessService.ExecuteProcess<Notification, bool>(notification);
+
+            return user;
+        }
+
+        public bool ExecuteProcess(NotificationDocument notificationDocument)
+        {
+            switch (notificationDocument.Type)
+            {
+                case "INE":
+                    var ine = this._IneAccountRetrieveService.Find(notificationDocument.IdDocument);
+                    ine.Approved = notificationDocument.Approve;
+                    ine.CommnetApproved = notificationDocument.Message;
+                    this._IneAccountWriteService.Update(ine);
+                    break;
+                case "SELFIE":
+                    var selfie = this._SelfieUserRetrieveService.Find(notificationDocument.IdDocument);
+                    selfie.Approved = notificationDocument.Approve;
+                    selfie.CommnetApproved = notificationDocument.Message;
+                    this._SelfieUserWriteService.Update(selfie);
+                    break;
+                case "ESTADO DE CUENTA":
+                    var statusAccount = this._StatusAccountRetrieveService.Find(notificationDocument.IdDocument);
+                    statusAccount.Approved = notificationDocument.Approve;
+                    statusAccount.CommnetApproved = notificationDocument.Message;
+                    this._StatusAccountWriteService.Update(statusAccount);
+                    break;
+                case "RECIBO DE NOMINA":
+                    var paySheet = this._PaySheetUserRetrieveService.Find(notificationDocument.IdDocument);
+                    paySheet.Approved = notificationDocument.Approve;
+                    paySheet.CommnetApproved = notificationDocument.Message;
+                    this._PaySheetUserWriteService.Update(paySheet);
+                    break;
+            }
+
+            if (!notificationDocument.Approve)
+            {
+                Notification notification = new Notification();
+                notification.User_Id = notificationDocument.AccreditedId;
+                notification.User_Type = (int) PrestaQiEnum.UserType.Acreditado;
+                notification.Title = "Actualizacion Documentación";
+                notification.Message = $"Su {notificationDocument.Type} Fue Rechazado, Motivo: {notificationDocument.Message}";
+                notification.Icon = "warning";
+                notification.created_at = DateTime.Now;
+                this._NotificationWriteService.Create(notification);
+
+                this._NotificationProcessService.ExecuteProcess<Notification, bool>(notification);
+
+                var accredited = this._AccreditedRetrieveService.Where(accredited => accredited.id == notificationDocument.AccreditedId).FirstOrDefault();
+                if (accredited != null)
+                {
+                    accredited.Is_Blocked = false;
+                    this._accreditedWriteService.Update(accredited);
+                }
+            }
+
+            return true;
         }
     }
 }

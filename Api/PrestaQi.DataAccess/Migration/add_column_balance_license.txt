@@ -1,0 +1,5 @@
+﻿ALTER TABLE public.license
+    ADD COLUMN balance double precision DEFAULT 0;
+
+ALTER TABLE public.license
+    ADD COLUMN originator_account character varying;

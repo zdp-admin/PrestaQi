@@ -76,7 +76,15 @@ namespace PrestaQi.Service.WriteServices
                 entity.Company_Id = company.id;
                 entity.First_Login = true;
                 string password = Utilities.GetPasswordRandom();
-                entity.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
+
+                if (entity.Password == String.Empty)
+                {
+                    entity.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(password);
+                } else
+                {
+                    password = entity.Password;
+                }
+
                 entity.created_at = DateTime.Now;
                 entity.updated_at = DateTime.Now;
 

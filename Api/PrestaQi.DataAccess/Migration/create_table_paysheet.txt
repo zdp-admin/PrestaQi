@@ -1,0 +1,40 @@
+﻿CREATE SEQUENCE paysheet_seq_id
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+CREATE TABLE public.paysheet_user
+(
+    id integer NOT NULL DEFAULT nextval('paysheet_seq_id'::regclass),
+    name character varying,
+    rfc character varying,
+    curp character varying,
+    nss character varying,
+    date_initial timestamp without time zone,
+    date_finish timestamp without time zone,
+    neto double precision,
+    total double precision,
+    accredited_id integer,
+    path_file character varying,
+    meta character varying,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT paysheet_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.paysheet_user
+    OWNER to "PrestaQi";
+
+ALTER TABLE public.paysheet_user
+    ADD CONSTRAINT accredited_id_foreign FOREIGN KEY (accredited_id)
+    REFERENCES public.accrediteds (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX fki_accredited_id_foreign
+    ON public.paysheet_user(accredited_id);

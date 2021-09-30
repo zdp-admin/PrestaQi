@@ -35,7 +35,6 @@ namespace PrestaQi.Service.RetrieveServices
             });
 
 
-
             return notifications;
         }
     }

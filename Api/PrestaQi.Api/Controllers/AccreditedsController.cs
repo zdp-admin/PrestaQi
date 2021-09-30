@@ -89,12 +89,9 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpGet, Route("ListAdvancesReceivable")]
-        public IActionResult ListAdvancesReceivable([FromQuery] string filter)
+        public IActionResult ListAdvancesReceivable([FromQuery] AdvancesReceivableByFilter filter)
         {
-            var list = this._AccreditedProcessService.ExecuteProcess<AdvancesReceivableByFilter, List<AdvanceReceivable>>(new AdvancesReceivableByFilter()
-            {
-                Filter = filter
-            }).ToList();
+            var list = this._AccreditedProcessService.ExecuteProcess<AdvancesReceivableByFilter, List<AdvanceReceivable>>(filter).ToList();
 
             return Ok(list);
         }
@@ -139,12 +136,44 @@ namespace PrestaQi.Api.Controllers
             return Ok(this._AccreditedWriteService.Update<BlockedAccredited, bool>(blockedAccredited));
         }
 
+        [HttpPost, Route("GetExternal")]
+        public IActionResult GetExternal(AccreditedExternalByPagination filter)
+        {
+            var result = this._AccreditedRetrieveService.RetrieveResult<AccreditedExternalByPagination, AccreditedPagination>(filter);
+            return Ok(result);
+        }
+
         [HttpGet, Route("GetCurrentPeriod")]
         public IActionResult GetCurrentPeriod()
         {
             int accreditedId = int.Parse(HttpContext.User.FindFirst("UserId").Value);
             var accredited = this._AccreditedRetrieveService.Find(accreditedId);
             return Ok(Utilities.getPeriodoByAccredited(accredited, DateTime.Now));
+        }
+
+        [HttpPut, Route("CompleteUploadFiles")]
+        public IActionResult CompleteUploadFiles([FromQuery] int id)
+        {
+            return Ok(this._AccreditedProcessService.ExecuteProcess<int, bool>(id));
+        }
+
+        [HttpPut, Route("ApproveDocuments/{id}")]
+        public IActionResult ApproveDocuments(int id)
+        {
+            var accredited = this._AccreditedRetrieveService.Where(accredited => accredited.id == id).FirstOrDefault();
+
+            if (accredited is null)
+            {
+                return BadRequest();
+            }
+
+            return Ok(this._AccreditedProcessService.ExecuteProcess<Accredited, Accredited>(accredited));
+        }
+
+        [HttpPost, Route("NotificationDocument")]
+        public IActionResult NotificationDocument(NotificationDocument notificationDocument)
+        {
+            return Ok(this._AccreditedProcessService.ExecuteProcess<NotificationDocument, bool>(notificationDocument));
         }
     }
 }

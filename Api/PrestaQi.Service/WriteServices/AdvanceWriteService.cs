@@ -30,6 +30,8 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<DetailsAdvance> _DetailsAdvanceRetrieve;
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieve;
         IWriteService<DetailsByAdvance> _DetailsByAdvanceWriteService;
+        IProcessService<PaySheetUser> _paySheetProcessService;
+        IWriteService<Accredited> _accreditedWriteService;
         public IConfiguration Configuration { get; }
 
         public AdvanceWriteService(
@@ -48,6 +50,8 @@ namespace PrestaQi.Service.WriteServices
             IRetrieveService<DetailsAdvance> detailsAdvanceRetrieve,
             IRetrieveService<DetailsByAdvance> detailsByAdvanceRetrieve,
             IWriteService<DetailsByAdvance> detailByAdvanceWriteService,
+            IProcessService<PaySheetUser> paySheetProcessService,
+            IWriteService<Accredited> accreditedWriteService,
             IConfiguration configuration
             ) : base(repository)
         {
@@ -65,6 +69,8 @@ namespace PrestaQi.Service.WriteServices
             this._DetailsAdvanceRetrieve = detailsAdvanceRetrieve;
             this._DetailsByAdvanceRetrieve = detailsByAdvanceRetrieve;
             this._DetailsByAdvanceWriteService = detailByAdvanceWriteService;
+            this._paySheetProcessService = paySheetProcessService;
+            this._accreditedWriteService = accreditedWriteService;
             Configuration = configuration;
         }
 
@@ -108,7 +114,7 @@ namespace PrestaQi.Service.WriteServices
                     {
                         if (response.details.Count > 1)
                         {
-                            var listDetails = SaveAdvanceDetails(response.advance, accredited.id, response.details);
+                            var listDetails = accredited.License_Id > 0 ? SaveDetailSimple(response.advance, accredited.id, response.details) : SaveAdvanceDetails(response.advance, accredited.id, response.details);
                             var detailsByAdvance = this.RelationDetailsToAdvance(listDetails, accredited).Where(detail => detail.Advance_Id == response.advance.id).ToList();
 
                             foreach (DetailsByAdvance detail in detailsByAdvance)
@@ -136,6 +142,25 @@ namespace PrestaQi.Service.WriteServices
                                 Accredited_Id = response.advance.Accredited_Id,
                                 Advance = response.advance
                             });
+                        }
+
+                        double totalPay = 0;
+                        double grossPay = 0;
+
+                        foreach(var paysheet in calculateAmount.PaySheets)
+                        {
+                            paysheet.AccreditedId = response.advance.Accredited_Id;
+                            paysheet.AdvanceId = response.advance.id;
+                            this._paySheetProcessService.ExecuteProcess<PaySheetUser, bool>(paysheet);
+                            totalPay += paysheet.Total;
+                            grossPay += paysheet.Neto;
+                        }
+
+                        if (calculateAmount.PaySheets.Count > 0)
+                        {
+                            accredited.Gross_Monthly_Salary = grossPay;
+                            accredited.Net_Monthly_Salary = totalPay;
+                            this._accreditedWriteService.Update(accredited);
                         }
                     }
 
@@ -180,71 +205,17 @@ namespace PrestaQi.Service.WriteServices
             return details;
         }
 
-        private void SaveDetail(int advanceId, int accreditedId, List<Advance> advances)
+        private List<DetailsAdvance> SaveDetailSimple(Advance advance, int accreditedId, List<DetailsAdvance> details)
         {
-            DateTime limitDate = advances.FirstOrDefault().Limit_Date;
-            double amount = advances.FirstOrDefault().Amount;
-
-            advances.RemoveAt(0);
-            List<AdvanceDetail> advanceDetails = new List<AdvanceDetail>();
-
-            var advancesDetails = this._AdvanceDetailRetrieveService.Where(p => true).ToList();
-            var advancesList = this._AdvanceRepository.Where(p => p.Accredited_Id == accreditedId).ToList();
-
-            var details = (from a in advancesDetails
-                           join b in advancesList on a.Advance_Id equals b.id
-                           where a.Limit_Date.Date >= limitDate.Date && (a.Paid_Status == 0 || a.Paid_Status == 2)
-                           select a).OrderBy(p => p.Advance_Id).ToList();
-            
-            if (details.Count > 0) 
-                this._AdvanceDetailWriteService.Delete(details);
-
-            Accredited accredited = this._AccreditedRetrieveService.Find(accreditedId);
-
-            advances.ForEach(p =>
+            details.ForEach(detail =>
             {
-                var recalcInteres = this.CalculateInterestAndVat(
-                    new CalculateAmount() { Amount = p.Amount, Accredited_Id = accreditedId }, accredited, p.Limit_Date.Day);
-                AdvanceDetail advanceDetail = new AdvanceDetail()
-                {
-                    Accredited_Id = accreditedId,
-                    Advance_Id = advanceId,
-                    Amount = p.Amount,
-                    Comission = p.Comission,
-                    id = p.id,
-                    created_at = p.created_at,
-                    Date_Advance = p.Date_Advance,
-                    Day_For_Payment = p.Day_For_Payment,
-                    Enabled = p.Enabled,
-                    Interest = recalcInteres.Item1 , //p.Interest,
-                    Limit_Date = p.Limit_Date,
-                    Paid_Status = p.Paid_Status,
-                    Requested_Day = p.Requested_Day,
-                    Subtotal = p.Subtotal,
-                    Total_Withhold = p.Total_Withhold,
-                    updated_at = p.updated_at,
-                    Vat = recalcInteres.Item2, //p.Vat,
-                    Initial = p.Initial,
-                    Final = p.Final
-                };
+                detail.Accredited_Id = accreditedId;
+                detail.Advance_Id = advance.id;
 
-                advanceDetails.Add(advanceDetail);
+                this._DetailsAdvanceWriteService.Create(detail);
             });
 
-            this._AdvanceDetailWriteService.Create(advanceDetails);
-
-            var detail = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accreditedId &&
-            p.Limit_Date.Date == DateTime.Now.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).FirstOrDefault();
-
-            if (detail != null)
-            {
-                detail.Initial = detail.Initial + amount;
-                detail.Final = Math.Round(detail.Initial - detail.Amount, MidpointRounding.AwayFromZero);
-
-                this._AdvanceDetailWriteService.Update(detail);
-            }
-
-            
+            return details;
         }
 
         public (double, double) CalculateInterestAndVat(CalculateAmount calculateAmount, Accredited accredited, int dayForPayment)

@@ -15,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PrestaQi.Api.Controllers
 {
@@ -81,7 +83,7 @@ namespace PrestaQi.Api.Controllers
         }
 
         [HttpPost]
-        public IActionResult Post(CalculateAmount calculateAmount)
+        public IActionResult Post([FromForm] CalculateAmount calculateAmount)
         {
             if (calculateAmount.Accredited_Id <= 0)
             {
@@ -94,9 +96,32 @@ namespace PrestaQi.Api.Controllers
                 Amount = 0
             });
 
+            if (calculateAmount.PaySheetsJson != null)
+            {
+                calculateAmount.PaySheets = JsonSerializer.Deserialize<List<PaySheetUser>>(calculateAmount.PaySheetsJson, new JsonSerializerOptions
+                {
+                    NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString
+                });
+            }
+
+            foreach(var file in Request.Form.Files)
+            {
+                var index = calculateAmount.PaySheets.FindIndex(sheet => sheet.UUID == file.Name);
+
+                if (index >= 0)
+                {
+                    calculateAmount.PaySheets[index].NameFile = file.FileName;
+                    using (var ms = new MemoryStream())
+                    {
+                        file.CopyTo(ms);
+                        calculateAmount.PaySheets[index].File = ms.ToArray();
+                    }
+                }
+            }
+
             if (calculateAmount.Amount > limitCredit.advance.Maximum_Amount)
-                throw new SystemValidationException($"No se puede realizar el préstamos, ya que la cantidad {calculateAmount.Amount:C} " +
-                    $"excede el monto máximo {limitCredit.advance.Maximum_Amount:C}");
+                throw new SystemValidationException($"No se puede realizar el préstamos, ya que la cantidad {calculateAmount.Amount} " +
+                    $"excede el monto máximo {limitCredit.advance.Maximum_Amount}");
             else
                  return Ok(this._AdvanceWriteService.Create<CalculateAmount, Advance>(calculateAmount), "Generator Advance");
         }

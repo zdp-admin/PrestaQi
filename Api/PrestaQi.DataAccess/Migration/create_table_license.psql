@@ -1,0 +1,30 @@
+﻿CREATE SEQUENCE license_seq_id
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE license_seq_id
+    OWNER TO "PrestaQi";
+
+
+CREATE TABLE license
+(
+    id integer NOT NULL DEFAULT nextval('license_seq_id'::regclass),
+    name character varying,
+    name_person_charge character varying,
+    contract_number character varying,
+    license_number character varying,
+    date_payment timestamp without time zone,
+    cost_center character varying,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT license_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE license
+    OWNER to "PrestaQi";

@@ -1,4 +1,5 @@
 ﻿using PrestaQi.Model.Spei;
+using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -72,6 +73,30 @@ namespace PrestaQi.Service.Tools
                 finalValue = number.ToString();
             }
             return finalValue;
+        }
+    
+        public string signForSaldoCuenta(string cuentaClabe, byte[] file)
+        {
+            string cadenaOriginal = cuentaClabe;
+            X509Certificate2 x509 = new X509Certificate2(file, password);
+
+            RSA rsa = (RSA)x509.PrivateKey;
+            byte[] hashValue = rsa.SignData(System.Text.Encoding.UTF8.GetBytes(cadenaOriginal), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            string signature = System.Convert.ToBase64String(hashValue);
+
+            return signature;
+        }
+
+        public string signForConstaOrdenEnviadasRecibidas(string company, DateTime operatorDate, byte[] file)
+        {
+            string cadenaOriginal = $"|||{company}|{operatorDate.ToString("yyyyMMdd")}|||||||||||||||||||||||||||||||||";
+            X509Certificate2 x509 = new X509Certificate2(file, password);
+
+            RSA rsa = (RSA)x509.PrivateKey;
+            byte[] hashValue = rsa.SignData(System.Text.Encoding.UTF8.GetBytes(cadenaOriginal), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            string signature = System.Convert.ToBase64String(hashValue);
+
+            return signature;
         }
     }
 }

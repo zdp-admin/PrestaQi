@@ -29,6 +29,7 @@ namespace PrestaQi.Service.ProcessServices
         IWriteService<AcreditedCartaMandato> _AcreditedCartaMandatoWrite;
         IRetrieveService<AccreditedContractMutuo> _AccreditedContractMutuo;
         IWriteService<AccreditedContractMutuo> _AccreditedContractMutuoWrite;
+        IRetrieveService<License> _licenseRetrieveService;
 
 
         public OrdenPagoProcessService(
@@ -41,7 +42,8 @@ namespace PrestaQi.Service.ProcessServices
              IRetrieveService<AcreditedCartaMandato> acreditedCartaMandato,
         IWriteService<AcreditedCartaMandato> acreditedCartaMandatoWrite,
         IRetrieveService<AccreditedContractMutuo> accreditedContractMutuo,
-        IWriteService<AccreditedContractMutuo> accreditedContractMutuoWrite
+        IWriteService<AccreditedContractMutuo> accreditedContractMutuoWrite,
+        IRetrieveService<License> licenseRetrieveService
             )
         {
             
@@ -55,6 +57,7 @@ namespace PrestaQi.Service.ProcessServices
             this._AcreditedCartaMandatoWrite = acreditedCartaMandatoWrite;
             this._AccreditedContractMutuo = accreditedContractMutuo;
             this._AccreditedContractMutuoWrite = accreditedContractMutuoWrite;
+            this._licenseRetrieveService = licenseRetrieveService;
         }
 
         public ResponseSpei ExecuteProcess(OrderPayment orderPayment)
@@ -69,6 +72,17 @@ namespace PrestaQi.Service.ProcessServices
                 string prefix = configurations.Find(p => p.Configuration_Name == "PREFIX_ORDER_PAYMENT").Configuration_Value;
                 int advanceCount = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id).Count() + 2;
                 var institutions = this._InstitutionRetrieveService.Where(p => p.Enabled == true).ToList();
+                var company = configurations.Find(p => p.Configuration_Name == "COMPANY_NAME").Configuration_Value;
+
+                if (accredited.License_Id != null)
+                {
+                    var license = this._licenseRetrieveService.Where(license => license.id == accredited.License_Id).FirstOrDefault();
+
+                    if (license != null)
+                    {
+                        company = license.CostCenter;
+                    }
+                }
 
                 CryptoHandler crypto = new CryptoHandler();
                 crypto.password = configurations.Find(p => p.Configuration_Name == "CERTIFIED_PASSWORD").Configuration_Value;
