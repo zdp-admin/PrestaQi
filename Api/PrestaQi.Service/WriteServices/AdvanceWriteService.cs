@@ -31,6 +31,7 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieve;
         IWriteService<DetailsByAdvance> _DetailsByAdvanceWriteService;
         public IConfiguration Configuration { get; }
+        DateTime dateNow = DateTime.Now;
 
         public AdvanceWriteService(
             IWriteRepository<Advance> repository,
@@ -66,6 +67,11 @@ namespace PrestaQi.Service.WriteServices
             this._DetailsByAdvanceRetrieve = detailsByAdvanceRetrieve;
             this._DetailsByAdvanceWriteService = detailByAdvanceWriteService;
             Configuration = configuration;
+
+            if (dateNow.Hour >= 12)
+            {
+                dateNow.AddDays(1);
+            }
         }
 
         public Advance Create(CalculateAmount calculateAmount)
@@ -75,8 +81,8 @@ namespace PrestaQi.Service.WriteServices
             
             response.details.ForEach(advance =>
             {
-                advance.created_at = DateTime.Now;
-                advance.updated_at = DateTime.Now;
+                advance.created_at = dateNow;
+                advance.updated_at = dateNow;
                 advance.Paid_Status = (int)PrestaQiEnum.AdvanceStatus.NoPagado;
             });
 
@@ -99,8 +105,8 @@ namespace PrestaQi.Service.WriteServices
                 
                 if (spei.resultado.id > 0)
                 {
-                    response.advance.created_at = DateTime.Now;
-                    response.advance.updated_at = DateTime.Now;
+                    response.advance.created_at = dateNow;
+                    response.advance.updated_at = dateNow;
 
                     bool created =  this._Repository.Create(response.advance);
 
@@ -121,8 +127,8 @@ namespace PrestaQi.Service.WriteServices
 
                         this._SpeiWriteService.Create(new SpeiResponse()
                         {
-                            created_at = DateTime.Now,
-                            updated_at = DateTime.Now,
+                            created_at = dateNow,
+                            updated_at = dateNow,
                             advance_id = response.advance.id,
                             tracking_id = spei.resultado.id,
                             tracking_key = spei.resultado.claveRastreo
@@ -155,8 +161,7 @@ namespace PrestaQi.Service.WriteServices
         private List<DetailsAdvance> SaveAdvanceDetails(Advance advance, int accreditedId, List<DetailsAdvance> details)
         {
 
-            var advancesDetails = this._DetailsAdvanceRetrieve.Where(detail => detail.Accredited_Id == accreditedId &&
-                detail.Date_Payment >= advance.Date_Advance && (detail.Paid_Status == 0 || detail.Paid_Status == 2)).OrderBy(detail => detail.id).ToList();
+            var advancesDetails = this._DetailsAdvanceRetrieve.Where(detail => detail.Accredited_Id == accreditedId && (detail.Paid_Status == 0 || detail.Paid_Status == 2)).OrderBy(detail => detail.id).ToList();
             
             foreach(DetailsAdvance detail in advancesDetails)
             {
@@ -234,7 +239,7 @@ namespace PrestaQi.Service.WriteServices
             this._AdvanceDetailWriteService.Create(advanceDetails);
 
             var detail = this._AdvanceDetailRetrieveService.Where(p => p.Accredited_Id == accreditedId &&
-            p.Limit_Date.Date == DateTime.Now.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).FirstOrDefault();
+            p.Limit_Date.Date == dateNow.Date && (p.Paid_Status == 0 || p.Paid_Status == 2)).OrderBy(p => p.id).FirstOrDefault();
 
             if (detail != null)
             {
@@ -250,16 +255,16 @@ namespace PrestaQi.Service.WriteServices
         public (double, double) CalculateInterestAndVat(CalculateAmount calculateAmount, Accredited accredited, int dayForPayment)
         {
             Advance advanceCalculated = new Advance();
-            DateTime startDate = DateTime.Now;
-            DateTime endDate = DateTime.Now;
-            DateTime limitDate = DateTime.Now;
-            int day = DateTime.Now.Day;
+            DateTime startDate = dateNow;
+            DateTime endDate = dateNow;
+            DateTime limitDate = dateNow;
+            int day = dateNow.Day;
             PeriodCommissionDetail commissionPerioDetail = new PeriodCommissionDetail();
             double annualInterest = ((double)accredited.Interest_Rate / 100);
             int finantialDay = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "FINANCIAL_DAYS").FirstOrDefault().Configuration_Value);
             double vat = Convert.ToDouble(this._ConfigutarionRetrieveService.Where(p => p.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value) / 100;
 
-            int endDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+            int endDay = DateTime.DaysInMonth(dateNow.Year, dateNow.Month);
 
             if (accredited.Period_Id != (int)PrestaQiEnum.PerdioAccredited.Semanal)
             {
@@ -270,7 +275,7 @@ namespace PrestaQi.Service.WriteServices
 
             double intereset = (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Mensual) || (accredited.Period_Id == (int)PrestaQiEnum.PerdioAccredited.Quincenal) ?
                 Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * commissionPerioDetail.Day_Payement), 2) :
-                Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * (limitDate.Date - DateTime.Now.Date).Days), 2);
+                Math.Round(calculateAmount.Amount * ((annualInterest / finantialDay) * (limitDate.Date - dateNow.Date).Days), 2);
 
             return (intereset, intereset * vat);
         }
@@ -279,7 +284,7 @@ namespace PrestaQi.Service.WriteServices
         {
             var advances = new List<Advance>();
             detailsAdvances = detailsAdvances.OrderByDescending(da => da.Date_Payment).ToList();
-            var cloneDetailAdvance = new List<DetailsAdvance>(detailsAdvances);
+            var cloneDetailAdvance = detailsAdvances.ToArray().ToList();
 
             var advanceOrderDesc = this._AdvanceRepository.Where(advance => advance.Accredited_Id == accredited.id).OrderByDescending(a => a.id).ToList();
 
@@ -288,20 +293,21 @@ namespace PrestaQi.Service.WriteServices
             int index = 0;
             foreach (DetailsAdvance detail in cloneDetailAdvance)
             {
-                while(detail.Principal_Payment > 0 && advanceOrderDesc.Count > index)
+                double principalPayment = detail.Principal_Payment;
+                while (principalPayment > 0 && advanceOrderDesc.Count > index)
                 {
-                    if (detail.Principal_Payment > Math.Round(advanceOrderDesc[index].Amount, 2))
+                    if (principalPayment > Math.Round(advanceOrderDesc[index].Amount, 2))
                     {
                         detailsByAdvance.Add(new DetailsByAdvance()
                         {
                             Advance_Id = advanceOrderDesc[index].id,
                             Detail_Id = detail.id,
                             amount = Math.Round(advanceOrderDesc[index].Amount, 2),
-                            created_at = DateTime.Now,
-                            updated_at = DateTime.Now
+                            created_at = dateNow,
+                            updated_at = dateNow
                         });
 
-                        detail.Principal_Payment -= Math.Round(advanceOrderDesc[index].Amount, 2);
+                        principalPayment -= Math.Round(advanceOrderDesc[index].Amount, 2);
                         index++;
                     } else
                     {
@@ -309,13 +315,13 @@ namespace PrestaQi.Service.WriteServices
                         {
                             Advance_Id = advanceOrderDesc[index].id,
                             Detail_Id = detail.id,
-                            amount = detail.Principal_Payment,
-                            created_at = DateTime.Now,
-                            updated_at = DateTime.Now
+                            amount = principalPayment,
+                            created_at = dateNow,
+                            updated_at = dateNow
                         });
 
-                        advanceOrderDesc[index].Amount -= detail.Principal_Payment;
-                        detail.Principal_Payment = 0;
+                        advanceOrderDesc[index].Amount -= principalPayment;
+                        principalPayment = 0;
                     }
                 }
             }
