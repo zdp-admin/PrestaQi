@@ -43,6 +43,9 @@ namespace PrestaQi.Model
         public string NameFile { get; set; }
         [NotMapped]
         public string UUID { get; set; }
-
+        [NotMapped]
+        public List<PaySheetUser> PaySheets { get; set; }
+        [NotMapped]
+        public string PaySheetsJson { get; set; }
     }
 }

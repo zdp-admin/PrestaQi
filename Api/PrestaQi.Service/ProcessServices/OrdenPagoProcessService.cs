@@ -87,7 +87,7 @@ namespace PrestaQi.Service.ProcessServices
                 CryptoHandler crypto = new CryptoHandler();
                 crypto.password = configurations.Find(p => p.Configuration_Name == "CERTIFIED_PASSWORD").Configuration_Value;
                 ordenPagoWS ordenPago = new ordenPagoWS();
-                ordenPago.empresa = configurations.Find(p => p.Configuration_Name == "COMPANY_NAME").Configuration_Value;
+                ordenPago.empresa = company;
                 ordenPago.claveRastreo = $"{prefix}{DateTime.Now:yyyyMMdd}{accredited.id}{advanceCount}";
                 ordenPago.referenciaNumerica = Convert.ToInt32(DateTime.Now.ToString("yyMMdd"));
                 ordenPago.cuentaBeneficiario = accredited.Clabe;
@@ -99,7 +99,7 @@ namespace PrestaQi.Service.ProcessServices
                 ordenPago.tipoCuentaBeneficiario = Convert.ToInt32(configurations.Find(p => p.Configuration_Name == "TYPE_BENEFICIARY_ACCOUNT").Configuration_Value);
                 ordenPago.conceptoPago = configurations.Find(p => p.Configuration_Name == "PAYMENT_CONCEPT").Configuration_Value;
                 ordenPago.institucionContraparte = institutions.Find(p => p.id == accredited.Institution_Id).Code;
-                ordenPago.monto = decimal.Add(Convert.ToDecimal(orderPayment.Advance.Amount), .00m);
+                ordenPago.monto = decimal.Add(Convert.ToDecimal(1), .00m);//decimal.Add(Convert.ToDecimal(orderPayment.Advance.Amount), .00m);
                 ordenPago.tipoCuentaBeneficiarioSpecified = true;
                 ordenPago.institucionOperanteSpecified = true;
                 ordenPago.institucionContraparteSpecified = true;
@@ -188,7 +188,20 @@ namespace PrestaQi.Service.ProcessServices
                     contractMutuo = this._AccreditedContractMutuo.Where(c => c.Accredited_Id == accredited.id).FirstOrDefault();
                 }
 
-                string html = this._DocumentUserProcessService.ExecuteProcess<CartaMandato, string>(new CartaMandato { accredited = accredited, advance = sendSpeiMail.Advance, acreditedCartaMandato = cartaMandato, contractMutuo = contractMutuo });
+                double totalWeek = 0;
+
+                if (sendSpeiMail.Advance.details.Count > 0)
+                {
+                    totalWeek = sendSpeiMail.Advance.details[0].Detail.Total_Payment;
+                }
+
+                string html = this._DocumentUserProcessService.ExecuteProcess<CartaMandato, string>(new CartaMandato { 
+                    accredited = accredited,
+                    advance = sendSpeiMail.Advance,
+                    acreditedCartaMandato = cartaMandato,
+                    contractMutuo = contractMutuo,
+                    totalWeek = totalWeek
+                });
 
                 var mailConf = configurations.FirstOrDefault(p => p.Configuration_Name == "EMAIL_CONFIG");
                 var messageConfig = configurations.FirstOrDefault(p => p.Configuration_Name == "MAI_ADVANCE");

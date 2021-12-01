@@ -21,7 +21,7 @@ namespace PrestaQi.Api.Controllers
             this._CompanyRetrieveService = companyRetrieveService;
         }
 
-        [HttpGet, Route("[action]")]
+        [HttpGet, Route("[action]"), AllowAnonymous]
         public IActionResult GetList([FromQuery] bool onlyActive)
         {
             return Ok(

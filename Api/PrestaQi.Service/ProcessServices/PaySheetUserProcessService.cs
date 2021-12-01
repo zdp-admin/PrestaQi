@@ -16,25 +16,19 @@ namespace PrestaQi.Service.ProcessServices
         private string pathProyect;
 
         IWriteService<PaySheetUser> _paySheetWriteService;
-        IRetrieveService<Accredited> _accreditedRetrevieService;
-        IWriteService<Accredited> _accreditedWriteService;
 
         public PaySheetUserProcessService(
             IHostingEnvironment hostingEnviroment,
-            IWriteService<PaySheetUser> paySheetUserWriteService,
-            IRetrieveService<Accredited> accreditedRetrieveService,
-            IWriteService<Accredited> accreditedWriteService
+            IWriteService<PaySheetUser> paySheetUserWriteService
         )
         {
             this._paySheetWriteService = paySheetUserWriteService;
             this.pathProyect = hostingEnviroment.ContentRootPath;
-            this._accreditedRetrevieService = accreditedRetrieveService;
-            this._accreditedWriteService = accreditedWriteService;
         }
 
         public bool ExecuteProcess(PaySheetUser paySheetUser)
         {
-            if(paySheetUser.File is null)
+            if(paySheetUser.PaySheets is null || paySheetUser.PaySheets.Count <= 0)
             {
                 throw new SystemValidationException("El archivo es necesario");
             }
@@ -44,42 +38,25 @@ namespace PrestaQi.Service.ProcessServices
                 Directory.CreateDirectory($"{this.pathProyect}/paysheet");
             }
 
-            var extension = paySheetUser.NameFile.Split(".").Last();
-            var newname = $"{Guid.NewGuid()}.{extension}";
+            double total = 0;
 
-            var currentDirectory = $"{this.pathProyect}/paysheet/{newname}";
-            FileStream fileStream = File.Create(currentDirectory);
-            fileStream.Write(paySheetUser.File, 0, paySheetUser.File.Length);
-            fileStream.Close();
-
-            paySheetUser.PathFile = $"paysheet/{newname}";
-            paySheetUser.created_at = DateTime.Now;
-            paySheetUser.updated_at = DateTime.Now;
-
-            this._paySheetWriteService.Create(paySheetUser);
-
-            var user = this._accreditedRetrevieService.Where(accredited => accredited.id == paySheetUser.AccreditedId).FirstOrDefault();
-
-            if (user != null)
+            foreach(var paysheet in paySheetUser.PaySheets)
             {
-                var diffDays = paySheetUser.DateFinish - paySheetUser.DateInitial;
-                var dayInPeriodo = diffDays.Days;
+                var extension = paysheet.NameFile.Split(".").Last();
+                var newname = $"{Guid.NewGuid()}.{extension}";
 
-                if (dayInPeriodo >= 26)
-                {
-                    user.Gross_Monthly_Salary = paySheetUser.Neto;
-                    user.Net_Monthly_Salary = paySheetUser.Total;
-                } else if (dayInPeriodo >= 13)
-                {
-                    user.Gross_Monthly_Salary = paySheetUser.Neto * 2;
-                    user.Net_Monthly_Salary = paySheetUser.Total * 2;
-                } else
-                {
-                    user.Gross_Monthly_Salary = paySheetUser.Neto * 4;
-                    user.Net_Monthly_Salary = paySheetUser.Total * 4;
-                }
+                var currentDirectory = $"{this.pathProyect}/paysheet/{newname}";
+                FileStream fileStream = File.Create(currentDirectory);
+                fileStream.Write(paysheet.File, 0, paysheet.File.Length);
+                fileStream.Close();
 
-                this._accreditedWriteService.Update(user);
+                paysheet.PathFile = $"paysheet/{newname}";
+                paysheet.created_at = DateTime.Now;
+                paysheet.updated_at = DateTime.Now;
+                paysheet.AccreditedId = paySheetUser.AccreditedId;
+                total += paysheet.Neto;
+
+                this._paySheetWriteService.Create(paysheet);
             }
 
             return true;

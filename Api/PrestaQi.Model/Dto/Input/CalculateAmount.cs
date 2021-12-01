@@ -8,6 +8,6 @@ namespace PrestaQi.Model.Dto.Input
         public double Amount { get; set; }
         public List<PaySheetUser> PaySheets { get; set; }
         public string PaySheetsJson { get; set; }
-
+        public bool test { get; set; }
     }
 }

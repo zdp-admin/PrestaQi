@@ -1,0 +1,25 @@
+﻿CREATE SEQUENCE email_not_found_seq_id
+	INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE email_not_found_seq_id
+    OWNER TO "PrestaQi";
+
+CREATE TABLE public.email_not_found
+(
+    id integer NOT NULL DEFAULT nextval('email_not_found_seq_id'::regclass),
+    curp character varying,
+    email character varying,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT email_not_found_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.email_not_found
+    OWNER TO "PrestaQi";

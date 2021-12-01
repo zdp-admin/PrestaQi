@@ -1,5 +1,8 @@
 ﻿using InsiscoCore.Base.Service;
 using InsiscoCore.Service;
+using iText.Html2pdf;
+using iText.Kernel.Pdf;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.VisualBasic.FileIO;
 using MoreLinq;
 using Newtonsoft.Json;
@@ -14,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Web;
 
 namespace PrestaQi.Service.ProcessServices
 {
@@ -29,6 +33,8 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Period> _PeriodRetrieveService;
         IRetrieveService<TypeContract> _TypeContract;
         IRetrieveService<License> _LicenseRetrieveService;
+        IWriteService<Company> _CompanyWriteService;
+        private string pathProyect;
 
         public UserProcessService(
             IRetrieveService<User> userRetrieveService,
@@ -40,7 +46,9 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<Company> companyRetrieveService,
             IRetrieveService<Period> periodRetrieveService,
             IRetrieveService<TypeContract> typeContract,
-            IRetrieveService<License> licenseRetrieveService
+            IRetrieveService<License> licenseRetrieveService,
+            IWriteService<Company> companyWriteService,
+            IHostingEnvironment hostingEnvironment
             )
         {
             this._UserRetrieveService = userRetrieveService;
@@ -53,6 +61,8 @@ namespace PrestaQi.Service.ProcessServices
             this._PeriodRetrieveService = periodRetrieveService;
             this._TypeContract = typeContract;
             this._LicenseRetrieveService = licenseRetrieveService;
+            this._CompanyWriteService = companyWriteService;
+            this.pathProyect = hostingEnvironment.ContentRootPath;
         }
 
         public bool ExecuteProcess(string mail)
@@ -162,6 +172,20 @@ namespace PrestaQi.Service.ProcessServices
             catch (Exception exception)
             {
                 throw new SystemValidationException($"Error save file: {exception.Message}");
+            }
+        }
+
+        public ResponseFile ExecuteProcess(FileSnac fileSnac)
+        {
+            try
+            {
+                var users = ProcessFileEmployeeSnac(fileSnac.File, fileSnac.companyId);
+
+                return users;
+            }
+            catch(Exception e)
+            {
+                throw new SystemValidationException($"Error save file: {e.Message}");
             }
         }
 
@@ -324,6 +348,225 @@ namespace PrestaQi.Service.ProcessServices
 
             if (investors.Count > 0 || messages.Length > 0)
                 return new ResponseFile() { Entities = investors, Message = messages };
+
+            throw new SystemValidationException("No se encontraron registros");
+        }
+
+        ResponseFile ProcessFileEmployeeSnac(byte[] file, int companyId)
+        {
+            List<string> curps = new List<string>();
+            List<Accredited> accrediteds = new List<Accredited>();
+            StringBuilder messages = new StringBuilder();
+            var typeContract = this._TypeContract.Where(t => t.Code.ToLower() == "sueldoysalario").FirstOrDefault();
+            var genders = this._GenderRetrieveService.Where(p => p.Enabled).ToList();
+            var period = this._PeriodRetrieveService.Where(p => p.Description == "Quincenal" && p.User_Type == 2).FirstOrDefault();
+            var institution = this._InstitutionRetrieveService.Where(p => true).FirstOrDefault();
+            var license = this._LicenseRetrieveService.Where(license => license.Name == "SNAC").FirstOrDefault();
+            var listAccreditedLicense = this._AccreditedRetrieveService.RetrieveResult<Func<Accredited, bool>, List<Accredited>>(a => a.License_Id == license.id && a.Deleted_At == null);
+            var listAccredited = listAccreditedLicense.Where(a => a.Company_Id == companyId).ToList();
+            var undeleteAccredited = new List<Accredited>();
+
+            using (var stream = new MemoryStream(file))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    using (TextFieldParser parse = new TextFieldParser(reader))
+                    {
+                        parse.TextFieldType = FieldType.Delimited;
+                        parse.SetDelimiters(",");
+                        int row = 1;
+
+                        while(!parse.EndOfData)
+                        {
+                            bool save = true;
+                            string[] fields = parse.ReadFields();
+
+                            var existAccredited = listAccredited.Where(a => a.Curp.Trim().ToLower() == fields[11].Trim().ToLower()).FirstOrDefault();
+                            if (row == 1 || existAccredited != null )
+                            {
+                                if (existAccredited != null)
+                                {
+                                    undeleteAccredited.Add(existAccredited);
+                                }
+                                
+                                row += 1;
+                                continue;
+                            }
+
+                            var splitname = fields[2].Split(' ');
+                            var firstname = "";
+                            var lastname = "";
+                            for (int i = 0; i < splitname.Length; i++)
+                            {
+                                if (i == (splitname.Length - 2) || i == (splitname.Length - 1))
+                                {
+                                    lastname += $"{splitname[i]} ";
+                                    continue;
+                                }
+
+                                firstname += $"{splitname[i]} ";
+                            }
+
+                            var sueldo = fields[6].Replace("$", "").Replace(",", "");
+                            double.TryParse(sueldo, out double neto);
+
+                            neto = neto * 30;
+
+                            var fechaAltaSplit = fields[8].Split("/");
+                            var months = 0;
+
+                            if (fechaAltaSplit.Length >= 3)
+                            {
+                                DateTime now = DateTime.Now;
+                                bool processYear = int.TryParse(fechaAltaSplit[2], out int yearp);
+                                bool processMonth = int.TryParse(fechaAltaSplit[1], out int month);
+                                bool processDay = int.TryParse(fechaAltaSplit[0], out int day);
+                                DateTime alta = new DateTime(processYear ? yearp : now.Year, processMonth ? month : now.Month, processDay ? day : now.Day);
+
+                                months = (int) (now - alta).TotalDays / 30;
+                            }
+
+                            var fechaNacimientoSplit = fields[7].Split("/");
+                            DateTime birthDay = DateTime.Now;
+                            int year = 0;
+
+                            if (fechaNacimientoSplit.Length >= 3)
+                            {
+                                bool processYear = int.TryParse(fechaAltaSplit[2], out int yearB);
+                                bool processMonth = int.TryParse(fechaAltaSplit[1], out int monthB);
+                                bool processDay = int.TryParse(fechaAltaSplit[0], out int dayB);
+                                DateTime date = new DateTime(processYear ? yearB : birthDay.Year, processMonth ? monthB : birthDay.Month, processDay ? dayB : birthDay.Day);
+                                year = (int)(DateTime.Now - date).TotalDays / 365;
+
+                                birthDay = date;
+                            }
+
+
+                            Accredited accredited = new Accredited()
+                            {
+                                First_Name = firstname,
+                                Last_Name = lastname,
+                                Address = "",
+                                Colony = "",
+                                Municipality = "",
+                                Zip_Code = "",
+                                State = "",
+                                Identify = fields[0],
+                                Contract_number = fields[0],
+                                Position = fields[3],
+                                Net_Monthly_Salary = neto,
+                                Gross_Monthly_Salary = neto * .7,
+                                Other_Obligations = 0,
+                                Rfc = fields[10],
+                                Curp = fields[11],
+                                Interest_Rate = 60,
+                                Seniority_Company = months.ToString(),
+                                Birth_Date = birthDay,
+                                Age = year,
+                                Account_Number = "",
+                                Clabe = "",
+                                Moratoruim_Interest_Rate = 60,
+                                Mail = $"{fields[11]}@snac.com",
+                                Mail_Mandate_Latter = "",
+                                End_Day_Payment = null,
+                                Period_Start_Date = 1,
+                                Period_End_Date = 15,
+                                External = true,
+                                NumberEmployee = fields[0],
+                                ApprovedDocuments = false
+                            };
+                              
+                            accredited.Company_Id = (int) companyId;
+
+                            if (typeContract == null)
+                            {
+                                var typeContractDefault = this._TypeContract.Where(t => true).FirstOrDefault();
+                                accredited.Type_Contract_Id = typeContractDefault?.id;
+                            }
+                            else
+                            {
+                                accredited.Type_Contract_Id = typeContract.id;
+                            }
+
+                            var gender = genders.Where(p => p.Description.ToLower() == fields[9].ToLower()).FirstOrDefault();
+                            if (gender == null)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - Género [{fields[9]}] no encontrado. Línea: {row}");
+                            }
+                            else
+                            {
+                                accredited.Gender_Id = gender.id;
+                            }
+
+                            if (period == null)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - Perdiodo [Quincenal] no encontrado. Línea: {row}");
+                            }
+                            else
+                            {
+                                accredited.Period_Id = period.id;
+                            }
+
+                            if (institution == null)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - Código de Banco no encontrado. Línea: {row}");
+                            }
+                            else
+                            {
+                                accredited.Institution_Id = institution.id;
+                            }
+
+                            if (license == null)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - La Licencia SNAC no esta dado de alta. Linea: {row}");
+                            } else
+                            {
+                                accredited.License_Id = license.id;
+
+                                var verifyNumber = listAccredited.Where(a => a.Curp?.ToLower() == fields[11].ToLower()).Count() > 0;
+
+                                if (verifyNumber)
+                                {
+                                    save = false;
+                                    messages.Append($"{Environment.NewLine} - La CURP ({fields[11]}) ya existe. Linea: {row}");
+                                }
+                            }
+
+                            var verifyEmail = listAccreditedLicense.Where(a => a.Mail == accredited.Mail).Count() > 0;
+
+                            if (verifyEmail)
+                            {
+                                save = false;
+                                messages.Append($"{Environment.NewLine} - {accredited.Mail} ya existe. Línea: {row}");
+                            }
+
+                            if (save) {
+                                curps.Add(accredited.Curp.Trim().ToLower());
+                                accrediteds.Add(accredited);
+                            }
+
+                            row += 1;
+                        }
+                    }
+                }
+            }
+
+            if (accrediteds.Count > 0 || messages.Length > 0)
+            {
+                var deleteAccredited = this._AccreditedRetrieveService.RetrieveResult<Func<Accredited, bool>, List<Accredited>>(accredited => !curps.Contains(accredited?.Curp?.Trim().ToLower()) && accredited.Company_Id == companyId).ToList();
+
+                return new ResponseFile()
+                {
+                    Entities = accrediteds,
+                    Message = messages,
+                    ForDelete = deleteAccredited,
+                    ForUnDelete = undeleteAccredited
+                };
+            }
 
             throw new SystemValidationException("No se encontraron registros");
         }
@@ -543,6 +786,98 @@ namespace PrestaQi.Service.ProcessServices
             Utilities.SendEmail(sendMailChangePassword.Mails, messageMail, mailConf);
 
             return true;
+        }
+    
+        public AcceptConvenioAndAutorizacion ExecuteProcess(CartaTransferenciaDeDatos carta)
+        {
+            var response = new AcceptConvenioAndAutorizacion();
+            response.success = false;
+
+            try
+            {
+
+                Accredited accredited = this._AccreditedRetrieveService.RetrieveResult<Func<Accredited, bool>, List<Accredited>>(a => a.id == carta.AccreditedId).FirstOrDefault();
+                if (accredited != null)
+                {
+                    Company company = this._CompanyRetrieveService.Where(c => c.id == accredited.Company_Id).FirstOrDefault();
+
+                    if (company != null)
+                    {
+                        if (!Directory.Exists($"{this.pathProyect}/DocsFirma"))
+                        {
+                            Directory.CreateDirectory($"{this.pathProyect}/DocsFirma");
+                        }
+
+                        DateTime date = DateTime.Now;
+                        var code = $"{accredited.id}{date.Year}{date.Month}{date.Day}";
+                        string textHtml = System.IO.File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Documents/CartaTransferenciaDatosPersonales.html"));
+
+                        textHtml = textHtml.Replace("{NAME}", $"{accredited.First_Name} {accredited.Last_Name}");
+                        textHtml = textHtml.Replace("{COMPANY_NAME}", company.Description);
+                        textHtml = textHtml.Replace("{URL_PAGE}", "https://snactehaceelparo.com");
+                        textHtml = textHtml.Replace("{DAY}", date.ToString("dd"));
+                        textHtml = textHtml.Replace("{MONTH}", date.ToString("MM"));
+                        textHtml = textHtml.Replace("{YEAR}", date.ToString("yyyy"));
+
+                        textHtml = HttpUtility.HtmlDecode(textHtml);
+
+                        var memoryStream = new MemoryStream();
+                        using (var pdfWriter = new PdfWriter(memoryStream))
+                        {
+                            pdfWriter.SetCloseStream(false);
+                            using (var document = HtmlConverter.ConvertToDocument(textHtml, pdfWriter))
+                            {
+                            }
+                        }
+
+                        memoryStream.Position = 0;
+
+                        using (FileStream fs = new FileStream($"{this.pathProyect}/DocsFirma/CTDP-{code}.pdf", FileMode.OpenOrCreate))
+                        {
+                            memoryStream.CopyTo(fs);
+                            fs.Flush();
+                        }
+
+                        memoryStream.Close();
+
+                        memoryStream = new MemoryStream();
+
+
+                        string textHtmlConvenio = System.IO.File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Documents/Convenio.html"));
+
+                        textHtmlConvenio = textHtmlConvenio.Replace("{COMPANY_NAME}", company.Description);
+                        textHtmlConvenio = textHtmlConvenio.Replace("{NUMBER_CONVENIO}", code.PadLeft(12, '0'));
+
+                        textHtmlConvenio = HttpUtility.HtmlDecode(textHtmlConvenio);
+
+                        using (var pdfWriter = new PdfWriter(memoryStream))
+                        {
+                            pdfWriter.SetCloseStream(false);
+                            using (var document = HtmlConverter.ConvertToDocument(textHtmlConvenio, pdfWriter))
+                            {
+                            }
+                        }
+
+                        memoryStream.Position = 0;
+
+                        using (FileStream fs = new FileStream($"{this.pathProyect}/DocsFirma/CONVENIO-{code}.pdf", FileMode.OpenOrCreate))
+                        {
+                            memoryStream.CopyTo(fs);
+                            fs.Flush();
+                        }
+
+                        memoryStream.Close();
+
+                        response.success = true;
+                    }
+                }
+
+            } catch(Exception exception)
+            {
+                throw new SystemValidationException($"Error generate contract: {exception.Message}");
+            }
+
+            return response;
         }
     }
 }

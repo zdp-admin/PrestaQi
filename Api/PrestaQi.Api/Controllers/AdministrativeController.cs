@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PrestaQi.Api.Configuration;
 using PrestaQi.Model;
+using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
 using PrestaQi.Service.Tools;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -97,9 +99,9 @@ namespace PrestaQi.Api.Controllers
         [HttpPut, Route("RecoveryPassword"), AllowAnonymous]
         public IActionResult RecoveryPassword(RecoveryPassword recoveryPassword)
         {
-            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
-
             var result = this._UserProcessService.ExecuteProcess<RecoveryPassword, RecoveryPasswordData>(recoveryPassword);
+
+
             string name = string.Empty;
             bool recovery = false;
 
@@ -115,9 +117,17 @@ namespace PrestaQi.Api.Controllers
             }
             if (result.UserType == Model.Enum.PrestaQiEnum.UserType.Acreditado)
             {
+                var accredited = result.Data as Accredited;
+                if (!accredited.ApprovedDocuments)
+                {
+                    throw new SystemValidationException($"Tus documentos aún no han sido aprobados, te notificaremos cuando puedas iniciar sesión");
+                }
+
                 recovery = this._AccreditedWriteService.Update(result.Data as Accredited);
                 name = (result.Data as Accredited).First_Name;
             }
+
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
 
             if (recovery)
             {
@@ -155,6 +165,40 @@ namespace PrestaQi.Api.Controllers
             {
                 if (((List<Accredited>)response.Entities).Count > 0)
                     this._AccreditedWriteService.Create(response.Entities as List<Accredited>);
+            }
+
+            return Ok(true, response.Message.Length > 0 ? response.Message.ToString() : string.Empty);
+        }
+
+        [HttpPost, Route("SaveSnacGroup"), Authorize]
+        public IActionResult SaveSnacGroup(FileSnac fileUser)
+        {
+            var response = this._UserProcessService.ExecuteProcess<FileSnac, ResponseFile>(fileUser);
+
+            if (((List<Accredited>)response.Entities).Count > 0)
+            {
+                this._AccreditedWriteService.Create(response.Entities as List<Accredited>);
+
+                if (response.ForUnDelete.Count > 0)
+                {
+                    foreach (var item in response.ForUnDelete)
+                    {
+                        item.Deleted_At = null;
+                    }
+
+                    this._AccreditedWriteService.Update(response.ForUnDelete);
+                }
+
+                if (response.ForDelete.Count > 0)
+                {
+                    foreach (var item in response.ForDelete)
+                    {
+                        item.Enabled = false;
+                        item.Deleted_At = DateTime.Now;
+                    }
+
+                    this._AccreditedWriteService.Update(response.ForDelete);
+                }
             }
 
             return Ok(true, response.Message.Length > 0 ? response.Message.ToString() : string.Empty);

@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace PrestaQi.Api.Controllers
@@ -22,17 +24,20 @@ namespace PrestaQi.Api.Controllers
         IProcessService<PaySheetUser> _paySheetProcessService;
         IProcessService<StatusAccount> _statusAccountProcessService;
         IProcessService<IneAccount> _ineAccountProcessService;
+        IProcessService<Accredited> _AccreditedProcessService;
 
         public BinariaFilesController(
             IProcessService<SelfieUser> selfieProcessService,
             IProcessService<PaySheetUser> paySheetProcessService,
             IProcessService<StatusAccount> statusAccountProcessService,
-            IProcessService<IneAccount> ineAccountProcessService
+            IProcessService<IneAccount> ineAccountProcessService,
+            IProcessService<Accredited> accreditedProcessService
         ) : base() {
             this._selfieProcessService = selfieProcessService;
             this._paySheetProcessService = paySheetProcessService;
             this._statusAccountProcessService = statusAccountProcessService;
             this._ineAccountProcessService = ineAccountProcessService;
+            this._AccreditedProcessService = accreditedProcessService;
         }
 
         [HttpPost, Route("Selfie")]
@@ -66,13 +71,26 @@ namespace PrestaQi.Api.Controllers
                 throw new SystemValidationException("El archivo es requerido");
             }
 
-            var requestFile = Request.Form.Files[0];
-            paySheetUser.NameFile = requestFile.FileName;
-
-            using(var ms = new MemoryStream())
+            if (paySheetUser.PaySheetsJson != null)
             {
-                requestFile.CopyTo(ms);
-                paySheetUser.File = ms.ToArray();
+                paySheetUser.PaySheets = JsonSerializer.Deserialize<List<PaySheetUser>>(paySheetUser.PaySheetsJson, new JsonSerializerOptions {
+                    NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString
+                });
+            }
+
+            foreach(var file in Request.Form.Files)
+            {
+                var index = paySheetUser.PaySheets.FindIndex(sheet => sheet.UUID == file.Name);
+
+                if (index >= 0)
+                {
+                    paySheetUser.PaySheets[index].NameFile = file.FileName;
+                    using (var ms = new MemoryStream())
+                    {
+                        file.CopyTo(ms);
+                        paySheetUser.PaySheets[index].File = ms.ToArray();
+                    }
+                }
             }
 
             var result = this._paySheetProcessService.ExecuteProcess<PaySheetUser, bool>(paySheetUser);
@@ -136,6 +154,12 @@ namespace PrestaQi.Api.Controllers
             var result = this._ineAccountProcessService.ExecuteProcess<IneAccount, bool>(ineAccount);
 
             return Ok(result);
+        }
+
+        [HttpPut, Route("CompleteUploadFiles")]
+        public IActionResult CompleteUploadFiles(CompleUploadFiles compleUploadFiles)
+        {
+            return Ok(this._AccreditedProcessService.ExecuteProcess<int, bool>(compleUploadFiles.id));
         }
     }
 }

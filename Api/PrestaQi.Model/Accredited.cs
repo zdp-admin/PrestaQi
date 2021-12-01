@@ -27,6 +27,7 @@ namespace PrestaQi.Model
         string _municipality;
         string _zip_code;
         string _state;
+        string _curp;
         #endregion
 
         #region "Properties"
@@ -110,6 +111,9 @@ namespace PrestaQi.Model
         [Column("state")]
         [Encrypted(nameof(_state))]
         public string State { get => _state.Decrypt(); set => _state = value.Encrypt(); }
+        [Column("curp")]
+        [Encrypted(nameof(_curp))]
+        public string Curp { get => _curp.Decrypt(); set => _curp = value.Encrypt(); }
         [Column("is_blocked")]
         public bool Is_Blocked { get; set; }
         [Column("end_day_payment")]
@@ -126,6 +130,10 @@ namespace PrestaQi.Model
         public bool External { get; set; }
         [Column("approved_documents")]
         public bool ApprovedDocuments { get; set; }
+        [Column("number_employee")]
+        public string NumberEmployee { get; set; }
+        [Column("complete_upload")]
+        public bool CompleteUpload { get; set; }
         #endregion
     }
 }

@@ -6,6 +6,7 @@ using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
+using PrestaQi.Model.Spei;
 using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
@@ -67,10 +68,12 @@ namespace PrestaQi.Service.ProcessServices
         {
             var accredited = this._AcreditedRetrieveService.Find(calculateAmount.Accredited_Id);
             accredited.Period_Name = this._PeriodRetrieveService.Where(periodo => periodo.id == accredited.Period_Id).First().Description;
-            
+
             if (accredited.License_Id != null || accredited.External)
             {
-                return this.CalculateSnac(accredited, calculateAmount.Amount);
+                double neto = calculateAmount.PaySheets is null ? 0 : calculateAmount.PaySheets.Sum(p => p.Total);
+
+                return this.CalculateSnac(accredited, calculateAmount.Amount, neto);
             }
             
             var result = CalculateAdvance(calculateAmount, accredited);
@@ -697,13 +700,43 @@ namespace PrestaQi.Service.ProcessServices
             return myAdvances;
         }
 
-        private AdvanceAndDetails CalculateSnac(Accredited accredited, double amount)
+        private AdvanceAndDetails CalculateSnac(Accredited accredited, double amount, double neto)
         {
             AdvanceAndDetails advanceAndDetails = new AdvanceAndDetails();
+            DateTime date = DateTime.Now;
+            DateTime firstFriday = DateTime.Now;
+            double.TryParse(accredited.Seniority_Company, out double months);
+            int years = (int)(months / 12);
+            double totalNeto = neto * .3;
+
+            int numDay = (int)date.DayOfWeek;
+            if (numDay == 0)
+            {
+                numDay = 7;
+            }
+
+            if (numDay < 6)
+            {
+                firstFriday = firstFriday.AddDays(5 - numDay);
+            } else if (numDay == 6)
+            {
+                firstFriday = firstFriday.AddDays(6);
+            } else if (numDay == 7)
+            {
+                firstFriday = firstFriday.AddDays(5);
+            }
 
             License license = this._licenseRespository.Where(license => license.id == accredited.License_Id).First();
 
             List<Advance> advances = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id).ToList();
+            List<int> advanaceIds = advances.Select(advance => advance.id).ToList();
+            List<DetailsAdvance> details = this._DetailsAdvance.Where(
+                detail => advanaceIds.Contains(detail.Advance_Id) && detail.Date_Payment > date && 
+                date.Year == detail.Date_Payment.Year &&
+                date.Month == detail.Date_Payment.Month
+            ).ToList();
+
+            double totalToPay = details.Sum(detail => detail.Total_Payment);
 
             DateTime intialYear = new DateTime(DateTime.Now.Year, 1, 1);
             DateTime finalYear = new DateTime(DateTime.Now.Year, 12, DateTime.DaysInMonth(DateTime.Now.Year, 12));
@@ -724,7 +757,19 @@ namespace PrestaQi.Service.ProcessServices
             advanceAndDetails.advance.Date_Advance = DateTime.Now;
             advanceAndDetails.advance.Requested_Day = DateTime.Now.Day;
             advanceAndDetails.advance.Enabled = false;
-            advanceAndDetails.advance.Limit_Date = DateTime.Now.AddDays(7);
+            advanceAndDetails.advance.Limit_Date = firstFriday;
+
+            if (years < 1)
+            {
+                advanceAndDetails.advance.Amount = 0;
+                advanceAndDetails.advance.Maximum_Amount = 0;
+                advanceAndDetails.advance.Total_Withhold = 0;
+                advanceAndDetails.advance.Comission = 0;
+                advanceAndDetails.advance.Vat = 0;
+                advanceAndDetails.details = new List<DetailsAdvance>();
+
+                return advanceAndDetails;
+            } 
 
             int dividerWeek = 6;
 
@@ -754,7 +799,7 @@ namespace PrestaQi.Service.ProcessServices
                         dividerWeek = 0;
                     } else
                     {
-                        if ((countAdvanceActiveOne + countAdvanceActiveTwo + countAdvanceActiveThree) == 0)
+                        if ((countAdvanceActiveOne + countAdvanceActiveTwo + countAdvanceActiveThree) == 0 && years >= 5 && totalNeto > (totalToPay + totalForAmount(3000)))
                         {
                             advanceAndDetails.advance.Amount = 3000;
                             advanceAndDetails.advance.Maximum_Amount = 3000;
@@ -764,7 +809,7 @@ namespace PrestaQi.Service.ProcessServices
 
                             dividerWeek = 12;
                         }
-                        else if (countAdvanceActiveOne < 2 && countAdvanceActiveTwo == 0 && countAdvanceActiveThree == 0)
+                        else if (countAdvanceActiveOne < 2 && countAdvanceActiveTwo == 0 && countAdvanceActiveThree == 0 && years >= 2 && totalNeto > (totalToPay + totalForAmount(2000)))
                         {
                             advanceAndDetails.advance.Amount = 2000;
                             advanceAndDetails.advance.Maximum_Amount = 2000;
@@ -774,7 +819,7 @@ namespace PrestaQi.Service.ProcessServices
 
                             dividerWeek = 12;
                         }
-                        else if (countAdvanceActiveThree == 0 && countAdvanceActiveOne < 2 && countAdvanceActiveTwo == 0)
+                        else if (countAdvanceActiveThree == 0 && countAdvanceActiveOne < 2 && countAdvanceActiveTwo == 0 && totalNeto > (totalToPay + totalForAmount(1000)))
                         {
                             advanceAndDetails.advance.Amount = 1000;
                             advanceAndDetails.advance.Maximum_Amount = 1000;
@@ -789,17 +834,17 @@ namespace PrestaQi.Service.ProcessServices
                 }
                 else
                 {
-                    if (amount == 1000 && (countAdvanceActiveOne + countAdvanceActiveTwo) <= 1 && countAdvanceActiveThree == 0)
+                    if (amount == 1000 && (countAdvanceActiveOne + countAdvanceActiveTwo) <= 1 && countAdvanceActiveThree == 0 && totalNeto > (totalToPay + totalForAmount(1000)))
                     {
                         advanceAndDetails.advance.Amount = 1000;
                         advanceAndDetails.advance.Maximum_Amount = 1000;
-                        advanceAndDetails.advance.Total_Withhold = 1092.80;
+                        advanceAndDetails.advance.Total_Withhold = 1080;
                         advanceAndDetails.advance.Comission = 80;
                         advanceAndDetails.advance.Vat = 0;
 
                         dividerWeek = 6;
                     }
-                    else if (amount == 2000 && countAdvanceActiveThree == 0 && countAdvanceActiveTwo == 0 && countAdvanceActiveOne < 2)
+                    else if (amount == 2000 && countAdvanceActiveThree == 0 && countAdvanceActiveTwo == 0 && countAdvanceActiveOne < 2 && years >= 2 && totalNeto > (totalToPay + totalForAmount(2000)))
                     {
                         advanceAndDetails.advance.Amount = 2000;
                         advanceAndDetails.advance.Maximum_Amount = 2000;
@@ -811,7 +856,7 @@ namespace PrestaQi.Service.ProcessServices
 
                         dividerWeek = 12;
                     }
-                    else if (amount == 3000 && (countAdvanceActiveOne + countAdvanceActiveTwo + countAdvanceActiveThree) == 0)
+                    else if (amount == 3000 && (countAdvanceActiveOne + countAdvanceActiveTwo + countAdvanceActiveThree) == 0 && years >= 5 && totalNeto > (totalToPay + totalForAmount(3000)))
                     {
                         advanceAndDetails.advance.Amount = 3000;
                         advanceAndDetails.advance.Maximum_Amount = 3000;
@@ -828,11 +873,12 @@ namespace PrestaQi.Service.ProcessServices
             {
                 advanceAndDetails.details = new List<DetailsAdvance>();
 
-                DateTime date = DateTime.Now;
-
                 for (int index = 0; index < dividerWeek; index++)
                 {
-                    date = date.AddDays(7);
+                    if (index > 0)
+                    {
+                        firstFriday = firstFriday.AddDays(7);
+                    }
 
                     if (advanceAndDetails.advance.Amount == 1000)
                     {
@@ -841,7 +887,7 @@ namespace PrestaQi.Service.ProcessServices
                             Principal_Payment = 166.67,
                             Total_Payment = 180,
                             Vat = 0,
-                            Date_Payment = date,
+                            Date_Payment = firstFriday,
                         });
                     }
                     else if (advanceAndDetails.advance.Amount == 2000)
@@ -851,7 +897,7 @@ namespace PrestaQi.Service.ProcessServices
                             Principal_Payment = 166.67,
                             Total_Payment = 180,
                             Vat = 0,
-                            Date_Payment = date,
+                            Date_Payment = firstFriday,
                         });
                     }
                     else if (advanceAndDetails.advance.Amount == 3000)
@@ -861,7 +907,7 @@ namespace PrestaQi.Service.ProcessServices
                             Principal_Payment = 250,
                             Total_Payment = 270,
                             Vat = 0,
-                            Date_Payment = date,
+                            Date_Payment = firstFriday,
                         });
                     }
                 }
@@ -869,5 +915,22 @@ namespace PrestaQi.Service.ProcessServices
 
             return advanceAndDetails;
         }
+
+        private int totalForAmount(int amount)
+        {
+            if (amount == 3000)
+            {
+                return 4 * 270;
+            }
+
+            if (amount == 2000 || amount == 100)
+            {
+                return 4 * 180;
+            }
+
+            return 0;
+        }
     }
+
+    
 }

@@ -41,6 +41,8 @@ namespace PrestaQi.Model
         [NotMapped]
         public StatusAccount StatusAccount { get; set; }
         [NotMapped]
+        public List<PaySheetUser> PaySheetInitial { get; set; }
+        [NotMapped]
         public IneAccount IneAccount { get; set; }
 
     }

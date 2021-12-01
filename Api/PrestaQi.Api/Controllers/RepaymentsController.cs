@@ -24,7 +24,5 @@ namespace PrestaQi.Api.Controllers
         {
             return Ok(this._RepaymentRetrieveService.Where(p => true).OrderBy(p => p.Description));
         }
-
-
     }
 }

@@ -28,6 +28,7 @@ namespace PrestaQi.Api.Controllers
         IProcessService<Advance> _AdvanceProcessService;
         IRetrieveService<AcreditedCartaMandato> _AcreditedCartaMandato;
         IWriteService<AcreditedCartaMandato> _AcreditedCartaMandatoWrite;
+        IProcessService<User> _UserProccessService;
 
         public UsersController(
             IWriteService<User> userWriteService, 
@@ -37,7 +38,8 @@ namespace PrestaQi.Api.Controllers
             IWriteService<AccreditedContractMutuo> accreditedContractMutuoWrite,
             IProcessService<Advance> advanceProcessService,
             IRetrieveService<AcreditedCartaMandato> acreditedCartaMandato,
-            IWriteService<AcreditedCartaMandato> acreditedCartaMandatoWrite
+            IWriteService<AcreditedCartaMandato> acreditedCartaMandatoWrite,
+            IProcessService<User> userProccessService
             )
         {
             this._UserWriteService = userWriteService;
@@ -48,6 +50,7 @@ namespace PrestaQi.Api.Controllers
             this._AdvanceProcessService = advanceProcessService;
             this._AcreditedCartaMandato = acreditedCartaMandato;
             this._AcreditedCartaMandatoWrite = acreditedCartaMandatoWrite;
+            this._UserProccessService = userProccessService;
     }
 
         [HttpGet, Route("[action]")]
@@ -164,12 +167,49 @@ namespace PrestaQi.Api.Controllers
             };
         }
 
+        [HttpGet, Route("GetConvenio"), AllowAnonymous]
+        public IActionResult GetConvenio([FromQuery] string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var tokenS = handler.ReadToken(token) as JwtSecurityToken;
+            var userId = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "UserId").Value);
+
+            var docHtml = this._DocumentUserWriteService.ExecuteProcess<int, string>(userId);
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = docHtml
+            };
+        }
+
+        [HttpGet, Route("GetCartaTransferenciaDatosPersonales"), AllowAnonymous]
+        public IActionResult GetCartaTransferenciaDatosPersonales([FromQuery] string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var tokenS = handler.ReadToken(token) as JwtSecurityToken;
+            var userId = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "UserId").Value);
+
+            var docHtml = this._DocumentUserWriteService.ExecuteProcess<CartaTransferenciaDeDatos, string>(new CartaTransferenciaDeDatos() {
+                AccreditedId = userId
+            });
+
+            return new ContentResult
+            {
+                ContentType = "text/html",
+                StatusCode = (int)HttpStatusCode.OK,
+                Content = docHtml
+            };
+        }
+
         [HttpGet, Route("GetCartaMandato"), AllowAnonymous]
         public IActionResult GetCartaMandato([FromQuery] string token, 
                                              [FromQuery] double amount, 
                                              [FromQuery] int days, 
                                              [FromQuery] int commision, 
                                              [FromQuery] double totalAmount,
+                                             [FromQuery] double totalWeek,
                                              [FromQuery] string dates = ""
             )
         {
@@ -219,7 +259,8 @@ namespace PrestaQi.Api.Controllers
                     advance = advance,
                     acreditedCartaMandato = cartaMandato,
                     contractMutuo = contractMutuo,
-                    dates = dates
+                    dates = dates,
+                    totalWeek = totalWeek
                 });
 
             return new ContentResult
@@ -324,6 +365,17 @@ namespace PrestaQi.Api.Controllers
                 StatusCode = (int)HttpStatusCode.OK,
                 Content = html
             };
+        }
+
+        [HttpPost, Route("AcceptConvenioAndAutorizacion"), AllowAnonymous]
+        public IActionResult AcceptConvenioAndAutorizacion(OnlyToken onlyToken)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var tokenS = handler.ReadToken(onlyToken.token) as JwtSecurityToken;
+
+            var userId = Convert.ToInt32(tokenS.Claims.FirstOrDefault(p => p.Type == "UserId").Value);
+
+            return Ok(this._UserProccessService.ExecuteProcess<CartaTransferenciaDeDatos, AcceptConvenioAndAutorizacion>(new CartaTransferenciaDeDatos() { AccreditedId = userId }));
         }
     }
 }

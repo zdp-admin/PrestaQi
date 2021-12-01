@@ -1,0 +1,242 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Document</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Montserrat';
+            line-height: 18px
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 15px;
+        }
+
+        .fz-14 {
+            font-size: 14px;
+        }
+
+        p > b {
+            color: #1b1a1f;
+        }
+
+        .title b {
+            color: #1b1a1f !important;
+        }
+        
+        p, span {
+            color: gray;
+        }
+
+        .m-t-40 {
+            margin-top: 40px;
+        }
+
+        .m-b-10 {
+            margin-bottom: 10px;
+        }
+
+        .p-l-25 {
+            padding-left: 25px;
+        }
+        
+        .divider {
+            margin-top: 25px;
+            margin-bottom: 25px;
+            height: 50px;
+        }
+
+        .tc {
+            display: flex;
+            font-size: 13px;
+            justify-content: space-between;
+            border: 1px solid gray;
+        }
+
+        .tc div:first-child {
+            background-color: gainsboro;
+            padding: 5px 15px;
+        }
+
+        .tc div:first-child p {
+            margin: 0;
+            font-weight: bold;
+            color: #1b1a1f;
+        }
+
+        .tc div:last-child {
+            padding: 5px 15px;
+        }
+
+        .tc div:last-child p {
+            margin: 0;
+        }
+
+        .fz-12 {
+            font-size: 12px;
+        }
+
+        .fx-12 {
+            font-size: 10px;
+        }
+
+        .tc.flex-start {
+            justify-content: flex-start;
+        }
+
+        .tcc {
+            max-width: 177px;
+            margin: auto;
+            border: 1px solid gray;
+        }
+
+        .tcc .tr {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid black;
+        }
+        
+        .tcc .tr div {
+            width: 50%;
+        }
+
+        .tcc .tr div:first-child {
+            border-right: 1px solid black;
+        }
+
+        .tcc .tr p {
+            margin: 3px 0;
+        }
+
+        .checkHide{
+            display: none;
+        }
+
+
+        .title-aviso {
+            color: #1b1a1f;
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .sub-title-aviso {
+            color: #1b1a1f;
+            font-size: 10px;
+        }
+
+        ol {
+            list-style-type: upper-roman;
+            font-size: 12px;
+        }
+
+        .cntcarta-bg {
+            background-color: white;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container cntcarta-bg">
+        <p class="title"><b>CARTA COMPROMISO</b></p>
+        <br>
+        <p class="fz-14"><b>C. SECRETARIO GENERAL DEL SINDICATO NACIONAL<br>
+            ALIMENTICIO Y DEL COMERCIO, SIMILARES Y CONEXOS<br>
+            DE LA REPÚBLICA MEXICANA<br>
+            PRESENTE</b></p>
+        <p class="fz-12">
+            {NAME}, por medio de la presente reconozco que solicité el día de hoy {DAY} de {MONTH} del año {YEAR} la cantidad de MXN {AMOUNT} ({AMOUNT_LETTER} 00/100 M.N.) al Sindicato Nacional Alimenticio y del Comercio, 
+            Similares y Conexos de la República Mexicana, en lo sucesivo “SNAC”. Por lo que en este acto autorizo a la compañía en donde presto mi servicio personal subordinado a retener 
+            en total la cantidad de {TOTAL_AMOUNT} ({TOTAL_AMOUNT_LETTER} 00/100 M.N.). ---------------
+            Esta cantidad se descontará semanalmente de mi recibo de nómina en parcialidades de {AMOUNT_WEEK} ({AMOUNT_WEEK_LETTER} 00/100 M.N.) durante las siguientes fechas: ------------------------------------------------------
+        </p>
+        <p class="fz-12 dates">
+            <br>
+            {LIST_DATES}
+            <br>
+        </p>
+        <p class="fz-12">
+            Este monto se le deberá de entregar íntegro a “SNAC”, fungiendo la presente como mi voluntad más amplia y eficaz a fin de notificar a la compañía en donde presto mi servicio personal subordinado mi consentimiento de que se retenga de mi sueldo las cantidades antes descritas a fin de solventar mi obligación de restituir esas cantidades a “SNAC”. ----------------------------------
+            <br>
+        </p>
+        <p class="fz-12">
+            En caso de que por algún motivo deje de prestar mis servicios para la Empresa donde laboro, autorizó a esta para que las cantidades que falten por restituir sean descontadas en una sola exhibición del pago de mi finiquito. ---------------------------------------------------------------------------
+            <br>
+        </p>
+        <p class="fz-12">
+            Manifiesto tener plena capacidad jurídica para obligarme legalmente y lo manifestado en el presente documento recoge mi auténtica y libre voluntad, sin que en ella exista, error, dolo, violencia o mala fe. ----------------------------------------------------------------------------------------------
+            <br>
+        </p>
+        <p class="fz-12">
+            Nota: La firma del presente documento se plasma de manera digital, fungiendo la misma como el equivalente funcional a la firma en papel, la cual surte todos los efectos legales, y la misma no podrá ser invalidada o anulada.
+            <br>
+            <br>
+        </p>
+
+        <p class="title-aviso"><b>Aviso de Privacidad para la Protección de Datos Personales.</b></p>
+        <p class="fx-12">
+            En términos de lo previsto en la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (en lo sucesivo denominada como “la Ley”), el Sindicato Nacional Alimenticio y del Comercio, Similares y Conexos de la República Mexicana, institución dedicada al estudio, defensa y mejoramiento de las condiciones de trabajo de sus agremiados, establece el presente Aviso de Privacidad de conformidad con lo siguiente:
+            <br>
+            <br>
+        </p>
+        <p class="sub-title-aviso"><b>Términos y Condiciones</b></p>
+        <p class="fx-12">
+            1.- El presente Aviso de Privacidad tiene por objeto la protección de los datos personales proporcionados por nuestros representados, mediante su tratamiento legítimo, controlado e informado, a efecto de garantizar su privacidad, así como tu derecho a la autodeterminación informativa.
+            <br>
+        </p>
+        <p class="fx-12">
+            2.- Dato Personal es Cualquier información concerniente a una persona física identificada o identificable; el responsable de recabar los datos personales es el representante sindical asignado a tu centro de trabajo.
+            <br>
+        </p>
+        <p class="fx-12">
+            3.- El domicilio social del sindicato se encuentra en Calle Pedregal 24 Int. S 300 P 3 Colonia Molino del Rey, C.P. 11040, Miguel Hidalgo, Ciudad de México.
+            <br>
+        </p>
+        <p class="fx-12">
+            4.- Al proporcionar tus Datos Personales por escrito, a través de una solicitud, formato en papel, formato digital, correo electrónico, o cualquier otro medio, aceptas y autorizas al sindicato a utilizar y tratar de forma automatizada tus datos personales e información suministrados, los cuales formarán parte de nuestra base de datos con la finalidad de usarlos, en forma enunciativa, más no limitativa, para: identificarte, ubicarte, comunicarte, contactarte, enviarte información, así como para enviarlos o transferirlos a terceros, dentro y fuera del territorio nacional, por cualquier medio que permita la Ley para cumplir con nuestros fines sociales. Mediante la aceptación y autorización para el tratamiento de tus datos personales en los términos antes señalados, nos facultas expresamente a transferirlos a autoridades de cualquier nivel (Federales, Estatales, Municipales), organismos públicos y privados, diversas empresas o personas físicas, dentro y fuera de México, con el propósito de darte participación de los beneficios, servicios financieros y las campañas sindicales promovidas en favor de la educación, salud o el acceso a descuentos para la adquisición de productos o servicios para nuestros agremiados.
+            <br>
+        </p>
+        <p class="fx-12">
+            5.- La temporalidad del manejo de tus datos personales será indefinida a partir de la fecha en que nos los proporciones, pudiendo oponerte al manejo de estos en cualquier momento que lo consideres oportuno, con las limitaciones de Ley; en caso de solicitar tu oposición, el sindicato dejará de manejar tus datos personales sin ninguna responsabilidad de nuestra parte.
+            <br>
+        </p>
+        <p class="fx-12">
+            6.- El responsable del tratamiento de tus datos personales, está obligada a cumplir con los principios de licitud, consentimiento, información, calidad, finalidad, lealtad, proporcionalidad y responsabilidad tutelados en la Ley; por tal motivo con fundamento en los artículos 13 y 14 de la Ley, el sindicato se compromete a guardar estricta confidencialidad de tus datos personales, así como a mantener las medidas de seguridad administrativas, técnicas y físicas que permitan protegerlos contra cualquier daño, pérdida, alteración, acceso o tratamiento no autorizado.
+            <br>
+        </p>
+        <p class="fx-12">
+            7.- En términos de lo establecido por el artículo 22 de la Ley, tienes derecho en cualquier momento a ejercer tus derechos de acceso, rectificación, cancelación y oposición al tratamiento de tus datos personales, mediante la solicitud vía correo electrónico a la siguiente dirección: <b>comunicacion@seccion11.com</b>, o por escrito con el representante sindical de tu centro de trabajo.
+            <br>
+        </p>
+        <p class="fx-12">
+            8.- El sindicato ocasionalmente modificará y corregirá este Aviso de Privacidad, por lo tanto, te pedimos que revises este aviso regularmente en nuestra cuenta de Facebook Sindicato Nacional Alimenticio y del Comercio.
+            <br>
+        </p>
+        <p class="fx-12">
+            9.- El sindicato protegerá tus datos personales en los términos de la Ley y te comunicará los elementos contenidos en las fracciones del artículo 16 de la Ley.
+            <br>
+        </p>
+        <p class="fx-12">
+            10.- Aportar tus datos personales es un hecho que presume tu total aceptación al contenido del presente aviso de privacidad, no obstante, te pedimos suscribir de conformidad el presente documento. Acepto de conformidad el contenido del Aviso de Privacidad que me da el Sindicato Nacional Alimenticio y del Comercio, Similares y Conexos de la República Mexicana.
+            <br>
+        </p>
+
+        <div class="x">
+            <br />
+            <label style="color: gray; font-size: 14px;">
+                <input id="acepto" type="checkbox" checked="checked" style="transform: scale(1.2)" />
+                Si Acepto
+            </label>
+        </div>
+    </div>
+</body>
+</html>

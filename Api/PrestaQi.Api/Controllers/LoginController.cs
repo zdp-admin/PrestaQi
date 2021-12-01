@@ -24,18 +24,19 @@ namespace PrestaQi.Api.Controllers
         IRetrieveService<User> _UserRetrieveService;
         IConfiguration _Configuration;
         IWriteService<Accredited> _AccreditedWriteService;
-
-        
+        IProcessService<Accredited> _AccreditedProcess;
 
         public LoginController(
             IConfiguration configuration,
             IRetrieveService<User> userRetrieveService,
-            IWriteService<Accredited> accreditedWriteService
+            IWriteService<Accredited> accreditedWriteService,
+            IProcessService<Accredited> accreditedProcessService
             )
         {
             this._UserRetrieveService = userRetrieveService;
             this._Configuration = configuration;
             this._AccreditedWriteService = accreditedWriteService;
+            this._AccreditedProcess = accreditedProcessService;
         }
 
         [HttpPost, AllowAnonymous]
@@ -76,6 +77,23 @@ namespace PrestaQi.Api.Controllers
             return Success("User not found");
         }
 
+        [HttpPost, Route("VerifyEmployeeNumber")]
+        public IActionResult VerifyEmployeeNumber(LoginVerifyNumber login)
+        {
+            if (Request.Headers.ContainsKey("LicenseName"))
+            {
+                Request.Headers.TryGetValue("LicenseName", out var LicenseName);
+                login.LicenceName = LicenseName;
+
+                var user = this._UserRetrieveService.RetrieveResult<LoginVerifyNumber, VerifyEmployeeNumber>(login);
+
+                return Ok(user);
+            } else
+            {
+                return NotFound("La licencia no es valida");
+            }
+        }
+
         [HttpPost, AllowAnonymous]
         [Route("LoginDocumentation")]
         public IActionResult LoginDocumentation(Login login)
@@ -107,6 +125,20 @@ namespace PrestaQi.Api.Controllers
                 Type = 1,
                 TypeName = "Administrador"
             });
+        }
+
+        [HttpPut, AllowAnonymous]
+        [Route("ChangeEmail")]
+        public IActionResult ChangeEmail(ChangeEmail changeEmail)
+        {
+            return Ok(this._AccreditedWriteService.Update<ChangeEmail, bool>(changeEmail));
+        }
+
+        [HttpPut, AllowAnonymous]
+        [Route("UpdateEmail")]
+        public IActionResult UpdateEmail(UpdateEmail updateEmail)
+        {
+            return Ok(this._AccreditedProcess.ExecuteProcess<UpdateEmail, bool>(updateEmail));
         }
 
         private string GenerateJSONWebToken(UserLogin user)

@@ -1,0 +1,41 @@
+﻿CREATE SEQUENCE register_seq_id
+	INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE register_seq_id
+    OWNER TO "PrestaQi";
+
+CREATE TABLE request_register
+(
+    id integer NOT NULL DEFAULT nextval('register_seq_id'::regclass),
+    name character varying,
+    lastname character varying,
+    m_lastname character varying,
+    employee_number character varying,
+    curp character varying,
+    company_id integer,
+    email character varying,
+    phone character varying,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    CONSTRAINT request_register_pkey PRIMARY KEY (id)
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.request_register
+    OWNER TO "PrestaQi";
+
+ALTER TABLE public.request_register
+    ADD CONSTRAINT company_id_register_foreign FOREIGN KEY (company_id)
+    REFERENCES public.companies (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+CREATE INDEX fki_company_id_register_foreign
+    ON public.request_register(company_id);

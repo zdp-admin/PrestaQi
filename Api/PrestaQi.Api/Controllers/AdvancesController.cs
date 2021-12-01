@@ -11,6 +11,7 @@ using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
+using PrestaQi.Model.Spei;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,6 +38,8 @@ namespace PrestaQi.Api.Controllers
         IWriteService<DetailsAdvance> _DetailsAdvanceWriteService;
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieve;
 
+        IProcessService<ordenPagoWS> _OrdenPagoProcessService;
+
         public IConfiguration Configuration { get; }
 
         public AdvancesController(
@@ -52,7 +55,8 @@ namespace PrestaQi.Api.Controllers
             IRetrieveService<DetailsAdvance> detailsAdvance,
             IWriteService<DetailsAdvance> detailsAdvanceWrite,
             IRetrieveService<DetailsByAdvance> detailsByAdvanceRetrieve,
-            IRetrieveRepository<Accredited> acreditedRetrieveService
+            IRetrieveRepository<Accredited> acreditedRetrieveService,
+            IProcessService<ordenPagoWS> ordenPagoProcessService
             )
         {
             this._AdvanceWriteService = advanceWriteService;
@@ -67,11 +71,12 @@ namespace PrestaQi.Api.Controllers
             this._DetailsAdvanceWriteService = detailsAdvanceWrite;
             this._DetailsByAdvanceRetrieve = detailsByAdvanceRetrieve;
             this._AcreditedRetrieveService = acreditedRetrieveService;
+            this._OrdenPagoProcessService = ordenPagoProcessService;
             Configuration = configuration;
         }
 
         [HttpPost, Route("CalculateAdvance")]
-        public IActionResult CalculateAdvance(CalculateAmount calculateAmount)
+        public IActionResult CalculateAdvance([FromForm] CalculateAmount calculateAmount)
         {
             
             if (calculateAmount.Accredited_Id <= 0)
@@ -79,22 +84,16 @@ namespace PrestaQi.Api.Controllers
                 calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
             }
 
-            return Ok(this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(calculateAmount));
-        }
-
-        [HttpPost]
-        public IActionResult Post([FromForm] CalculateAmount calculateAmount)
-        {
-            if (calculateAmount.Accredited_Id <= 0)
+            if (calculateAmount.test)
             {
-                calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+                var response = this._OrdenPagoProcessService.ExecuteProcess<OrderPayment, ResponseSpei>(new OrderPayment()
+                {
+                    Accredited_Id = calculateAmount.Accredited_Id,
+                    Advance = new Advance() { Amount = 1 }
+                });
+
+                return Ok(response);
             }
-
-            var limitCredit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(new CalculateAmount()
-            {
-                Accredited_Id = calculateAmount.Accredited_Id,
-                Amount = 0
-            });
 
             if (calculateAmount.PaySheetsJson != null)
             {
@@ -104,7 +103,7 @@ namespace PrestaQi.Api.Controllers
                 });
             }
 
-            foreach(var file in Request.Form.Files)
+            foreach (var file in Request.Form.Files)
             {
                 var index = calculateAmount.PaySheets.FindIndex(sheet => sheet.UUID == file.Name);
 
@@ -119,6 +118,48 @@ namespace PrestaQi.Api.Controllers
                 }
             }
 
+            return Ok(this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(calculateAmount));
+        }
+
+        [HttpPost]
+        public IActionResult Post([FromForm] CalculateAmount calculateAmount)
+        {
+            if (calculateAmount.Accredited_Id <= 0)
+            {
+                calculateAmount.Accredited_Id = int.Parse(HttpContext.User.FindFirst("UserId").Value);
+            }
+
+            if (calculateAmount.PaySheetsJson != null)
+            {
+                calculateAmount.PaySheets = JsonSerializer.Deserialize<List<PaySheetUser>>(calculateAmount.PaySheetsJson, new JsonSerializerOptions
+                {
+                    NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString
+                });
+            }
+
+            foreach (var file in Request.Form.Files)
+            {
+                var index = calculateAmount.PaySheets.FindIndex(sheet => sheet.UUID == file.Name);
+
+                if (index >= 0)
+                {
+                    calculateAmount.PaySheets[index].NameFile = file.FileName;
+                    using (var ms = new MemoryStream())
+                    {
+                        file.CopyTo(ms);
+                        calculateAmount.PaySheets[index].File = ms.ToArray();
+                    }
+                }
+            }
+
+            var limitCredit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(new CalculateAmount()
+            {
+                Accredited_Id = calculateAmount.Accredited_Id,
+                Amount = 0,
+                PaySheets = calculateAmount.PaySheets
+            });
+
+            
             if (calculateAmount.Amount > limitCredit.advance.Maximum_Amount)
                 throw new SystemValidationException($"No se puede realizar el préstamos, ya que la cantidad {calculateAmount.Amount} " +
                     $"excede el monto máximo {limitCredit.advance.Maximum_Amount}");

@@ -1,0 +1,2 @@
+﻿ALTER TABLE public.accrediteds
+    ADD COLUMN number_employee character varying;

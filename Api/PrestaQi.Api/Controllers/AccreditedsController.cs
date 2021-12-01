@@ -79,6 +79,19 @@ namespace PrestaQi.Api.Controllers
         [HttpPut]
         public IActionResult Put(Accredited accredited)
         {
+            var accreditedFind = this._AccreditedRetrieveService.RetrieveResult<Func<Accredited, bool>, List<Accredited>>(a => a.id == accredited.id).FirstOrDefault();
+
+            if (accreditedFind is null)
+            {
+                return BadRequest();
+            }
+
+            accredited.External = accreditedFind.External;
+            accredited.Is_Blocked = accreditedFind.Is_Blocked;
+            accredited.First_Login = accreditedFind.First_Login;
+            accredited.CompleteUpload = accreditedFind.CompleteUpload;
+            accredited.ApprovedDocuments = accreditedFind.ApprovedDocuments;
+
             return Ok(this._AccreditedWriteService.Update(accredited), "Accredited updated!");
         }
 
@@ -160,7 +173,7 @@ namespace PrestaQi.Api.Controllers
         [HttpPut, Route("ApproveDocuments/{id}")]
         public IActionResult ApproveDocuments(int id)
         {
-            var accredited = this._AccreditedRetrieveService.Where(accredited => accredited.id == id).FirstOrDefault();
+            var accredited = this._AccreditedRetrieveService.RetrieveResult< Func<Accredited, bool>, List<Accredited>> (accredited => accredited.id == id).FirstOrDefault();
 
             if (accredited is null)
             {

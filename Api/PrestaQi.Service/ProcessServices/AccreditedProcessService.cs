@@ -2,11 +2,14 @@
 using InsiscoCore.Service;
 using OpenXmlPowerTools;
 using PrestaQi.Model;
+using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Model.Dto.Output;
 using PrestaQi.Model.Enum;
+using PrestaQi.Service.Tools;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace PrestaQi.Service.ProcessServices
@@ -31,7 +34,8 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<StatusAccount> _StatusAccountRetrieveService;
         IRetrieveService<PaySheetUser> _PaySheetUserRetrieveService;
         IProcessService<Notification> _NotificationProcessService;
-
+        IRetrieveService<Contact> _ContactRetrieveService;
+        IRetrieveService<Institution> _institutionRetrieveService;
 
         public AccreditedProcessService(
             IRetrieveService<Company> companyRetrieveService,
@@ -51,7 +55,9 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveService<StatusAccount> statusAccountRetrieveService,
             IRetrieveService<PaySheetUser> paySheetUserRetrieveService,
             IProcessService<Notification> notificationProcessService,
-            IWriteService<Notification> notificationWriteService
+            IWriteService<Notification> notificationWriteService,
+            IRetrieveService<Contact> contactRetrieveService,
+            IRetrieveService<Institution> institutionRetrieveService
             )
         {
             this._CompanyRetrieveService = companyRetrieveService;
@@ -72,6 +78,8 @@ namespace PrestaQi.Service.ProcessServices
             this._PaySheetUserRetrieveService = paySheetUserRetrieveService;
             this._NotificationProcessService = notificationProcessService;
             this._NotificationWriteService = notificationWriteService;
+            this._ContactRetrieveService = contactRetrieveService;
+            this._institutionRetrieveService = institutionRetrieveService;
         }
 
         public List<AdvanceReceivable> ExecuteProcess(AdvancesReceivableByFilter filter)
@@ -232,6 +240,7 @@ namespace PrestaQi.Service.ProcessServices
 
             user.Is_Blocked = true;
             user.First_Login = false;
+            user.CompleteUpload = true;
             this._accreditedWriteService.Update(user);
 
             return true;
@@ -241,9 +250,27 @@ namespace PrestaQi.Service.ProcessServices
         {
             Accredited user = this._AccreditedRetrieveService.Where(accreditedfilter => accreditedfilter.id == accredited.id).FirstOrDefault();
 
+            var statusAccount = this._StatusAccountRetrieveService.Where(status => status.AccreditedId == accredited.id).FirstOrDefault();
+            var configurations = this._ConfigurationRetrieveService.Where(c => c.Enabled == true).ToList();
+            var mailConf = configurations.FirstOrDefault(c => c.Configuration_Name == "EMAIL_CONFIG");
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
+
+            var pass = Utilities.GetPasswordRandom();
+
+            user.Clabe = statusAccount.KeyAccount.Replace(" ", "");
+            user.Account_Number = statusAccount.NumberAccount;
+            user.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(pass);
             user.ApprovedDocuments = true;
+            user.Enabled = true;
             user.Is_Blocked = false;
-            user.First_Login = false;
+            user.First_Login = true;
+            user.updated_at = DateTime.Now;
+
+            var institution = this._institutionRetrieveService.Where(comp => comp.Description.ToLower().Contains(statusAccount.NameBank.ToLower())).FirstOrDefault();
+            if (institution != null)
+            {
+                user.Institution_Id = institution.id;
+            }
             this._accreditedWriteService.Update(user);
 
             Notification notification = new Notification();
@@ -256,6 +283,25 @@ namespace PrestaQi.Service.ProcessServices
             this._NotificationWriteService.Create(notification);
 
             this._NotificationProcessService.ExecuteProcess<Notification, bool>(notification);
+
+            string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Templates/DocumentsApprove.html"));
+            textHtml = textHtml.Replace("{NAME}", accredited.First_Name);
+            textHtml = textHtml.Replace("{MAIL}", user.Mail);
+            textHtml = textHtml.Replace("{PASSWORD}", pass);
+            textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
+            textHtml = textHtml.Replace("{MAIL_SOPORTE}", contacts.Find(p => p.id == 2).Contact_Data);
+            textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
+
+            var message = new MessageMail()
+            {
+                Message = textHtml,
+                Subject = "Continua con tu registro"
+            };
+
+            var emails = new List<String>();
+            emails.Add(user.Mail);
+
+            Utilities.SendEmail(emails, message, mailConf);
 
             return user;
         }
@@ -312,6 +358,47 @@ namespace PrestaQi.Service.ProcessServices
             }
 
             return true;
+        }
+    
+        public bool ExecuteProcess(UpdateEmail updateEmail)
+        {
+            var configurations = this._ConfigurationRetrieveService.Where(c => c.Enabled == true).ToList();
+            var mailConf = configurations.FirstOrDefault(c => c.Configuration_Name == "EMAIL_CONFIG");
+            var contacts = this._ContactRetrieveService.Where(p => p.Enabled == true).ToList();
+
+            var pass = Utilities.GetPasswordRandom();
+
+            var accredited = this._AccreditedRetrieveService.RetrieveResult<Func<Accredited, bool>, List<Accredited>>(a => a.Curp?.ToLower().Trim() == updateEmail.curp.ToLower().Trim()).FirstOrDefault();
+
+            if (accredited != null)
+            {
+                accredited.Mail = updateEmail.email.ToLower().Trim();
+                accredited.Password = InsiscoCore.Utilities.Crypto.MD5.Encrypt(pass);
+
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Templates/DocumentsApprove.html"));
+                textHtml = textHtml.Replace("{NAME}", accredited.First_Name);
+                textHtml = textHtml.Replace("{MAIL}", accredited.Mail);
+                textHtml = textHtml.Replace("{PASSWORD}", pass);
+                textHtml = textHtml.Replace("{WHATSAPP}", contacts.Find(p => p.id == 1).Contact_Data);
+                textHtml = textHtml.Replace("{MAIL_SOPORTE}", contacts.Find(p => p.id == 2).Contact_Data);
+                textHtml = textHtml.Replace("{PHONE}", contacts.Find(p => p.id == 3).Contact_Data);
+
+                var message = new MessageMail()
+                {
+                    Message = textHtml,
+                    Subject = "Continua con tu registro"
+                };
+
+                var emails = new List<String>();
+                emails.Add(accredited.Mail);
+
+                Utilities.SendEmail(emails, message, mailConf);
+
+
+                return this._accreditedWriteService.Update(accredited);
+            }
+
+            throw new SystemValidationException($"Usuario no encontrado");
         }
     }
 }

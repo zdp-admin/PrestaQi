@@ -14,14 +14,23 @@ namespace PrestaQi.Service.ProcessServices
         private string pathProyect;
 
         IWriteService<StatusAccount> _statusAccountWriteService;
+        IWriteService<Accredited> _accreditedWriteService;
+        IRetrieveService<Accredited> _accreditedRetrieveService;
+        IRetrieveService<Institution> _institutionRetrieveService;
 
         public StatusAccountProcessService(
             IHostingEnvironment hostingEvironment,
-            IWriteService<StatusAccount> statusAccountWriteService
+            IWriteService<StatusAccount> statusAccountWriteService,
+            IWriteService<Accredited> accreditedWriteService,
+            IRetrieveService<Accredited> accreditedRetrieveService,
+            IRetrieveService<Institution> institutionRetrieveService
         )
         {
             this.pathProyect = hostingEvironment.ContentRootPath;
             this._statusAccountWriteService = statusAccountWriteService;
+            this._accreditedWriteService = accreditedWriteService;
+            this._accreditedRetrieveService = accreditedRetrieveService;
+            this._institutionRetrieveService = institutionRetrieveService;
         }
 
         public bool ExecuteProcess(StatusAccount statusAccount)
@@ -49,6 +58,18 @@ namespace PrestaQi.Service.ProcessServices
             statusAccount.updated_at = DateTime.Now;
 
             this._statusAccountWriteService.Create(statusAccount);
+
+            var accredited = this._accreditedRetrieveService.Find(statusAccount.AccreditedId);
+            accredited.Clabe = statusAccount.KeyAccount.Replace(" ", "").Replace("-", "");
+            accredited.Account_Number = statusAccount.NumberAccount.Replace("-", "").Replace(" ", "");
+
+            var institution = this._institutionRetrieveService.Where(comp => comp.Description.ToLower().Contains(statusAccount.NameBank.ToLower())).FirstOrDefault();
+            if (institution != null)
+            {
+                accredited.Institution_Id = institution.id;
+            }
+
+            this._accreditedWriteService.Update(accredited);
 
             return true;
         }

@@ -8,6 +8,7 @@ using PrestaQi.Model.Configurations;
 using PrestaQi.Model.Dto.Input;
 using PrestaQi.Service.Tools;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -22,16 +23,91 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Configuration> _ConfigurationRetrieveService;
         IRetrieveService<Institution> _InstitutionRetrieveService;
         IRetrieveService<Capital> _CapitalRetrieveService;
+        IRetrieveService<Accredited> _AccreditedRetrieveService;
+        IRetrieveService<Company> _CompaniesRetriveService;
 
         public DocumentUserProcessService(
             IRetrieveService<Configuration> configurationRetrieveService,
             IRetrieveService<Institution> institutionRetrieveService,
-            IRetrieveService<Capital> capitalRetrieveService
+            IRetrieveService<Capital> capitalRetrieveService,
+            IRetrieveService<Accredited> accreditedRetrieveService,
+            IRetrieveService<Company> companiesRetriveService
             )
         {
             this._ConfigurationRetrieveService = configurationRetrieveService;
             this._InstitutionRetrieveService = institutionRetrieveService;
             this._CapitalRetrieveService = capitalRetrieveService;
+            this._AccreditedRetrieveService = accreditedRetrieveService;
+            this._CompaniesRetriveService = companiesRetriveService;
+        }
+
+        public string ExecuteProcess(int AccreditedId)
+        {
+            DateTime date = DateTime.Now;
+            string textHtml = "";
+
+            try
+            {
+                Accredited accredited = this._AccreditedRetrieveService.RetrieveResult<Func<Accredited, bool>, List<Accredited>>(a => a.id == AccreditedId).FirstOrDefault();
+                if (accredited != null)
+                {
+                    Company company = this._CompaniesRetriveService.Where(c => c.id == accredited.Company_Id).FirstOrDefault();
+
+                    if (company != null)
+                    {
+                        textHtml = System.IO.File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Documents/Convenio.html"));
+                        var code = $"{accredited.id}{date.Year}{date.Month}{date.Day}";
+
+                        textHtml = textHtml.Replace("{COMPANY_NAME}", company.Description);
+                        textHtml = textHtml.Replace("{NUMBER_CONVENIO}", code.PadLeft(12, '0'));
+
+                        textHtml = HttpUtility.HtmlDecode(textHtml);
+                    }
+                }
+
+                return textHtml;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error generate contract: {exception.Message}");
+            }
+        }
+
+        public string ExecuteProcess(CartaTransferenciaDeDatos carta)
+        {
+            DateTime date = DateTime.Now;
+            string textHtml = "";
+
+            try
+            {
+                Accredited accredited = this._AccreditedRetrieveService.RetrieveResult<Func<Accredited, bool>, List<Accredited>>(a => a.id == carta.AccreditedId).FirstOrDefault();
+                if (accredited != null)
+                {
+                    Company company = this._CompaniesRetriveService.Where(c => c.id == accredited.Company_Id).FirstOrDefault();
+
+                    if (company != null)
+                    {
+                        textHtml = System.IO.File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Documents/CartaTransferenciaDatosPersonales.html"));
+                        var code = $"{accredited.id}{date.Year}{date.Month}{date.Day}";
+
+                        textHtml = textHtml.Replace("{NAME}", $"{accredited.First_Name} {accredited.Last_Name}");
+                        textHtml = textHtml.Replace("{COMPANY_NAME}", company.Description);
+                        textHtml = textHtml.Replace("{URL_PAGE}", "https://snactehaceelparo.com");
+                        textHtml = textHtml.Replace("{DAY}", date.ToString("dd"));
+                        textHtml = textHtml.Replace("{MONTH}", date.ToString("MM"));
+                        textHtml = textHtml.Replace("{YEAR}", date.ToString("yyyy"));
+                        textHtml = textHtml.Replace("class=\"x\"", "class=\"checkHide\"");
+
+                        textHtml = HttpUtility.HtmlDecode(textHtml);
+                    }
+                }
+
+                return textHtml;
+            }
+            catch (Exception exception)
+            {
+                throw new SystemValidationException($"Error generate contract: {exception.Message}");
+            }
         }
 
         public string ExecuteProcess(DocumentInvestor documentInvestor)
@@ -181,31 +257,22 @@ namespace PrestaQi.Service.ProcessServices
             try
             {
                 DateTime date = DateTime.Now;
-                string fileConfig = "ACCREDITED_AS_CARTA_MANDATO";
-
-                if (cartaMandato.accredited.TypeContract?.Code == "sueldoysalario")
-                {
-                    fileConfig = "ACCREDITED_SS_CARTA_MANDATO";
-                }
-
 
                 var configurations = this._ConfigurationRetrieveService.Where(p => p.Enabled == true).ToList();
-                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), configurations.Where(p => p.Configuration_Name == fileConfig).FirstOrDefault().Configuration_Value));
+                string textHtml = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Documents/CartaCompromiso.html"));
 
-                textHtml = textHtml.Replace("{CODE}", cartaMandato.acreditedCartaMandato.id.ToString());
                 textHtml = textHtml.Replace("{NAME}", $"{cartaMandato.accredited.First_Name.ToUpper()}  {cartaMandato.accredited.Last_Name.ToUpper()}");
                 textHtml = textHtml.Replace("{DAY}", date.Day.ToString());
                 textHtml = textHtml.Replace("{MONTH}", date.ToString("MMMM", CultureInfo.CreateSpecificCulture("es")));
                 textHtml = textHtml.Replace("{YEAR}", date.Year.ToString());
                 textHtml = textHtml.Replace("{AMOUNT}", cartaMandato.advance.Amount.ToString("C2"));
                 textHtml = textHtml.Replace("{AMOUNT_LETTER}", new Moneda().Convertir(cartaMandato.advance.Amount.ToString(), true, "PESOS"));
-                textHtml = textHtml.Replace("{NUMBER_CONTRACT_MUTUO}", cartaMandato.contractMutuo.id.ToString());
-                textHtml = textHtml.Replace("{DAYS}", cartaMandato.advance.Day_For_Payment.ToString());
-                textHtml = textHtml.Replace("{COMISION}", cartaMandato.advance.Comission.ToString("C2"));
                 textHtml = textHtml.Replace("{TOTAL_AMOUNT}", cartaMandato.advance.Total_Withhold.ToString("C2"));
-                textHtml = textHtml.Replace("{INTEREST_RATE}", cartaMandato.accredited.Interest_Rate.ToString());
+                textHtml = textHtml.Replace("{TOTAL_AMOUNT_LETTER}", new Moneda().Convertir(cartaMandato.advance.Total_Withhold.ToString(), true, "PESOS"));
+                textHtml = textHtml.Replace("{AMOUNT_WEEK}", cartaMandato.totalWeek.ToString("C2"));
+                textHtml = textHtml.Replace("{AMOUNT_WEEK_LETTER}", new Moneda().Convertir(cartaMandato.totalWeek.ToString(), true, "PESOS"));
 
-                var ulDates = "<ul>";
+                var ulDates = "<ol>";
 
                 if (cartaMandato.dates != String.Empty && cartaMandato.dates != null)
                 {
@@ -216,7 +283,7 @@ namespace PrestaQi.Service.ProcessServices
                     }
                 }
 
-                ulDates += "</ul>";
+                ulDates += "</ol>";
 
                 textHtml = textHtml.Replace("{LIST_DATES}", ulDates);
 

@@ -45,6 +45,8 @@ namespace PrestaQi.DataAccess
         public DbSet<StatusAccount> statusAccounts { get; set; }
         public DbSet<IneAccount> ineAccounts { get; set; }
         public DbSet<LicenseDeposits> licenseDeposits { get; set; }
+        public DbSet<RequestRegister> RequestRegisters { get; set; }
+        public DbSet<EmailNotFound> emailNotFound { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

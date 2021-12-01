@@ -162,17 +162,6 @@ namespace PrestaQi.Service.WriteServices
 
                 bool created = base.Create(entities);
 
-                entities.ToList().ForEach(p =>
-                {
-                    try
-                    {
-                        SendMail(p.Mail, mails[p.Mail], p.First_Name);
-                    }
-                    catch (Exception)
-                    {
-                    }
-                });
-
                 return created;
             }
             catch (Exception exception)
@@ -271,6 +260,19 @@ namespace PrestaQi.Service.WriteServices
             {
                 throw new SystemValidationException("Error al bloquear/desbloquear los servicios: " + exception.Message);
             }
+        }
+    
+        public bool Update(ChangeEmail changeEmail)
+        {
+            var accredited = this._AccreditedRetrieveService.Find(changeEmail.accreditedId);
+            if (accredited != null)
+            {
+                accredited.Mail = changeEmail.email;
+
+                return this._Repository.Update(accredited);
+            }
+
+            throw new SystemValidationException($"Usuario no encontrado");
         }
     }
 }

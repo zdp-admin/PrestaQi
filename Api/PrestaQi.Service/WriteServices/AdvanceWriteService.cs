@@ -144,24 +144,19 @@ namespace PrestaQi.Service.WriteServices
                             });
                         }
 
-                        double totalPay = 0;
-                        double grossPay = 0;
+                        PaySheetUser paySheetUser = new PaySheetUser();
+                        paySheetUser.AccreditedId = response.advance.Accredited_Id;
+                        paySheetUser.PaySheets = new List<PaySheetUser>();
 
-                        foreach(var paysheet in calculateAmount.PaySheets)
+                        foreach (var paysheet in calculateAmount.PaySheets)
                         {
                             paysheet.AccreditedId = response.advance.Accredited_Id;
                             paysheet.AdvanceId = response.advance.id;
-                            this._paySheetProcessService.ExecuteProcess<PaySheetUser, bool>(paysheet);
-                            totalPay += paysheet.Total;
-                            grossPay += paysheet.Neto;
+
+                            paySheetUser.PaySheets.Add(paysheet);
                         }
 
-                        if (calculateAmount.PaySheets.Count > 0)
-                        {
-                            accredited.Gross_Monthly_Salary = grossPay;
-                            accredited.Net_Monthly_Salary = totalPay;
-                            this._accreditedWriteService.Update(accredited);
-                        }
+                        this._paySheetProcessService.ExecuteProcess<PaySheetUser, bool>(paySheetUser);
                     }
 
                     return response.advance;
@@ -256,39 +251,16 @@ namespace PrestaQi.Service.WriteServices
 
             List<DetailsByAdvance> detailsByAdvance = new List<DetailsByAdvance>();
 
-            int index = 0;
             foreach (DetailsAdvance detail in cloneDetailAdvance)
             {
-                while(detail.Principal_Payment > 0 && advanceOrderDesc.Count > index)
+                detailsByAdvance.Add(new DetailsByAdvance()
                 {
-                    if (detail.Principal_Payment > Math.Round(advanceOrderDesc[index].Amount, 2))
-                    {
-                        detailsByAdvance.Add(new DetailsByAdvance()
-                        {
-                            Advance_Id = advanceOrderDesc[index].id,
-                            Detail_Id = detail.id,
-                            amount = Math.Round(advanceOrderDesc[index].Amount, 2),
-                            created_at = DateTime.Now,
-                            updated_at = DateTime.Now
-                        });
-
-                        detail.Principal_Payment -= Math.Round(advanceOrderDesc[index].Amount, 2);
-                        index++;
-                    } else
-                    {
-                        detailsByAdvance.Add(new DetailsByAdvance()
-                        {
-                            Advance_Id = advanceOrderDesc[index].id,
-                            Detail_Id = detail.id,
-                            amount = detail.Principal_Payment,
-                            created_at = DateTime.Now,
-                            updated_at = DateTime.Now
-                        });
-
-                        advanceOrderDesc[index].Amount -= detail.Principal_Payment;
-                        detail.Principal_Payment = 0;
-                    }
-                }
+                    Advance_Id = detail.Advance_Id,
+                    Detail_Id = detail.id,
+                    amount = detail.Total_Payment,
+                    created_at = DateTime.Now,
+                    updated_at = DateTime.Now
+                });
             }
 
             this._DetailsByAdvanceWriteService.Create(detailsByAdvance);
