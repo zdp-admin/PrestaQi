@@ -28,7 +28,9 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<Institution> _InsitutionRetrieveService;
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieveService;
         IRetrieveRepository<PaidAdvance> _PaidAdvanceRepository;
-        DateTime dateNow = DateTime.Now;
+        DateTime dateNow = new DateTime(2021, 9, 29, 10, 0, 0); //DateTime.Now;
+        // solo cambiar la hora en el cuarto dia antes de la fecha de pago
+        // liberar pago principal
 
         public AdvanceProcessService(
             IRetrieveRepository<Accredited> acreditedRetrieveService,
@@ -59,7 +61,7 @@ namespace PrestaQi.Service.ProcessServices
             this._InsitutionRetrieveService = insitutionRetrieveService;
             this._DetailsByAdvanceRetrieveService = detailsByAdvance;
             this._PaidAdvanceRepository = paidAdvanceRepository;
-    }
+        }
 
         public AdvanceAndDetails ExecuteProcess(CalculateAmount calculateAmount)
         {
@@ -176,19 +178,90 @@ namespace PrestaQi.Service.ProcessServices
                 .Where(paidAdvance => paidAdvance.created_at >= datePeriodInitial && paidAdvance.created_at <= datePeriodFinish).FirstOrDefault() != null;
 
             periodIsPaying = false;
+            DateTime limitDate = datePeriodFinish;
 
-            if (periodIsPaying)
+            switch (accredited.Period_Id)
             {
-                currentDate = datePeriodFinish.AddDays(1);
+                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
 
-                currentPeriod = Utilities.getPeriodoByAccredited(accredited, currentDate);
+                    /*Check is available day*/
+                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        limitDate = limitDate.AddDays(-1);
+                    }
+
+                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        limitDate = limitDate.AddDays(-2);
+                    }
+
+                    break;
+                case (int)PrestaQiEnum.PerdioAccredited.Mensual:
+
+                    /*Check is available day*/
+                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        limitDate = limitDate.AddDays(-1);
+                    }
+
+                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        limitDate = limitDate.AddDays(-2);
+                    }
+
+                    break;
+            }
+
+            if (periodIsPaying || (limitDate - currentDate.Date).Days <= 3)
+            {
+                currentPeriod = Utilities.getPeriodoByAccredited(accredited, datePeriodFinish.AddDays(1));
                 datePeriodInitial = currentPeriod.initial;
                 datePeriodFinish = currentPeriod.finish;
+            } else if ((limitDate - currentDate).Days == 4)
+            {
+                if (dateNow.Hour >= 12)
+                {
+                    currentPeriod = Utilities.getPeriodoByAccredited(accredited, datePeriodFinish.AddDays(1));
+                    datePeriodInitial = currentPeriod.initial;
+                    datePeriodFinish = currentPeriod.finish;
+                }
+            }
+
+            switch (accredited.Period_Id)
+            {
+                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
+
+                    /*Check is available day*/
+                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        limitDate = limitDate.AddDays(-1);
+                    }
+
+                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        limitDate = limitDate.AddDays(-2);
+                    }
+
+                    break;
+                case (int)PrestaQiEnum.PerdioAccredited.Mensual:
+
+                    /*Check is available day*/
+                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        limitDate = limitDate.AddDays(-1);
+                    }
+
+                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        limitDate = limitDate.AddDays(-2);
+                    }
+
+                    break;
             }
 
             DateTime startDate = currentDate;
             DateTime endDate = currentDate;
-            DateTime limitDate = currentDate;
+            
             int day = currentDate.Day;
             PeriodCommissionDetail commissionPerioDetail = new PeriodCommissionDetail();
 
@@ -324,7 +397,7 @@ namespace PrestaQi.Service.ProcessServices
             advanceCalculated.Vat = vatTotal;
             advanceCalculated.Subtotal = subtotal;
             advanceCalculated.Limit_Date = limitDate;
-            advanceCalculated.Date_Advance = currentDate;
+            advanceCalculated.Date_Advance = dateNow;
             advanceCalculated.Interest_Rate = accredited.Interest_Rate;
             advanceCalculated.Maximum_Amount = isMaxAmount ? Math.Round(advanceCalculated.Maximum_Amount - subtotal - vatTotal) : 0;
             advanceCalculated.Maximum_Amount = advanceCalculated.Maximum_Amount < 0 ? 0 : advanceCalculated.Maximum_Amount;
@@ -350,7 +423,23 @@ namespace PrestaQi.Service.ProcessServices
             double vatConfig = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(c => c.Configuration_Name == "VAT").FirstOrDefault().Configuration_Value);
             double FINANCIAL_DAYS = Convert.ToInt32(this._ConfigutarionRetrieveService.Where(c => c.Configuration_Name == "FINANCIAL_DAYS").FirstOrDefault().Configuration_Value);
 
-            double discountPeriod = ((double)accredited.Interest_Rate / 100);
+            double discountPeriod = 1;
+            switch (accredited.Period_Id)
+            {
+                case (int)PrestaQiEnum.PerdioAccredited.Semanal:
+                    discountPeriod = .25;
+                    break;
+                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
+                    discountPeriod = .5;
+                    break;
+                default:
+                    discountPeriod = 1;
+                    break;
+            }
+
+            var datesToPayment = advances.Select(a => a.Limit_Date).ToList();
+
+
             double maxdiscount = maximumAmountDiscountByPeriod;
             double totalDisponible = (accredited.Gross_Monthly_Salary * gross_percentage) - accredited.Other_Obligations;
             double totalForPay = advances.Sum(advance => advance.Total_Withhold);
@@ -361,7 +450,8 @@ namespace PrestaQi.Service.ProcessServices
             List<DetailsAdvance> detailsAdvances = new List<DetailsAdvance>();
             int index = 0;
 
-            DateTime nextDayForPayment = advances[0].Limit_Date;
+            DateTime nextDayForPayment = datesToPayment.Min();
+            DateTime dateRequest = advances[0].created_at;
 
             if (numberOfPayments > 1 || residuo > 0)
             {
@@ -409,7 +499,7 @@ namespace PrestaQi.Service.ProcessServices
                     double[] listTotalsToDiscount =
                     {
                         totalDisponible,
-                        ((amounForNextDayPayment * discountPeriod) + (deductionsForNextDayPayment - detailsTotalPayment) + detailsAmountPayment),
+                        ((amounForNextDayPayment * discountPeriod) + ((deductionsForNextDayPayment + detailsDeductionsTotal) - detailsTotalPayment) + detailsAmountPayment),
                         (amounForNextDayPayment - detailsAmountPayment) + (deductionsForNextDayPayment + detailsDeductionsTotal) - detailsTotalPayment + detailsAmountPayment,
                         maxdiscount
                     };

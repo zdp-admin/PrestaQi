@@ -31,7 +31,7 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieve;
         IWriteService<DetailsByAdvance> _DetailsByAdvanceWriteService;
         public IConfiguration Configuration { get; }
-        DateTime dateNow = DateTime.Now;
+        DateTime dateNow = new DateTime(2021, 9, 29, 10, 0, 0); //DateTime.Now;
 
         public AdvanceWriteService(
             IWriteRepository<Advance> repository,
@@ -67,11 +67,6 @@ namespace PrestaQi.Service.WriteServices
             this._DetailsByAdvanceRetrieve = detailsByAdvanceRetrieve;
             this._DetailsByAdvanceWriteService = detailByAdvanceWriteService;
             Configuration = configuration;
-
-            if (dateNow.Hour >= 12)
-            {
-                dateNow.AddDays(1);
-            }
         }
 
         public Advance Create(CalculateAmount calculateAmount)
@@ -105,7 +100,6 @@ namespace PrestaQi.Service.WriteServices
                 
                 if (spei.resultado.id > 0)
                 {
-                    response.advance.created_at = dateNow;
                     response.advance.updated_at = dateNow;
 
                     bool created =  this._Repository.Create(response.advance);

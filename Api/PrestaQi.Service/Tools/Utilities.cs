@@ -312,7 +312,7 @@ namespace PrestaQi.Service.Tools
 
                 if (currenDate.Day > finish)
                 {
-                    initialDate = parseDateTime(currenDate.Year, currenDate.Month, finish + 1);
+                    initialDate = parseDateTime(currenDate.Year, currenDate.Month, finish);
                 }
 
                 finishDate = initialDate.AddDays(15);
@@ -320,7 +320,7 @@ namespace PrestaQi.Service.Tools
 
                 if (initialDate.Day > finish)
                 {
-                    finishDate = new DateTime(finishDate.Year, finishDate.Month, (initial - 1) == 0 ? DateTime.DaysInMonth(finishDate.Year, finishDate.Month) : initial - 1);
+                    finishDate = new DateTime(finishDate.Year, finishDate.Month, (initial - 1) == 0 ? DateTime.DaysInMonth(finishDate.Year, finishDate.Month) : initial);
                 }
             }
 
