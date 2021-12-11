@@ -7,6 +7,7 @@ using PrestaQi.Model.Enum;
 using System;
 using System.Linq;
 using PrestaQi.Service.Tools;
+using System.Collections.Generic;
 
 namespace PrestaQi.Service.ProcessServices
 {
@@ -47,6 +48,7 @@ namespace PrestaQi.Service.ProcessServices
 
         public bool ExecuteProcess(SetPayAdvance data)
         {
+
             PaidAdvance paidAdvance = new PaidAdvance()
             {
                 Amount = data.Amount,
@@ -56,97 +58,34 @@ namespace PrestaQi.Service.ProcessServices
                 updated_at = DateTime.Now
             };
 
-            bool createPay = true; // this._PaidAdvanceWriteService.Create(paidAdvance);
+            bool createPay = this._PaidAdvanceWriteService.Create(paidAdvance);
 
-            if (createPay)
+            var advancesUpdate = new List<Advance>();
+            var advances = this._AdvanceRetrieveService.Where(a => a.Paid_Status == 0).ToList();
+            var advanceIds = advances.Select(a => a.id).ToList();
+
+            var details = this._DetailsAdvance.Where(d => d.Date_Payment.Date < DateTime.Now.Date).Where(d => advanceIds.Contains(d.Advance_Id)).ToList();
+            var detailsForPay = this._DetailsAdvance.Where(d => d.Paid_Status == 0).Where(d => advanceIds.Contains(d.Advance_Id)).ToList();
+
+            foreach (Advance advance in advances)
             {
-                var advanceIds = data.AdvanceIds.Where(p => p.Contract_Type_Id == 1).Select(p => p.Advance_Id);
-                var advances = this._AdvanceRetrieveService.Where(p => advanceIds.Contains(p.id)).ToList();
-                var detailsAdvanceAll = this._DetailsAdvance.Where(da => advanceIds.Contains(da.Advance_Id)).ToList();
-                var detailsByAdvances = this._DetailsByAdvance.Where(da => advanceIds.Contains(da.Advance_Id)).ToList();
+                advance.DetailsAdvances = detailsForPay.Where(d => d.Advance_Id == advance.id).Where(d => d.Date_Payment.Date < DateTime.Now.Date).ToList();
 
-                advances.ForEach(p =>
+                if (advance.DetailsAdvances.Count <= 0 && advance.Limit_Date.Date < DateTime.Now.Date)
                 {
-                    var nextDayForPayment = nextDatePayment(p.Accredited_Id);
-
-                    p.updated_at = DateTime.Now;
-
-                    p.details = detailsByAdvances.Where(da => da.Advance_Id == p.id).ToList();
-
-                    if (p.details.Count <= 0)
-                    {
-                        if (p.Limit_Date <= nextDayForPayment)
-                        {
-                            p.Enabled = data.IsPartial ? true : false;
-                            p.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
-                                (int)PrestaQiEnum.AdvanceStatus.Pagado;
-                        }
-                    } else
-                    {
-                        p.details.ForEach(d =>
-                        {
-                            d.Detail = detailsAdvanceAll.Where(da => da.id == d.Detail_Id && da.Date_Payment <= nextDayForPayment).FirstOrDefault();
-
-                            if (d.Detail != null)
-                            {
-                                d.Detail.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
-                                        (int)PrestaQiEnum.AdvanceStatus.Pagado;
-
-                                this._DetailsAdvanceWriteService.Update(d.Detail);
-                            }
-                        });
-
-                        bool allpaided = p.details.All(d => d.Detail is null ? false : d.Detail.Paid_Status != 0);
-
-                        if (allpaided)
-                        {
-                            p.Enabled = data.IsPartial ? true : false;
-                            p.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
-                                (int)PrestaQiEnum.AdvanceStatus.Pagado;
-                        }
-                    }
-                });
-
-                this._AdvanceWriteService.Update(advances);
-
-                
-                advanceIds = data.AdvanceIds.Where(p => p.Contract_Type_Id == 2).Select(p => p.Advance_Id);
-                advances = this._AdvanceRetrieveService.Where(p => advanceIds.Contains(p.id)).ToList();
-
-                advances.ForEach(p =>
-                {
-                    var nextDayForPayment = nextDatePayment(p.Accredited_Id);
-
-                    if (p.Limit_Date <= nextDayForPayment)
-                    {
-                        p.updated_at = DateTime.Now;
-                        p.Enabled = data.IsPartial ? true : false;
-                        p.Paid_Status = data.IsPartial ? (int)PrestaQiEnum.AdvanceStatus.PagadoParcial :
-                            (int)PrestaQiEnum.AdvanceStatus.Pagado;
-                    }
-
-                });
-
-                this._AdvanceWriteService.Update(advances);
-
-
-                if (!data.IsPartial)
-                {
-                    var payAdvances = this._PaidAdvanceRetrieveService.Where(p => p.Company_Id == data.Company_Id &&
-                        p.created_at.Date <= DateTime.Now.Date && p.Is_Partial).ToList();
-
-                    if (payAdvances.Count > 0)
-                    {
-                        payAdvances.ForEach(p =>
-                        {
-                            p.updated_at = DateTime.Now;
-                            p.Is_Partial = false;
-                        });
-                        this._PaidAdvanceWriteService.Update(payAdvances);
-                    }
+                    advance.Paid_Status = 1;
+                    advancesUpdate.Add(advance);
                 }
-
             }
+
+            this._AdvanceWriteService.Update(advancesUpdate);
+
+            foreach (DetailsAdvance detailsAdvance in details)
+            {
+                detailsAdvance.Paid_Status = 1;
+            }
+
+            this._DetailsAdvanceWriteService.Update(details);
 
             return true;
         }

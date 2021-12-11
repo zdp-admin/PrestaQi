@@ -240,23 +240,47 @@ namespace PrestaQi.Service.Tools
                     initial = currentDate.AddDays(-(indexDay - 1));
                     finish = currentDate.AddDays(7 - indexDay);
 
-                    /*if (periodStart == 0)
-                    {
-                        initial = currentDate.AddDays(-(6 - indexDay));
-                        finish = currentDate.AddDays(-indexDay);
-                    }*/
-
                     break;
                 case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
                     var result = quincenal(accredited.Period_Start_Date ?? 0, accredited.Period_End_Date ?? 15, currentDate);
                     initial = result.Item1;
                     finish = result.Item2;
+
+                    if (finish.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        finish = finish.AddDays(-1);
+                    }
+
+                    if (finish.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        finish = finish.AddDays(-2);
+                    }
+
                     break;
                 default:
                     var month = mensual(accredited.Period_Start_Date ?? 1, currentDate);
                     initial = month.Item1;
                     finish = month.Item2;
+
+                    if (finish.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        finish = finish.AddDays(-1);
+                    }
+
+                    if (finish.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        finish = finish.AddDays(-2);
+                    }
+
                     break;
+            }
+
+            if (accredited.Period_Id != (int)PrestaQiEnum.PerdioAccredited.Semanal)
+            {
+                if ((finish - currentDate.Date).Days <= 2 || (finish - currentDate.Date).Days == 3 && currentDate.Hour >= 12)
+                {
+                    return getPeriodoByAccredited(accredited, finish.AddDays(4));
+                }
             }
 
             return ( initial, finish );

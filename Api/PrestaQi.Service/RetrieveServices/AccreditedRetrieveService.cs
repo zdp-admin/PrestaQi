@@ -88,12 +88,14 @@ namespace PrestaQi.Service.RetrieveServices
                 var stringProperties = typeof(Accredited).GetProperties().Where(prop =>
                     prop.PropertyType == accreditedByPagination.Filter.GetType());
 
+                var filvalue = accreditedByPagination.Filter.ToLower();
+
                 totalRecord = accrediteds
-                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(accreditedByPagination.Filter.ToLower())))
+                        .Where(p => p.id.ToString().Contains(filvalue) || (p.First_Name.ToLower() + " " + p.Last_Name.ToLower()).ToLower().Contains(filvalue) || p.Mail.ToLower().Contains(filvalue))
                         .OrderBy(p => p.id).ToList().Count;
 
                 accrediteds = accrediteds
-                        .Where(p => stringProperties.Any(prop => prop.GetValue(p, null) != null && prop.GetValue(p, null).ToString().ToLower().Contains(accreditedByPagination.Filter.ToLower())))
+                        .Where(p => p.id.ToString().Contains(filvalue) || (p.First_Name.ToLower() + " " + p.Last_Name.ToLower()).ToLower().Contains(filvalue) || p.Mail.ToLower().Contains(filvalue))
                         .OrderBy(p => p.id)
                         .Skip((accreditedByPagination.Page - 1) * accreditedByPagination.NumRecord)
                         .Take(accreditedByPagination.NumRecord).ToList();
@@ -144,10 +146,17 @@ namespace PrestaQi.Service.RetrieveServices
                 p.Type = (int)PrestaQiEnum.UserType.Acreditado;
                 p.TypeName = PrestaQiEnum.UserType.Acreditado.ToString();
                 p.TypeContract = typeContracts.FirstOrDefault(tc => tc.id == p.Type_Contract_Id);
-                p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(new CalculateAmount()
+                try
                 {
-                    Accredited_Id = p.id
-                }).advance.Maximum_Amount;
+                    p.Credit_Limit = this._AdvanceProcessService.ExecuteProcess<CalculateAmount, AdvanceAndDetails>(new CalculateAmount()
+                    {
+                        Accredited_Id = p.id
+                    }).advance.Maximum_Amount;
+                } catch(Exception e)
+                {
+                    p.Credit_Limit = 0;
+                }
+                
 
                 if (p.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.WagesAndSalaries)
                 {
@@ -168,6 +177,11 @@ namespace PrestaQi.Service.RetrieveServices
             accredited = GetList(new List<Accredited>() { accredited }).FirstOrDefault();
 
             return accredited;
+        }
+
+        public List<Accredited> RetrieveResult(Func<Accredited, bool> predicate)
+        {
+            return this._Repository.Where(predicate).ToList();
         }
     }
 }

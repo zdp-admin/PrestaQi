@@ -24,11 +24,16 @@ namespace PrestaQi.Api
         static  NotificationsMessageHandler _NotificationsMessageHandler { get; set; }
         static IWriteService<Model.Notification> _NotificationWriteService;
         static IRetrieveService<Model.Notification> _NotificationRetrieveService;
+        static IRetrieveService<Model.Advance> _AdvanceRetrieveService;
+        static IRetrieveService<Model.DetailsAdvance> _DetailsAdvanceRetrieveService;
+        static IWriteService<Model.Advance> _AdvanceWriteService;
+        static IWriteService<Model.DetailsAdvance> _DetailsAdvanceWriteService;
         static IProcessService<Capital> _CapitalProcessService;
         static IRetrieveService<User> _UserRetrieveService;
         static IRetrieveService<Model.Configuration> _ConfigurationRetrieveService;
         static IConfiguration _Configuration;
         static System.Timers.Timer _Timer;
+        static System.Timers.Timer _TimerPayment;
 
         static void GenerateInstances(IServiceProvider serviceProvider)
         {
@@ -38,6 +43,11 @@ namespace PrestaQi.Api
             _UserRetrieveService = serviceProvider.GetService<IRetrieveService<User>>();
             _NotificationRetrieveService = serviceProvider.GetService<IRetrieveService<Model.Notification>>();
             _ConfigurationRetrieveService = serviceProvider.GetService<IRetrieveService<Model.Configuration>>();
+
+            _AdvanceRetrieveService = serviceProvider.GetService<IRetrieveService<Advance>>();
+            _DetailsAdvanceRetrieveService = serviceProvider.GetService<IRetrieveService<DetailsAdvance>>();
+            _AdvanceWriteService = serviceProvider.GetService<IWriteService<Advance>>();
+            _DetailsAdvanceWriteService = serviceProvider.GetService<IWriteService<DetailsAdvance>>();
         }
 
         public static void Initialize(IServiceProvider serviceProvider, IConfiguration configuration)
@@ -52,6 +62,10 @@ namespace PrestaQi.Api
 
             _Timer.Elapsed += Timer_Elapsed;
             _Timer.Enabled = true;
+
+            _TimerPayment = new System.Timers.Timer() { Interval = 35 * 60 * 1000 };
+            _TimerPayment.Elapsed += Timer_Payment;
+            _TimerPayment.Enabled = true;
         }
 
         private static void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -59,6 +73,44 @@ namespace PrestaQi.Api
             _Timer.Enabled = false;
             VerifyInteresetPayment();            
             _Timer.Enabled = true;
+        }
+
+        private static void Timer_Payment(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (DateTime.Now.Hour != 12)
+            {
+                return;
+            }
+
+            _TimerPayment.Enabled = false;
+            var advancesUpdate = new List<Advance>();
+            var advances = _AdvanceRetrieveService.Where(a => a.Paid_Status == 0).ToList();
+            var advanceIds = advances.Select(a => a.id).ToList();
+
+            var details = _DetailsAdvanceRetrieveService.Where(d => d.Date_Payment.Date < DateTime.Now.Date).Where(d => advanceIds.Contains(d.Advance_Id)).ToList();
+            var detailsForPay = _DetailsAdvanceRetrieveService.Where(d => d.Paid_Status == 0).Where(d => advanceIds.Contains(d.Advance_Id)).ToList();
+
+            foreach(Advance advance in advances)
+            {
+                advance.DetailsAdvances = detailsForPay.Where(d => d.Advance_Id == advance.id).Where(d => d.Date_Payment.Date < DateTime.Now.Date).ToList();
+
+                if (advance.DetailsAdvances.Count <= 0 && advance.Limit_Date.Date < DateTime.Now.Date)
+                {
+                    advance.Paid_Status = 1;
+                    advancesUpdate.Add(advance);
+                }
+            }
+
+            _AdvanceWriteService.Update(advancesUpdate);
+
+            foreach(DetailsAdvance detailsAdvance in details)
+            {
+                detailsAdvance.Paid_Status = 1;
+            }
+
+            _DetailsAdvanceWriteService.Update(details);
+
+            _TimerPayment.Enabled = true;
         }
 
         static void VerifyInteresetPayment()

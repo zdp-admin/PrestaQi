@@ -31,7 +31,7 @@ namespace PrestaQi.Service.WriteServices
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieve;
         IWriteService<DetailsByAdvance> _DetailsByAdvanceWriteService;
         public IConfiguration Configuration { get; }
-        DateTime dateNow = new DateTime(2021, 9, 29, 10, 0, 0); //DateTime.Now;
+        DateTime dateNow = DateTime.Now;
 
         public AdvanceWriteService(
             IWriteRepository<Advance> repository,

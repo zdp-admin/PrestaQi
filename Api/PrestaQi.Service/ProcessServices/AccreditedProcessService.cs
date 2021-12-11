@@ -53,7 +53,7 @@ namespace PrestaQi.Service.ProcessServices
             var advances = this._AdvanceRetrieveService.Where(p => p.Paid_Status == 0 || p.Paid_Status == 2).ToList();
             var accreditIds = advances.Select(p => p.Accredited_Id).Distinct();
 
-            accrediteds = this._AccreditedRetrieveService.Where(p => accreditIds.Contains(p.id) && p.Deleted_At == null).ToList();
+            accrediteds = this._AccreditedRetrieveService.RetrieveResult<Func<Accredited, bool>, List<Accredited>>(p => accreditIds.Contains(p.id) && p.Deleted_At == null);
 
             if (!string.IsNullOrEmpty(filter.Filter))
             {

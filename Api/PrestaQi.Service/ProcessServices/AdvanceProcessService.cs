@@ -27,8 +27,7 @@ namespace PrestaQi.Service.ProcessServices
         IRetrieveService<TypeContract> _TypeContractService;
         IRetrieveService<Institution> _InsitutionRetrieveService;
         IRetrieveService<DetailsByAdvance> _DetailsByAdvanceRetrieveService;
-        IRetrieveRepository<PaidAdvance> _PaidAdvanceRepository;
-        DateTime dateNow = new DateTime(2021, 9, 29, 10, 0, 0); //DateTime.Now;
+        DateTime dateNow = DateTime.Now;
         // solo cambiar la hora en el cuarto dia antes de la fecha de pago
         // liberar pago principal
 
@@ -44,8 +43,7 @@ namespace PrestaQi.Service.ProcessServices
             IRetrieveRepository<DetailsAdvance> detailsAdvanceRetrieveService,
             IRetrieveService<TypeContract> typeContractService,
             IRetrieveService<Institution> insitutionRetrieveService,
-            IRetrieveService<DetailsByAdvance> detailsByAdvance,
-            IRetrieveRepository<PaidAdvance> paidAdvanceRepository
+            IRetrieveService<DetailsByAdvance> detailsByAdvance
             )
         {
             this._AcreditedRetrieveService = acreditedRetrieveService;
@@ -60,7 +58,6 @@ namespace PrestaQi.Service.ProcessServices
             this._TypeContractService = typeContractService;
             this._InsitutionRetrieveService = insitutionRetrieveService;
             this._DetailsByAdvanceRetrieveService = detailsByAdvance;
-            this._PaidAdvanceRepository = paidAdvanceRepository;
         }
 
         public AdvanceAndDetails ExecuteProcess(CalculateAmount calculateAmount)
@@ -84,16 +81,16 @@ namespace PrestaQi.Service.ProcessServices
             if (accredited.Type_Contract_Id == (int)PrestaQiEnum.AccreditedContractType.AssimilatedToSalary || result.Item2)
                 return new AdvanceAndDetails() { advance = result.Item1, details = new List<DetailsAdvance>() };
 
-            var totalAdvance = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id && (advance.Paid_Status == 0 || advance.Paid_Status == 2)).OrderByDescending(advance => advance.id).ToList();
+            var totalAdvance = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id && advance.Paid_Status == (int)PrestaQiEnum.AdvanceStatus.NoPagado).OrderByDescending(advance => advance.id).ToList();
 
 
             if ((result.Item1.Total_Withhold + totalAdvance.Sum(advance => advance.Total_Withhold)) <= maximumAmountDiscountByPeriod)
                 return new AdvanceAndDetails() { advance = result.Item1, details = new List<DetailsAdvance>() };
 
             var advances = new List<Advance>();
-            var detailsAdvance = this._DetailsAdvance.Where(detail => detail.Accredited_Id == accredited.id && (detail.Paid_Status == 0 || detail.Paid_Status == 2)).OrderBy(detail => detail.id).ToList();
+            var detailsAdvance = this._DetailsAdvance.Where(detail => detail.Accredited_Id == accredited.id && detail.Paid_Status == (int)PrestaQiEnum.AdvanceStatus.NoPagado).OrderBy(detail => detail.id).ToList();
 
-            var advanceOrderDesc = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id).OrderByDescending(a => a.id).ToList();
+            var advanceOrderDesc = this._AdvanceRetrieveService.Where(advance => advance.Accredited_Id == accredited.id && advance.Paid_Status == (int)PrestaQiEnum.AdvanceStatus.NoPagado).OrderByDescending(a => a.id).ToList();
 
             foreach(Advance advance in advanceOrderDesc)
             {
@@ -125,26 +122,6 @@ namespace PrestaQi.Service.ProcessServices
 
             result.Item1.id = 0;
 
-            var sumAditionalVat = 0.0;
-
-            /*if (resultList.Count > 0)
-            {
-                foreach(DetailsAdvance detail in resultList)
-                {
-                    if (detail.Interest > 0)
-                    {
-                        sumAditionalVat += detail.Interest / advances.Count;
-                    }
-
-                    if (detail.Vat > 0)
-                    {
-                        sumAditionalVat += detail.Vat / advances.Count;
-                    }
-                }
-
-                result.Item1.Total_Withhold += Math.Round(sumAditionalVat, 2);
-            }*/
-
             return new AdvanceAndDetails() { advance = result.Item1, details = resultList };
         }
 
@@ -165,99 +142,13 @@ namespace PrestaQi.Service.ProcessServices
                 throw new SystemValidationException("Accredited not found");
 
             DateTime currentDate = dateNow;
-            bool periodIsPaying = false;
             DateTime datePeriodInitial = currentDate;
             DateTime datePeriodFinish = currentDate;
 
             var currentPeriod = Utilities.getPeriodoByAccredited(accredited, currentDate);
             datePeriodInitial = currentPeriod.initial;
             datePeriodFinish = currentPeriod.finish;
-
-            periodIsPaying = this._PaidAdvanceRepository
-                .Where(paidAdvance => paidAdvance.Company_Id == accredited.Company_Id)
-                .Where(paidAdvance => paidAdvance.created_at >= datePeriodInitial && paidAdvance.created_at <= datePeriodFinish).FirstOrDefault() != null;
-
-            periodIsPaying = false;
             DateTime limitDate = datePeriodFinish;
-
-            switch (accredited.Period_Id)
-            {
-                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-
-                    /*Check is available day*/
-                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        limitDate = limitDate.AddDays(-1);
-                    }
-
-                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        limitDate = limitDate.AddDays(-2);
-                    }
-
-                    break;
-                case (int)PrestaQiEnum.PerdioAccredited.Mensual:
-
-                    /*Check is available day*/
-                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        limitDate = limitDate.AddDays(-1);
-                    }
-
-                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        limitDate = limitDate.AddDays(-2);
-                    }
-
-                    break;
-            }
-
-            if (periodIsPaying || (limitDate - currentDate.Date).Days <= 3)
-            {
-                currentPeriod = Utilities.getPeriodoByAccredited(accredited, datePeriodFinish.AddDays(1));
-                datePeriodInitial = currentPeriod.initial;
-                datePeriodFinish = currentPeriod.finish;
-            } else if ((limitDate - currentDate).Days == 4)
-            {
-                if (dateNow.Hour >= 12)
-                {
-                    currentPeriod = Utilities.getPeriodoByAccredited(accredited, datePeriodFinish.AddDays(1));
-                    datePeriodInitial = currentPeriod.initial;
-                    datePeriodFinish = currentPeriod.finish;
-                }
-            }
-
-            switch (accredited.Period_Id)
-            {
-                case (int)PrestaQiEnum.PerdioAccredited.Quincenal:
-
-                    /*Check is available day*/
-                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        limitDate = limitDate.AddDays(-1);
-                    }
-
-                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        limitDate = limitDate.AddDays(-2);
-                    }
-
-                    break;
-                case (int)PrestaQiEnum.PerdioAccredited.Mensual:
-
-                    /*Check is available day*/
-                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        limitDate = limitDate.AddDays(-1);
-                    }
-
-                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        limitDate = limitDate.AddDays(-2);
-                    }
-
-                    break;
-            }
 
             DateTime startDate = currentDate;
             DateTime endDate = currentDate;
@@ -281,18 +172,6 @@ namespace PrestaQi.Service.ProcessServices
 
                     limitDate = datePeriodFinish;
 
-                    /*Check is available day*/
-                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        limitDate = limitDate.AddDays(-1);
-                    }
-
-                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        limitDate = limitDate.AddDays(-2);
-                    }
-                    /*Check is available day*/
-
                     if (calculateAmount.Amount == 0)
                     {
                         advanceCalculated.Maximum_Amount = Math.Round(accredited.Net_Monthly_Salary / 2);
@@ -306,18 +185,6 @@ namespace PrestaQi.Service.ProcessServices
                 case (int)PrestaQiEnum.PerdioAccredited.Mensual:
                     
                     limitDate = datePeriodFinish;
-
-                    /*Check is available day*/
-                    if (limitDate.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        limitDate = limitDate.AddDays(-1);
-                    }
-
-                    if (limitDate.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        limitDate = limitDate.AddDays(-2);
-                    }
-                    /*Check is available day*/
 
                     if (calculateAmount.Amount == 0)
                     {
@@ -350,8 +217,7 @@ namespace PrestaQi.Service.ProcessServices
                     break;
             }
 
-            var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id &&
-            ((p.Date_Advance.Date >= startDate.Date && p.Date_Advance <= endDate.Date && p.Paid_Status == 0) || (p.Date_Advance < endDate && p.Paid_Status == 0))).ToList();
+            var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id && p.Paid_Status == (int)PrestaQiEnum.AdvanceStatus.NoPagado).ToList();
 
             var advancesIds = new List<int>();
             var detailsAdvancesPaided = 0d;
@@ -464,17 +330,6 @@ namespace PrestaQi.Service.ProcessServices
                         nextDayForPayment = currentPeriodDetails.finish;
                     }
 
-                    // verify days habiles
-                    if (nextDayForPayment.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        nextDayForPayment = nextDayForPayment.AddDays(-1);
-                    }
-
-                    if (nextDayForPayment.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        nextDayForPayment = nextDayForPayment.AddDays(-2);
-                    }
-
                     var count = detailsAdvances.Count();
 
                     if (count > 0 && detailsAdvances.FirstOrDefault(detail => detail.Date_Payment == nextDayForPayment) != null
@@ -486,9 +341,9 @@ namespace PrestaQi.Service.ProcessServices
                     }
 
                     //advances
-                    var deductionsForNextDayPayment = advances.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Comission + advance.Interest + advance.Vat);
-                    var totalForNextDayPayment = advances.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Total_Withhold);
-                    var amounForNextDayPayment = advances.Where(advance => advance.Limit_Date <= nextDayForPayment).Sum(advance => advance.Amount);
+                    var deductionsForNextDayPayment = advances.Where(advance => advance.Date_Advance <= nextDayForPayment).Sum(advance => advance.Comission + advance.Interest + advance.Vat);
+                    var totalForNextDayPayment = advances.Where(advance => advance.Date_Advance <= nextDayForPayment).Sum(advance => advance.Total_Withhold);
+                    var amounForNextDayPayment = advances.Where(advance => advance.Date_Advance <= nextDayForPayment).Sum(advance => advance.Amount);
 
                     //detailsAdvance
                     var detailsDeductionsTotal = detailsAdvances.Sum(da => da.Interest + da.Vat);
@@ -525,17 +380,6 @@ namespace PrestaQi.Service.ProcessServices
 
                     var currentPeriod = Utilities.getPeriodoByAccredited(accredited, nextDayForPayment.AddDays(4));
                     nextDate = currentPeriod.finish;
-
-                    //verify days habiles
-                    if (nextDate.DayOfWeek == DayOfWeek.Saturday)
-                    {
-                        nextDate = nextDate.AddDays(-1);
-                    }
-
-                    if (nextDate.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        nextDate = nextDate.AddDays(-2);
-                    }
 
                     dayForPayment = nextDate.Subtract(nextDayForPayment).Days;
 

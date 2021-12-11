@@ -35,5 +35,7 @@ namespace PrestaQi.Model
         public string Bank_Name { get; set; }
         [NotMapped]
         public string Account_Number { get; set; }
+        [NotMapped]
+        public Advance Advance { get; set; }
     }
 }
