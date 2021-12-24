@@ -95,8 +95,11 @@ namespace PrestaQi.Service.ProcessServices
                             {
                                 advance.details.ForEach(detail =>
                                 {
-                                    total += detail.Detail.Interest + detail.Detail.Vat;
-                                    total += detail.Detail.Promotional_Setting ?? 0;
+                                    if (detail.Detail != null)
+                                    {
+                                        total += detail.Detail.Interest + detail.Detail.Vat;
+                                        total += detail.Detail.Promotional_Setting ?? 0;
+                                    }
                                 });
                             }
 
@@ -107,12 +110,15 @@ namespace PrestaQi.Service.ProcessServices
                             if (advance.details != null) {
                                 advance.details.ForEach(detail =>
                                 {
-                                    workSheet.Cell(row, 8).Value = detail.Detail.Date_Payment.ToString("dd/MM/yyyy");
-                                    workSheet.Cell(row, 10).Value = detail.Detail.Interest.ToString("C");
-                                    workSheet.Cell(row, 13).Value = detail.Detail.Promotional_Setting?.ToString("C");
-                                    workSheet.Cell(row, 15).Value = detail.Detail.Vat.ToString("C");
-                                    workSheet.Cell(row, 17).Value = detail.Detail.Total_Payment.ToString("C");
-                                    row += 1;
+                                    if (detail.Detail != null)
+                                    {
+                                        workSheet.Cell(row, 8).Value = detail.Detail.Date_Payment.ToString("dd/MM/yyyy");
+                                        workSheet.Cell(row, 10).Value = detail.Detail.Interest.ToString("C");
+                                        workSheet.Cell(row, 13).Value = detail.Detail.Promotional_Setting?.ToString("C");
+                                        workSheet.Cell(row, 15).Value = detail.Detail.Vat.ToString("C");
+                                        workSheet.Cell(row, 17).Value = detail.Detail.Total_Payment.ToString("C");
+                                        row += 1;
+                                    }
                                 });
                             }
                         });

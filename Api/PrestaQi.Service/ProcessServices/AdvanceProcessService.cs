@@ -217,6 +217,8 @@ namespace PrestaQi.Service.ProcessServices
                     break;
             }
 
+            var maxAmount = advanceCalculated.Maximum_Amount;
+
             var advances = this._AdvanceRetrieveService.Where(p => p.Accredited_Id == accredited.id && p.Paid_Status == (int)PrestaQiEnum.AdvanceStatus.NoPagado).ToList();
 
             var advancesIds = new List<int>();
@@ -267,6 +269,7 @@ namespace PrestaQi.Service.ProcessServices
             advanceCalculated.Interest_Rate = accredited.Interest_Rate;
             advanceCalculated.Maximum_Amount = isMaxAmount ? Math.Round(advanceCalculated.Maximum_Amount - subtotal - vatTotal) : 0;
             advanceCalculated.Maximum_Amount = advanceCalculated.Maximum_Amount < 0 ? 0 : advanceCalculated.Maximum_Amount;
+            advanceCalculated.Maximum_Amount = advanceCalculated.Maximum_Amount > maxAmount ? maxAmount : advanceCalculated.Maximum_Amount;
             advanceCalculated.created_at = dateNow;
 
             if (accredited.Net_Monthly_Salary == 0)

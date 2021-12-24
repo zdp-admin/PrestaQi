@@ -92,7 +92,7 @@ namespace PrestaQi.Api
 
             foreach(Advance advance in advances)
             {
-                advance.DetailsAdvances = detailsForPay.Where(d => d.Advance_Id == advance.id).Where(d => d.Date_Payment.Date < DateTime.Now.Date).ToList();
+                advance.DetailsAdvances = detailsForPay.Where(d => d.Advance_Id == advance.id).Where(d => d.Date_Payment.Date >= DateTime.Now.Date).ToList();
 
                 if (advance.DetailsAdvances.Count <= 0 && advance.Limit_Date.Date < DateTime.Now.Date)
                 {
