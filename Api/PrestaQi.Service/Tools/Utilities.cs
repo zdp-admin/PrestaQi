@@ -274,6 +274,7 @@ namespace PrestaQi.Service.Tools
 
                     break;
             }
+            
 
             if ((finish - currentDate.Date).Days <= 2 || (finish - currentDate.Date).Days == 3 && currentDate.Hour >= 12)
             {
