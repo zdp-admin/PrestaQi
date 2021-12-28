@@ -371,15 +371,15 @@ namespace PrestaQi.Service.ProcessServices
                                 Seniority_Company = fields[18],
                                 Birth_Date = Convert.ToDateTime(fields[19]),
                                 Age = 0,
-                                Account_Number = fields[24],
-                                Clabe = fields[22],
+                                Account_Number = fields[23],
+                                Clabe = fields[24],
                                 Moratoruim_Interest_Rate = Convert.ToInt32(fields[25]),
                                 Mail = fields[26],
                                 Mail_Mandate_Latter = fields[27],
-                                End_Day_Payment = Convert.ToDateTime(fields[28])
+                                End_Day_Payment = Convert.ToDateTime(fields[28]),
+                                Period_Start_Date = Convert.ToInt32(fields[29]),
+                                Period_End_Date = Convert.ToInt32(fields[30])
                             };
-
-
 
                             var institution = this._InstitutionRetrieveService.Where(p => p.Code == int.Parse(fields[22])).FirstOrDefault();
                             if (institution == null)
@@ -479,7 +479,7 @@ namespace PrestaQi.Service.ProcessServices
                             else
                                 accredited.Period_Id = period.id;
 
-                            var typeContract = this._TypeContract.Where(t => t.Description.ToLower() == fields[8].ToLower()).FirstOrDefault();
+                            var typeContract = this._TypeContract.Where(t => t.Description.ToLower() == fields[9].ToLower()).FirstOrDefault();
                             if (typeContract == null)
                             {
                                 var typeContractDefault = this._TypeContract.Where(t => true).FirstOrDefault();

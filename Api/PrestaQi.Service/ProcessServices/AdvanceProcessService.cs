@@ -202,10 +202,7 @@ namespace PrestaQi.Service.ProcessServices
                     endDate = datePeriodFinish;
                     limitDate = endDate;
 
-                    if (!(dateNow.Date >= endDate.AddDays(-2).Date))
-                    {
-                        commission = commission + ((dateNow.Date - startDate.Date).Days);
-                    }
+                    commission = 10;
 
                     if (calculateAmount.Amount == 0)
                     {

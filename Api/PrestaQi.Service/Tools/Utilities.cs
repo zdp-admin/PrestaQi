@@ -275,12 +275,9 @@ namespace PrestaQi.Service.Tools
                     break;
             }
 
-            if (accredited.Period_Id != (int)PrestaQiEnum.PerdioAccredited.Semanal)
+            if ((finish - currentDate.Date).Days <= 2 || (finish - currentDate.Date).Days == 3 && currentDate.Hour >= 12)
             {
-                if ((finish - currentDate.Date).Days <= 2 || (finish - currentDate.Date).Days == 3 && currentDate.Hour >= 12)
-                {
-                    return getPeriodoByAccredited(accredited, finish.AddDays(4));
-                }
+                return getPeriodoByAccredited(accredited, finish.AddDays(4));
             }
 
             return ( initial, finish );
